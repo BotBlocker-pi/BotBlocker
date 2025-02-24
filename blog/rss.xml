@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>BotBlocker Blog</title>
+        <link>https://github.com/botblocker/blog</link>
+        <description>BotBlocker Blog</description>
+        <lastBuildDate>Sat, 15 Feb 2025 00:47:11 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>en</language>
+        <item>
+            <title><![CDATA[Sprint 1]]></title>
+            <link>https://github.com/botblocker/blog/sprint1</link>
+            <guid>https://github.com/botblocker/blog/sprint1</guid>
+            <pubDate>Sat, 15 Feb 2025 00:47:11 GMT</pubDate>
+            <description><![CDATA[---]]></description>
+            <content:encoded><![CDATA[<hr>
+<p>Sprint 1</p>]]></content:encoded>
+        </item>
+    </channel>
+</rss>

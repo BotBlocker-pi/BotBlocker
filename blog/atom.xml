@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://github.com/botblocker/blog</id>
+    <title>BotBlocker Blog</title>
+    <updated>2025-02-15T00:47:11.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://github.com/botblocker/blog"/>
+    <subtitle>BotBlocker Blog</subtitle>
+    <icon>https://github.com/botblocker/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Sprint 1]]></title>
+        <id>https://github.com/botblocker/blog/sprint1</id>
+        <link href="https://github.com/botblocker/blog/sprint1"/>
+        <updated>2025-02-15T00:47:11.000Z</updated>
+        <summary type="html"><![CDATA[---]]></summary>
+        <content type="html"><![CDATA[<hr>
+<p>Sprint 1</p>]]></content>
+        <author>
+            <name>Hugo</name>
+            <uri>https://github.com/hujuc</uri>
+        </author>
+    </entry>
+</feed>

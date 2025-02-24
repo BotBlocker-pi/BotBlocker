@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkbot_sentinel_documentation=self.webpackChunkbot_sentinel_documentation||[]).push([[73],{6068:t=>{t.exports=JSON.parse('{"authors":[{"name":"Hugo","title":"Developer","url":"https://github.com/hujuc","imageURL":"https://avatars.githubusercontent.com/u/107763649?v=4","key":"hugo","page":null,"count":1}]}')}}]);
