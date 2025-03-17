@@ -52,7 +52,7 @@ const HomePage = () => {
           <AiAnalysis
             botPercentage={data.probability}
             numberVotes={data.numberOfEvaluations}
-            badge="bot"
+            badge={data.badge}
           />
         </>
       )}
