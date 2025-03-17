@@ -26,6 +26,7 @@ class ProfileDTO(serializers.Serializer):
     plataform = serializers.CharField() 
     badge = serializers.CharField()
     probability = serializers.FloatField()
+    numberOfEvaluations = serializers.IntegerField()
 
     def __init__(self, username, social__social):
         try:
@@ -43,6 +44,7 @@ class ProfileDTO(serializers.Serializer):
             "plataform": profile.social.social,
             "badge": profile.badge,
             "probability": probability, 
+            "numberOfEvaluations":total_evaluations
         }
 
         super().__init__(data=data)

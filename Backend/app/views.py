@@ -18,8 +18,7 @@ def create_profile(username, platform, image=None):
 
 def get_probability(request):
 
-    body = json.loads(request.body.decode('utf-8'))
-    url = body.get("url")
+    url = request.GET.get("url")
     print("url",url)
     username, platform = extractPerfilNameAndPlataformOfURL(url)
     print(username, platform)
