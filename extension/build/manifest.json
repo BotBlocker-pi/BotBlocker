@@ -2,9 +2,8 @@
   "manifest_version": 3,
   "name": "BotBlocker Extension",
   "version": "1.0.0",
-  "description": "THe extension for the BotBlocker app",
+  "description": "The extension for the BotBlocker app",
   "action": {
     "default_popup": "index.html"
-  },
-  "permissions": []
+  }
 }
