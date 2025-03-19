@@ -17,7 +17,31 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from app.views import *
+from django.contrib import admin
+from django.urls import include, path, re_path
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+
+    # Endpoint para a página de login (View baseada em classe)
+    path("login/", LoginPage.as_view(), name="login"),
+
+    # Endpoints de autenticação via Django Rest Auth
+    path("api/v1/auth/", include("dj_rest_auth.urls")),
+
+    # Endpoint para autenticação de contas via Django AllAuth
+    re_path(r"^api/v1/auth/accounts/", include("allauth.urls")),
+
+    # Endpoint para registro de usuários via Django Rest Auth
+    path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
+
+    # Endpoints para autenticação via Google OAuth
+    path("api/v1/auth/google/", GoogleLogin.as_view(), name="google_login"),
+    path(
+        "api/v1/auth/google/callback/",
+        GoogleLoginCallback.as_view(),
+        name="google_login_callback",
+    ),
     path('get_probability/', get_probability, name='get_probability'),
+    path("api/v1/protected/", protected_view, name="protected_view"),
 ]

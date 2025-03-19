@@ -6,5 +6,12 @@
   "action": {
     "default_popup": "index.html"
   },
-  "permissions": ["tabs"]
+  "permissions": ["tabs", "storage","identity"],
+  "oauth2": {
+    "client_id": "761894176093-5dn58g5tp54vt0gi1mmu3lpau7dr31p5.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "background": {
+  "service_worker": "background.js"
+}
 }

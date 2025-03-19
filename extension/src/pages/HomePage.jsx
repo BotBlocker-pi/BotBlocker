@@ -34,6 +34,48 @@ const HomePage = () => {
     });
   }, []);
 
+ // Estado que armazena se o usuário está autenticado ou não
+const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+useEffect(() => {
+  // Obtém o token armazenado localmente no Chrome
+  chrome.storage.local.get("accessToken", (data) => {
+    if (data.accessToken) {
+      console.log("🔑 Usuário autenticado. Token:", data.accessToken);
+      setIsLoggedIn(true); // ✅ Define o estado como logado
+    } else {
+      console.log("🔴 Usuário não autenticado.");
+      setIsLoggedIn(false); // ✅ Define como não logado
+    }
+  });
+}, []); // Executa apenas uma vez quando o componente é montado
+
+// Função para buscar dados protegidos da API
+const fetchProtectedData = () => {
+  // Obtém o token armazenado no Chrome
+  chrome.storage.local.get("accessToken", (data) => {
+    if (data.accessToken) {
+      // Faz uma requisição GET à API protegida
+      fetch("http://localhost:8000/api/v1/protected/", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${data.accessToken}`, // Envia o token no cabeçalho
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => response.json()) // Converte a resposta para JSON
+      .then(data => console.log("✅ Dados protegidos:", data)) // Exibe os dados no console
+      .catch(error => console.error("❌ Erro ao acessar a view protegida:", error)); // Captura e exibe erros
+    } else {
+      console.error("❌ Nenhum token encontrado.");
+    }
+  });
+};
+
+// Chama a função automaticamente ao abrir a extensão
+fetchProtectedData();
+
+  
   return (
     <div>
       <Navbar />
@@ -56,6 +98,16 @@ const HomePage = () => {
           />
         </>
       )}
+
+      <div>
+        <h1>BotBlocker</h1>
+        {isLoggedIn ? (
+          <p>Bem-vindo!</p>
+        ) : (
+          <p>Não logado</p>
+
+        )}
+      </div>
     </div>
   );
 };

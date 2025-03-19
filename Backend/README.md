@@ -15,7 +15,7 @@ pip install django-cors-headers
 
 Executar o backand:
 
-python manage.py makemigrations
+python manage.py makemigrations app
 python manage.py migrate    
 python .\manage.py runserver  
 
