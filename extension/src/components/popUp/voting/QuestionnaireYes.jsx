@@ -1,4 +1,3 @@
-// components/popUp/Questionnaire.jsx
 import React, { useState } from "react";
 import styled from "styled-components";
 
@@ -19,18 +18,18 @@ const Question = styled.p`
 `;
 
 const OptionLabel = styled.label`
-  display: flex;
-  align-items: center;
-  padding: 10px 20px;
-  font-size: 14px;
-  color: black;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-  margin: 5px;
-  transition: background-color 0.3s ease;
-  text-align: left;
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    font-size: 14px;
+    color: black;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+    transition: background-color 0.3s ease;
+    text-align: left;
 
     &:hover {
         background-color: #ddd;
@@ -39,6 +38,15 @@ const OptionLabel = styled.label`
 
 const Checkbox = styled.input`
     margin-right: 10px;
+`;
+
+const OtherInput = styled.input`
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 10px;
+    width: 80%;
 `;
 
 const SubmitButton = styled.button`
@@ -59,24 +67,36 @@ const SubmitButton = styled.button`
 
 const QuestionnaireYes = ({ onSubmit }) => {
     const [selectedReasons, setSelectedReasons] = useState([]);
+    const [otherReason, setOtherReason] = useState("");
 
     const handleReasonSelect = (reason) => {
         if (selectedReasons.includes(reason)) {
-            // If the reason is already selected, remove it
             setSelectedReasons(selectedReasons.filter((r) => r !== reason));
         } else {
-            // Otherwise, add it to the selected reasons
             setSelectedReasons([...selectedReasons, reason]);
         }
     };
 
+    const handleOtherReasonChange = (e) => {
+        setOtherReason(e.target.value);
+    };
+
     const handleSubmit = () => {
-        onSubmit(selectedReasons);
+        if (selectedReasons.includes("Other") && otherReason.trim() === "") {
+            alert("Please specify the reason for selecting 'Other'.");
+            return;
+        }
+
+        const reasonsToSubmit = selectedReasons.includes("Other")
+            ? [...selectedReasons.filter((r) => r !== "Other"), `Other: ${otherReason}`]
+            : selectedReasons;
+
+        onSubmit(reasonsToSubmit); // Pass the reasons back to the parent component
     };
 
     return (
         <QuestionnaireContainer>
-            <Question>Reason?</Question>
+            <Question>Why do you think this profile is AI?</Question>
             <OptionLabel>
                 <Checkbox
                     type="checkbox"
@@ -117,6 +137,14 @@ const QuestionnaireYes = ({ onSubmit }) => {
                 />
                 Other
             </OptionLabel>
+            {selectedReasons.includes("Other") && (
+                <OtherInput
+                    type="text"
+                    placeholder="Please specify the reason..."
+                    value={otherReason}
+                    onChange={handleOtherReasonChange}
+                />
+            )}
             <SubmitButton onClick={handleSubmit}>Submit</SubmitButton>
         </QuestionnaireContainer>
     );

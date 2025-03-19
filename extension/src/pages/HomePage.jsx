@@ -5,6 +5,7 @@ import SocialMediaProfile from "../components/popUp/SocialMediaProfileInfo.jsx";
 import AiAnalysis from "../components/popUp/AiAnalysis.jsx";
 import getProfileData from "../api/api.jsx";
 import QuestionnaireYes from "../components/popUp/voting/QuestionnaireYes.jsx";
+import QuestionnaireNo from "../components/popUp/voting/QuestionnaireNo.jsx";
 
 const Container = styled.div`
   background-color: #f9f9f9;
@@ -71,23 +72,54 @@ const TextContainer = styled.div`
 const HomePage = () => {
   const [data, setData] = useState(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
-  const [vote, setVote] = useState("Yes")
+  const [vote, setVote] = useState(null);
 
   const handleVote = (vote) => {
     console.log(`User voted: ${vote}`);
     setShowQuestionnaire(true); // Show the questionnaire after voting
-    if (vote === "Yes"){
-      setAnswerYes(true);
-    }else{
-      setAnswerNo(true)
+    setVote(vote); // Set the user's vote
+  };
+
+  const sendEvaluationToBackend = async (evaluationData) => {
+    try {
+      const response = await fetch("http://localhost:8000/avaliacao/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(evaluationData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit evaluation");
+      }
+
+      const result = await response.json();
+      console.log("Evaluation submitted successfully:", result);
+    } catch (error) {
+      console.error("Error submitting evaluation:", error);
     }
   };
 
   const handleSubmitReason = (reason) => {
     console.log(`Selected reason: ${reason}`);
-    setShowQuestionnaire(false); // Hide the questionnaire after submission
-    setAnswerNo(false);
-    setAnswerYes(false)
+
+    // Prepare the evaluation data
+    const evaluationData = {
+      user: "current_user_name", // Replace with the actual user name or ID
+      profile: data.perfil_name, // Use the profile name from the data
+      rede_social: data.plataform, // Use the platform from the data
+      is_bot: vote === "Yes", // Set is_bot to true if the user voted "Yes"
+      notas: reason.join(", "), // Convert the array of reasons to a string
+      created_at: new Date().toISOString(), // Add the current timestamp
+    };
+
+    // Send the evaluation data to the backend
+    sendEvaluationToBackend(evaluationData);
+
+    // Reset the state
+    setShowQuestionnaire(false);
+    setVote(null);
   };
 
   useEffect(() => {
@@ -132,8 +164,10 @@ const HomePage = () => {
                 <Button onClick={() => handleVote("No")}>No</Button>
               </ButtonContainer>
             </VotingContainer>
-        ) : (
+        ) : vote === "Yes" ? (
             <QuestionnaireYes onSubmit={handleSubmitReason} />
+        ) : (
+            <QuestionnaireNo onSubmit={handleSubmitReason} />
         )}
 
         <WebsiteLink>

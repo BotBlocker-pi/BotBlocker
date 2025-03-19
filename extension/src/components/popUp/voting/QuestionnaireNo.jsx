@@ -71,7 +71,16 @@ const QuestionnaireNo = ({ onSubmit }) => {
     };
 
     const handleSubmit = () => {
-        onSubmit(selectedReasons);
+        if (selectedReasons.includes("Other") && otherReason.trim() === "") {
+            alert("Please specify the reason for selecting 'Other'.");
+            return;
+        }
+
+        const reasonsToSubmit = selectedReasons.includes("Other")
+            ? [...selectedReasons.filter((r) => r !== "Other"), `Other: ${otherReason}`]
+            : selectedReasons;
+
+        onSubmit(reasonsToSubmit); // Pass the reasons back to the parent component
     };
 
     return (
@@ -122,4 +131,4 @@ const QuestionnaireNo = ({ onSubmit }) => {
     );
 };
 
-export default QuestionnaireYes;
+export default QuestionnaireNo;
