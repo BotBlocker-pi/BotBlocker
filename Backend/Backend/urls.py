@@ -20,4 +20,6 @@ from app.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('get_probability/', get_probability, name='get_probability'),
+    path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
+
 ]
