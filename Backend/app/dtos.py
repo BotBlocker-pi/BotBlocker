@@ -48,3 +48,4 @@ class ProfileDTO(serializers.Serializer):
         }
 
         super().__init__(data=data)
+

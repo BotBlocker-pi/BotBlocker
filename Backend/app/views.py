@@ -8,8 +8,6 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.utils.dateparse import parse_datetime
 
-
-
 def create_profile(username, platform, image=None):
 
     social_instance, _ = Social.objects.get_or_create(social=platform)
@@ -41,14 +39,18 @@ def criar_avaliacao(request):
     if request.method == 'POST':
         try:
             data = JSONParser().parse(request)  
+            print("Received Data:", data)  # Log the received data
 
             serializer = EvaluationSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
                 return JsonResponse(serializer.data, status=201)
-            return JsonResponse(serializer.errors, status=400)
+            else:
+                print("Validation Errors:", serializer.errors)  # Log validation errors
+                return JsonResponse(serializer.errors, status=400)
 
         except Exception as e:
+            print("Error:", str(e))  # Log any exceptions
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
