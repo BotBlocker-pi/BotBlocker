@@ -37,9 +37,6 @@ WORKDIR /app
 # Copy application code
 COPY --chown=appuser:appuser . .
 
-# Run collectstatic to gather static files
-RUN python manage.py collectstatic --noinput
-
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -52,3 +49,4 @@ EXPOSE 8000
 
 # Start the application using Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "Backend.wsgi:application"]
+#CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --workers 3 Backend.wsgi:application"]
