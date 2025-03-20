@@ -75,12 +75,13 @@ const HomePage = () => {
   const [vote, setVote] = useState(null);
 
   const handleVote = (vote) => {
-    console.log(`User voted: ${vote}`);
+    console.log(`[handleVote] User voted: ${vote}`);
     setShowQuestionnaire(true); // Show the questionnaire after voting
     setVote(vote); // Set the user's vote
   };
 
   const sendEvaluationToBackend = async (evaluationData) => {
+    console.log("[sendEvaluationToBackend] Sending evaluation data:", evaluationData);
     try {
       const response = await fetch("http://localhost:8000/avaliacao/", {
         method: "POST",
@@ -95,14 +96,14 @@ const HomePage = () => {
       }
 
       const result = await response.json();
-      console.log("Evaluation submitted successfully:", result);
+      console.log("[sendEvaluationToBackend] Evaluation submitted successfully:", result);
     } catch (error) {
-      console.error("Error submitting evaluation:", error);
+      console.error("[sendEvaluationToBackend] Error submitting evaluation:", error);
     }
   };
 
   const handleSubmitReason = (reason) => {
-    console.log(`Selected reason: ${reason}`);
+    console.log(`[handleSubmitReason] Selected reason: ${reason}`);
 
     // Prepare the evaluation data
     const evaluationData = {
@@ -122,58 +123,132 @@ const HomePage = () => {
     setVote(null);
   };
 
-  useEffect(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+  const fetchProfileData = async (url) => {
+    console.log("[fetchProfileData] Fetching profile data for URL:", url);
+    try {
+      const profileData = await getProfileData(url);
+      console.log("[fetchProfileData] Profile data fetched:", profileData);
+      setData(profileData);
+    } catch (error) {
+      console.error("[fetchProfileData] Error getting profile data:", error);
+    }
+  };
+
+  const hideProfilePosts = (profileName) => {
+    console.log(`[hideProfilePosts] Hiding posts for profile: ${profileName}`);
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0) {
-        console.log(tabs[0].url);
-        try {
-          const profileData = await getProfileData(tabs[0].url);
-          setData(profileData);
-          console.log(profileData);
-        } catch (error) {
-          console.error("Error getting profile data:", error);
-        }
+        const tabId = tabs[0].id;
+        console.log(`[hideProfilePosts] Injecting script into tab ${tabId}`);
+        chrome.scripting.executeScript({
+          target: { tabId },
+          func: (profileName) => {
+            console.log(`[hideProfilePosts - Injected Script] Hiding posts for profile: ${profileName}`);
+            // Lógica para ocultar os posts do perfil
+            const posts = document.querySelectorAll('[data-testid="tweet"]'); // Seleciona todos os tweets
+            console.log(`[hideProfilePosts - Injected Script] Found ${posts.length} posts`);
+            posts.forEach((post) => {
+              const postAuthor = post.querySelector('[data-testid="User-Name"]'); // Seleciona o autor do tweet
+              if (postAuthor && postAuthor.innerText.includes(profileName)) {
+                console.log(`[hideProfilePosts - Injected Script] Removing post by ${profileName}`);
+                post.remove(); // Remove o post do DOM
+              }
+            });
+          },
+          args: [profileName], // Passa o nome do perfil como argumento
+        });
+      } else {
+        console.error("[hideProfilePosts] No active tab found");
       }
     });
+  };
+
+  useEffect(() => {
+    console.log("[useEffect] Setting up tab update listener");
+    const handleTabUpdate = (tabId, changeInfo, tab) => {
+      console.log(`[handleTabUpdate] Tab updated - Tab ID: ${tabId}, Change Info:`, changeInfo);
+      // Verifica se o URL mudou e se a aba está ativa
+      if (changeInfo.url && tab.active) {
+        console.log(`[handleTabUpdate] URL changed to: ${changeInfo.url}`);
+        fetchProfileData(changeInfo.url);
+
+        // Verifica se o perfil é o que queremos ocultar (ex: elonmusk)
+        const profileName = "elonmusk"; // Nome do perfil a ser ocultado
+        const currentProfile = changeInfo.url.split("/")[3]; // Extrai o nome do perfil da URL
+        console.log(`[handleTabUpdate] Current profile: ${currentProfile}`);
+        if (currentProfile === profileName) {
+          console.log(`[handleTabUpdate] Hiding posts for profile: ${profileName}`);
+          hideProfilePosts(profileName); // Oculta os posts do perfil
+        }
+      }
+    };
+
+    // Busca os dados iniciais
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        console.log(`[useEffect] Initial tab URL: ${tabs[0].url}`);
+        fetchProfileData(tabs[0].url);
+
+        // Verifica se o perfil é o que queremos ocultar (ex: elonmusk)
+        const profileName = "elonmusk"; // Nome do perfil a ser ocultado
+        const currentProfile = tabs[0].url.split("/")[3]; // Extrai o nome do perfil da URL
+        console.log(`[useEffect] Initial profile: ${currentProfile}`);
+        if (currentProfile === profileName) {
+          console.log(`[useEffect] Hiding posts for profile: ${profileName}`);
+          hideProfilePosts(profileName); // Oculta os posts do perfil
+        }
+      } else {
+        console.error("[useEffect] No active tab found");
+      }
+    });
+
+    // Adiciona o listener para atualizações de URL
+    chrome.tabs.onUpdated.addListener(handleTabUpdate);
+
+    // Remove o listener quando o componente é desmontado
+    return () => {
+      console.log("[useEffect] Cleaning up tab update listener");
+      chrome.tabs.onUpdated.removeListener(handleTabUpdate);
+    };
   }, []);
 
   return (
-      <Container>
-        <Navbar />
-        {data && (
-            <>
-              <SocialMediaProfile
-                  imageUrl="https://via.placeholder.com/50"
-                  accountType={data.plataform}
-                  username={data.perfil_name}
-              />
+    <Container>
+      <Navbar />
+      {data && (
+        <>
+          <SocialMediaProfile
+            imageUrl="https://via.placeholder.com/50"
+            accountType={data.plataform}
+            username={data.perfil_name}
+          />
 
-              <AiAnalysis
-                  botPercentage={data.probability}
-                  numberVotes={data.numberOfEvaluations}
-                  badge={data.badge}
-              />
-            </>
-        )}
+          <AiAnalysis
+            botPercentage={data.probability}
+            numberVotes={data.numberOfEvaluations}
+            badge={data.badge}
+          />
+        </>
+      )}
 
-        {!showQuestionnaire ? (
-            <VotingContainer>
-              <TextContainer>Is this profile AI?</TextContainer>
-              <ButtonContainer>
-                <Button onClick={() => handleVote("Yes")}>Yes</Button>
-                <Button onClick={() => handleVote("No")}>No</Button>
-              </ButtonContainer>
-            </VotingContainer>
-        ) : vote === "Yes" ? (
-            <QuestionnaireYes onSubmit={handleSubmitReason} />
-        ) : (
-            <QuestionnaireNo onSubmit={handleSubmitReason} />
-        )}
+      {!showQuestionnaire ? (
+        <VotingContainer>
+          <TextContainer>Is this profile AI?</TextContainer>
+          <ButtonContainer>
+            <Button onClick={() => handleVote("Yes")}>Yes</Button>
+            <Button onClick={() => handleVote("No")}>No</Button>
+          </ButtonContainer>
+        </VotingContainer>
+      ) : vote === "Yes" ? (
+        <QuestionnaireYes onSubmit={handleSubmitReason} />
+      ) : (
+        <QuestionnaireNo onSubmit={handleSubmitReason} />
+      )}
 
-        <WebsiteLink>
-          Visit our website for more details on this account.
-        </WebsiteLink>
-      </Container>
+      <WebsiteLink>
+        Visit our website for more details on this account.
+      </WebsiteLink>
+    </Container>
   );
 };
 
