@@ -34,21 +34,6 @@ const HomePage = () => {
     });
   }, []);
 
- // Estado que armazena se o usuário está autenticado ou não
-const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-useEffect(() => {
-  // Obtém o token armazenado localmente no Chrome
-  chrome.storage.local.get("accessToken", (data) => {
-    if (data.accessToken) {
-      console.log("🔑 Usuário autenticado. Token:", data.accessToken);
-      setIsLoggedIn(true); // ✅ Define o estado como logado
-    } else {
-      console.log("🔴 Usuário não autenticado.");
-      setIsLoggedIn(false); // ✅ Define como não logado
-    }
-  });
-}, []); // Executa apenas uma vez quando o componente é montado
 
 // Função para buscar dados protegidos da API
 const fetchProtectedData = () => {
@@ -73,7 +58,7 @@ const fetchProtectedData = () => {
 };
 
 // Chama a função automaticamente ao abrir a extensão
-fetchProtectedData();
+// fetchProtectedData();
 
   
   return (
@@ -99,15 +84,6 @@ fetchProtectedData();
         </>
       )}
 
-      <div>
-        <h1>BotBlocker</h1>
-        {isLoggedIn ? (
-          <p>Bem-vindo!</p>
-        ) : (
-          <p>Não logado</p>
-
-        )}
-      </div>
     </div>
   );
 };

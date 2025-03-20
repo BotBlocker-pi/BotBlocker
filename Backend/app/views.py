@@ -104,22 +104,55 @@ class LoginPage(View):
             },
         )
     
+# from rest_framework.decorators import api_view, permission_classes
+# from rest_framework.permissions import IsAuthenticated, AllowAny
+# from rest_framework.response import Response
+# from rest_framework.views import APIView
+# from rest_framework_simplejwt.tokens import AccessToken
+# from django.contrib.auth.models import User
+# from django.conf import settings
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])  # ✅ Exige autenticação
-def protected_view(request):
-    user = request.user  # ✅ Obtém o utilizador autenticado
-    print(user)
-    return Response({
-        "message": "Bem-vindo!",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "name": user.get_full_name()
-        }
-    }, status=status.HTTP_200_OK)
+# # 🔹 LOGIN: Cria JWT e define no cookie
+
+# class LoginView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def post(self, request):
+#         username = request.data.get("username")
+#         user, _ = User.objects.get_or_create(username=username, defaults={"email": f"{username}@email.com"})
+
+#         token = AccessToken()
+#         token["username"] = user.username
+#         token["email"] = user.email
+
+#         response = Response({"message": "Login efetuado"})
+#         response.set_cookie(
+#             key=settings.SIMPLE_JWT["AUTH_COOKIE"],
+#             value=str(token),
+#             httponly=True,
+#             samesite="Lax",
+#             max_age=86400,  # 1 dia
+#         )
+
+#         return response
+
+
+# # 🔹 LOGOUT: Remove cookie JWT
+# class LogoutView(APIView):
+#     def post(self, request):
+#         response = Response({"message": "Logout efetuado"})
+#         response.delete_cookie(settings.SIMPLE_JWT["AUTH_COOKIE"])
+#         return response
+
+
+# # 🔹 ENDPOINT PROTEGIDO: Verifica JWT no cookie
+# @api_view(["GET"])
+# @permission_classes([IsAuthenticated])
+# def protected_view(request):
+#     token = AccessToken(request.COOKIES.get(settings.SIMPLE_JWT["AUTH_COOKIE"]))
+
+#     return Response({
+#         "message": "Bem-vindo!",
+#         "user": {"username": token["username"], "email": token["email"]}
+#     })

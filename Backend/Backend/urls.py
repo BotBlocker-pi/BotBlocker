@@ -43,5 +43,5 @@ urlpatterns = [
         name="google_login_callback",
     ),
     path('get_probability/', get_probability, name='get_probability'),
-    path("api/v1/protected/", protected_view, name="protected_view"),
+
 ]
