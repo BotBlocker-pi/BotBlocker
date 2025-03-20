@@ -1,5 +1,6 @@
 from django.db import models
 from django.db import utils
+from django.contrib.auth.models import User
 import uuid
 
 class Role(models.TextChoices):
@@ -19,15 +20,15 @@ class SocialType(models.TextChoices):
 
 
 
-class User(models.Model):
+class User_BB(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.DEFAULT)
     email = models.EmailField(unique=True)
 
     def __str__(self):
-        return self.name
+        return self.user.username
     
 
 class Social(models.Model):
