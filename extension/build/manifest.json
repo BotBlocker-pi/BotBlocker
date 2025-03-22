@@ -10,5 +10,13 @@
   "host_permissions": [
     "https://x.com/*", 
     "https://twitter.com/*" 
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://twitter.com/*", "*://x.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
   ]
+  
 }

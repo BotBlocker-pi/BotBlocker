@@ -134,34 +134,6 @@ const HomePage = () => {
     }
   };
 
-  const hideProfilePosts = (profileName) => {
-    console.log(`[hideProfilePosts] Hiding posts for profile: ${profileName}`);
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        const tabId = tabs[0].id;
-        console.log(`[hideProfilePosts] Injecting script into tab ${tabId}`);
-        chrome.scripting.executeScript({
-          target: { tabId },
-          func: (profileName) => {
-            console.log(`[hideProfilePosts - Injected Script] Hiding posts for profile: ${profileName}`);
-            // Lógica para ocultar os posts do perfil
-            const posts = document.querySelectorAll('[data-testid="tweet"]'); // Seleciona todos os tweets
-            console.log(`[hideProfilePosts - Injected Script] Found ${posts.length} posts`);
-            posts.forEach((post) => {
-              const postAuthor = post.querySelector('[data-testid="User-Name"]'); // Seleciona o autor do tweet
-              if (postAuthor && postAuthor.innerText.includes(profileName)) {
-                console.log(`[hideProfilePosts - Injected Script] Removing post by ${profileName}`);
-                post.remove(); // Remove o post do DOM
-              }
-            });
-          },
-          args: [profileName], // Passa o nome do perfil como argumento
-        });
-      } else {
-        console.error("[hideProfilePosts] No active tab found");
-      }
-    });
-  };
 
   useEffect(() => {
     console.log("[useEffect] Setting up tab update listener");
@@ -171,15 +143,6 @@ const HomePage = () => {
       if (changeInfo.url && tab.active) {
         console.log(`[handleTabUpdate] URL changed to: ${changeInfo.url}`);
         fetchProfileData(changeInfo.url);
-
-        // Verifica se o perfil é o que queremos ocultar (ex: elonmusk)
-        const profileName = "elonmusk"; // Nome do perfil a ser ocultado
-        const currentProfile = changeInfo.url.split("/")[3]; // Extrai o nome do perfil da URL
-        console.log(`[handleTabUpdate] Current profile: ${currentProfile}`);
-        if (currentProfile === profileName) {
-          console.log(`[handleTabUpdate] Hiding posts for profile: ${profileName}`);
-          hideProfilePosts(profileName); // Oculta os posts do perfil
-        }
       }
     };
 
@@ -188,15 +151,6 @@ const HomePage = () => {
       if (tabs.length > 0) {
         console.log(`[useEffect] Initial tab URL: ${tabs[0].url}`);
         fetchProfileData(tabs[0].url);
-
-        // Verifica se o perfil é o que queremos ocultar (ex: elonmusk)
-        const profileName = "elonmusk"; // Nome do perfil a ser ocultado
-        const currentProfile = tabs[0].url.split("/")[3]; // Extrai o nome do perfil da URL
-        console.log(`[useEffect] Initial profile: ${currentProfile}`);
-        if (currentProfile === profileName) {
-          console.log(`[useEffect] Hiding posts for profile: ${profileName}`);
-          hideProfilePosts(profileName); // Oculta os posts do perfil
-        }
       } else {
         console.error("[useEffect] No active tab found");
       }
