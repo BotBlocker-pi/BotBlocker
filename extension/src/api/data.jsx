@@ -17,10 +17,12 @@ export const getProfileData = async (url) => {
 };
 
 export const sendEvaluationToBackend = async (evaluationData) => {
+    const token = localStorage.getItem("access_token");
+    if (!token){alert("The user is not authenticated"); return null;}
     try {
         const response = await fetch(`${API_BASE_URL}/avaliacao/`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {"Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify(evaluationData),
         });
 
