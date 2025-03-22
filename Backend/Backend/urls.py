@@ -17,9 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from app.views import *
+
+urlpatterns = [
+]
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('get_probability/', get_probability, name='get_probability'),
     path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
+    path("api/token/", CustomTokenObtainView.as_view(), name="token_obtain"),
+    path('api/protected/',ProtectedView.as_view(),name="ProtectedView")
 
 ]

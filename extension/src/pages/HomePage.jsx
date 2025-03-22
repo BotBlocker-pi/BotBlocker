@@ -3,9 +3,10 @@ import Navbar from "../components/popUp/Navbar.jsx";
 import styled from "styled-components";
 import SocialMediaProfile from "../components/popUp/SocialMediaProfileInfo.jsx";
 import AiAnalysis from "../components/popUp/AiAnalysis.jsx";
-import getProfileData from "../api/api.jsx";
+import { getProfileData, sendEvaluationToBackend } from "../api/data.jsx";
 import QuestionnaireYes from "../components/popUp/voting/QuestionnaireYes.jsx";
 import QuestionnaireNo from "../components/popUp/voting/QuestionnaireNo.jsx";
+import Login from "./Login.jsx";
 
 const Container = styled.div`
   background-color: #f9f9f9;
@@ -80,33 +81,12 @@ const HomePage = () => {
     setVote(vote); // Set the user's vote
   };
 
-  const sendEvaluationToBackend = async (evaluationData) => {
-    try {
-      const response = await fetch("http://localhost:8000/avaliacao/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(evaluationData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit evaluation");
-      }
-
-      const result = await response.json();
-      console.log("Evaluation submitted successfully:", result);
-    } catch (error) {
-      console.error("Error submitting evaluation:", error);
-    }
-  };
 
   const handleSubmitReason = (reason) => {
     console.log(`Selected reason: ${reason}`);
 
     // Prepare the evaluation data
     const evaluationData = {
-      user: "current_user_name", // Replace with the actual user name or ID
       profile: data.perfil_name, // Use the profile name from the data
       rede_social: data.plataform, // Use the platform from the data
       is_bot: vote === "Yes", // Set is_bot to true if the user voted "Yes"
@@ -138,42 +118,44 @@ const HomePage = () => {
   }, []);
 
   return (
-      <Container>
-        <Navbar />
-        {data && (
-            <>
-              <SocialMediaProfile
-                  imageUrl="https://via.placeholder.com/50"
-                  accountType={data.plataform}
-                  username={data.perfil_name}
-              />
+    <Container>
+      <Navbar />
+      {data && (
+        <>
+          <SocialMediaProfile
+            imageUrl="https://via.placeholder.com/50"
+            accountType={data.plataform}
+            username={data.perfil_name}
+          />
 
-              <AiAnalysis
-                  botPercentage={data.probability}
-                  numberVotes={data.numberOfEvaluations}
-                  badge={data.badge}
-              />
-            </>
-        )}
+          <AiAnalysis
+            botPercentage={data.probability}
+            numberVotes={data.numberOfEvaluations}
+            badge={data.badge}
+          />
+        </>
+      )}
 
-        {!showQuestionnaire ? (
-            <VotingContainer>
-              <TextContainer>Is this profile AI?</TextContainer>
-              <ButtonContainer>
-                <Button onClick={() => handleVote("Yes")}>Yes</Button>
-                <Button onClick={() => handleVote("No")}>No</Button>
-              </ButtonContainer>
-            </VotingContainer>
-        ) : vote === "Yes" ? (
-            <QuestionnaireYes onSubmit={handleSubmitReason} />
-        ) : (
-            <QuestionnaireNo onSubmit={handleSubmitReason} />
-        )}
+      {!showQuestionnaire ? (
+        <VotingContainer>
+          <TextContainer>Is this profile AI?</TextContainer>
+          <ButtonContainer>
+            <Button onClick={() => handleVote("Yes")}>Yes</Button>
+            <Button onClick={() => handleVote("No")}>No</Button>
+          </ButtonContainer>
+        </VotingContainer>
+      ) : vote === "Yes" ? (
+        <QuestionnaireYes onSubmit={handleSubmitReason} />
+      ) : (
+        <QuestionnaireNo onSubmit={handleSubmitReason} />
+      )}
 
-        <WebsiteLink>
-          Visit our website for more details on this account.
-        </WebsiteLink>
-      </Container>
+      <WebsiteLink>
+        Visit our website for more details on this account.
+      </WebsiteLink>
+      <Login />
+
+    </Container>
   );
 };
 
