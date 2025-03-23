@@ -6,9 +6,7 @@ const ProfileContainer = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-right: 10px;
-    padding-left: 10px;
-    padding-bottom: 5px;
+    padding: 15px 10px 5px 10px;
     margin: 0;
 `;
 
