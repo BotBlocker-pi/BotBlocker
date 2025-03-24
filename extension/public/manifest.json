@@ -6,5 +6,15 @@
   "action": {
     "default_popup": "index.html"
   },
+  "permissions": ["tabs", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://twitter.com/*", "*://x.com/*"],
+      "js": ["content.js"]
+    }
+  ],
   "options_page": "settings.html"
 }
