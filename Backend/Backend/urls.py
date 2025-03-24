@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('get_probability/', get_probability, name='get_probability'),
     path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
+    path('perfis/', get_perfis, name='get_perfis'),
 
 ]

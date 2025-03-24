@@ -28,6 +28,13 @@ class EvaluationSerializer(serializers.ModelSerializer):
             profile = Profile.objects.get(url=validated_data['profile'], social=social)
         except Profile.DoesNotExist:
             raise serializers.ValidationError({"profile": "Profile not found"})
+        
+        total_evaluations = Evaluation.objects.filter(profile=profile).count()
+        bot_evaluations = Evaluation.objects.filter(profile=profile, is_bot=True).count()
+        
+        probability = (bot_evaluations / total_evaluations) * 100 if total_evaluations > 0 else 0
+
+        profile.percentage = probability
 
         evaluation = Evaluation.objects.create(
             user=user,
@@ -38,3 +45,11 @@ class EvaluationSerializer(serializers.ModelSerializer):
         )
 
         return evaluation
+    
+class ProfileListSerializer(serializers.ModelSerializer):
+    social = serializers.CharField(source='social.social') 
+    print(social)
+    
+    class Meta:
+        model = Profile
+        fields = ['username', 'badge', 'social', 'percentage']

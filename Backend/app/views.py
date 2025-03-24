@@ -7,6 +7,8 @@ from app.serializers import *
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.utils.dateparse import parse_datetime
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 def create_profile(username, platform, image=None):
 
@@ -54,3 +56,11 @@ def criar_avaliacao(request):
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@api_view(['GET'])
+def get_perfis(request):
+    print("GET /perfis")
+    perfis = Profile.objects.all()
+    serializer = ProfileListSerializer(perfis, many=True)
+    return Response({'perfis': serializer.data})  # Padronizando para sempre retornar um objeto com campo 'perfis'
+    

@@ -34,10 +34,8 @@ class ProfileDTO(serializers.Serializer):
         except Profile.DoesNotExist:
             raise ValueError(f"Profile with {username, social__social} not found.")
 
+        probability = profile.percentage
         total_evaluations = Evaluation.objects.filter(profile=profile).count()
-        bot_evaluations = Evaluation.objects.filter(profile=profile, is_bot=True).count()
-        
-        probability = (bot_evaluations / total_evaluations) * 100 if total_evaluations > 0 else 0
 
         data = {
             "perfil_name": profile.username,

@@ -41,6 +41,7 @@ class Profile(models.Model):
     username = models.CharField(max_length=255)
     badge = models.CharField(max_length=50, choices=Badge.choices, default=Badge.EMPTY)
     social = models.ForeignKey(Social, on_delete=models.CASCADE, related_name='profiles')
+    percentage = models.FloatField(default=0)
 
     def __str__(self):
         return self.url
