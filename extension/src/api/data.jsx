@@ -1,15 +1,24 @@
-const API_BASE_URL = "http://localhost:8000"; 
+const API_BASE_URL = "http://localhost/api";
 
 export const getProfileData = async (url) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/get_probability/?url=${encodeURIComponent(url)}`, {
+        console.log("URL recebida para análise:", url);
+        const apiUrl = `${API_BASE_URL}/get_probability/?url=${encodeURIComponent(url)}`;
+        console.log("Fazendo requisição para:", apiUrl);
+
+        const response = await fetch(apiUrl, {
             method: "GET",
             headers: { "Content-Type": "application/json" }
         });
 
-        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+        if (!response.ok) {
+            console.error(`API Error: ${response.status} - ${response.statusText}`);
+            throw new Error(`API Error: ${response.statusText}`);
+        }
 
-        return await response.json();
+        const data = await response.json();
+        console.log("Dados retornados da API:", data);
+        return data;
     } catch (error) {
         console.error("Error getting profile data:", error);
         return null;
