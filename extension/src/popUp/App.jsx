@@ -1,6 +1,5 @@
 import React from 'react';
-import Navbar from './components/popUp/Navbar.jsx'; // Importa a Navbar
-import HomePage from './pages/HomePage'; // Importa a HomePage
+import HomePage from './pages/HomePage.jsx'; // Importa a HomePage
 
 const App = () => {
     return (

@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import Logo from '../../assets/logo.png';
+import Logo from '../../../assets/logo.png';
+import { FaCog } from 'react-icons/fa';
 
 const Nav = styled.nav`
     display: flex;
@@ -17,33 +18,32 @@ const LogoImage = styled.img`
     height: 40px;
 `;
 
-const LoginButton = styled.button`
-    background-color: #4a5b84;
+const GearIcon = styled(FaCog)`
+    font-size: 24px;
     color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
 
     &:hover {
-        background-color: #3a4a70;
-    }
-
-    &:active {
-        background-color: #2d3a5a;
+        opacity: 0.8;
     }
 `;
 
-const SettingsNavbar = () => {
+const Navbar = () => {
+    const handleSettingsClick = () => {
+        chrome.tabs.create({ url: chrome.runtime.getURL('settings.html') });
+    };
+
     return (
         <Nav>
             <div>
                 <LogoImage src={Logo} alt="Logo" />
             </div>
+
+            <div>
+                <GearIcon onClick={handleSettingsClick} />
+            </div>
         </Nav>
     );
 };
 
-export default SettingsNavbar;
+export default Navbar;

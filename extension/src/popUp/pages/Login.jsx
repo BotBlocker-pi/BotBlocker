@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { loginUser, checkAuth, logoutUser } from "../api/loginApi";
+import { loginUser, checkAuth, logoutUser } from "../../api/loginApi.jsx";
 
 // Using the same theme from HomePage for consistency
 const theme = {

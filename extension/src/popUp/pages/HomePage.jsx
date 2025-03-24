@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/popUp/Navbar.jsx";
+import Navbar from "../components/global/Navbar.jsx";
 import styled from "styled-components";
-import SocialMediaProfile from "../components/popUp/SocialMediaProfileInfo.jsx";
-import AiAnalysis from "../components/popUp/AiAnalysis.jsx";
-import { getProfileData, sendEvaluationToBackend } from "../api/data.jsx";
-import QuestionnaireYes from "../components/popUp/voting/QuestionnaireYes.jsx";
-import QuestionnaireNo from "../components/popUp/voting/QuestionnaireNo.jsx";
+import SocialMediaProfile from "../components/SocialMediaProfileInfo.jsx";
+import AiAnalysis from "../components/AiAnalysis.jsx";
+import { getProfileData, sendEvaluationToBackend } from "../../api/data.jsx";
+import QuestionnaireYes from "../components/voting/QuestionnaireYes.jsx";
+import QuestionnaireNo from "../components/voting/QuestionnaireNo.jsx";
 import Login from "./Login.jsx";
-import { checkAuth, logoutUser } from "../api/loginApi"; // Import the required functions
+import { checkAuth, logoutUser } from "../../api/loginApi.jsx"; // Import the required functions
 
 // Enhanced colors and theme
 const theme = {
