@@ -266,13 +266,14 @@ const HomePage = () => {
       setIsLoading(true);
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         if (tabs.length > 0) {
-          console.log(tabs[0].url);
+          console.log("URL atual:", tabs[0].url);
           try {
+            console.log("Fazendo requisição para obter dados do perfil...");
             const profileData = await getProfileData(tabs[0].url);
+            console.log("Dados recebidos da API:", profileData);
             setData(profileData);
-            console.log(profileData);
           } catch (error) {
-            console.error("Error getting profile data:", error);
+            console.error("Erro ao obter dados do perfil:", error);
           } finally {
             setIsLoading(false);
           }
