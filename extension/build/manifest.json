@@ -6,7 +6,7 @@
   "action": {
     "default_popup": "index.html"
   },
-  "permissions": ["tabs", "scripting"],
+  "permissions": ["tabs", "scripting", "storage"],
   "host_permissions": [
     "https://x.com/*", 
     "https://twitter.com/*" 
@@ -17,6 +17,9 @@
       "js": ["content.js"],
       "run_at": "document_end"
     }
-  ]
-  
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html"
 }

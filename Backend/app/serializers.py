@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from .models import Evaluation, User, Profile, Social
+from .models import Evaluation, User_BB, Profile, Social
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField(write_only=True)  
     profile = serializers.CharField(write_only=True)  
-    rede_social = serializers.CharField(write_only=True)  
+    rede_social = serializers.CharField(write_only=True)
 
     class Meta:
         model = Evaluation
@@ -13,19 +13,12 @@ class EvaluationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
 
         try:
-            user = User.objects.get(name=validated_data['user'])
-        except User.DoesNotExist:
+            user = User_BB.objects.get(user__username=validated_data['user'])
+        except User_BB.DoesNotExist:
             raise serializers.ValidationError({"user": "User not found"})
-        
-
-        try:
-            social = Social.objects.get(name=validated_data['rede_social'])
-        except Social.DoesNotExist:
-            raise serializers.ValidationError({"rede_social": "Rede social não encontrada"})
-
        
         try:
-            profile = Profile.objects.get(url=validated_data['profile'], social=social)
+            profile = Profile.objects.get(username=validated_data["profile"], social__social=validated_data["rede_social"])
         except Profile.DoesNotExist:
             raise serializers.ValidationError({"profile": "Profile not found"})
         
