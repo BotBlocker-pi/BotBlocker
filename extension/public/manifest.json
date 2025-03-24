@@ -15,5 +15,6 @@
       "matches": ["*://twitter.com/*", "*://x.com/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "options_page": "settings.html"
 }
