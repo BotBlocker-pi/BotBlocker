@@ -40,6 +40,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         profile.percentage = probability
 
+        profile.save()
+
         return evaluation
     
 class ProfileListSerializer(serializers.ModelSerializer):

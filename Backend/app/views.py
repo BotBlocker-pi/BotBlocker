@@ -34,6 +34,7 @@ def create_profile(username, platform, image=None):
 
 def get_probability(request):
 
+
     url = request.GET.get("url")
     print("url",url)
     username, platform = extractPerfilNameAndPlataformOfURL(url)
