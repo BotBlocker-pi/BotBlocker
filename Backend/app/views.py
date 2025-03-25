@@ -10,6 +10,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_profile(username, platform, image=None):
 
@@ -64,21 +68,12 @@ def criar_avaliacao(request):
         print("Error:", str(e))
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.response import Response
 
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return JsonResponse({"auth": True})
-    
-    from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
 
 class CustomTokenObtainView(APIView):
     """
@@ -101,6 +96,41 @@ class CustomTokenObtainView(APIView):
         
         return Response({"error": "Credenciais inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_settings(request):
+    try:
+        user_bb = User_BB.objects.get(user=request.user)
+    except User_BB.DoesNotExist:
+        return Response({'error': 'User_BB não encontrado para este utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    settings, created = Settings.objects.get_or_create(
+        user=user_bb,
+        defaults={
+            'tolerance': 50.0,
+            'badge': Badge.EMPTY
+        }
+    )
+
+    serializer = SettingsSerializer(settings)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_settings(request):
+    try:
+        user_bb = User_BB.objects.get(user=request.user)
+        settings = Settings.objects.get(user=user_bb)
+    except (User_BB.DoesNotExist, Settings.DoesNotExist):
+        return Response({'error': 'Settings ou utilizador não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = SettingsSerializer(settings, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 def criar_dados_para_joao():

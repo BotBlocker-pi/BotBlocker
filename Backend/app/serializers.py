@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Evaluation, User_BB, Profile, Social
+from .models import Badge, Evaluation, Settings, User_BB, Profile, Social
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField(write_only=True)  
@@ -31,3 +31,18 @@ class EvaluationSerializer(serializers.ModelSerializer):
         )
 
         return evaluation
+    
+class ProfileShortSerializer(serializers.ModelSerializer):
+    social = serializers.CharField(source='social.social')
+
+    class Meta:
+        model = Profile
+        fields = ['username', 'social']
+
+class SettingsSerializer(serializers.ModelSerializer):
+    badge = serializers.ChoiceField(choices=Badge.choices)
+    blocklist = ProfileShortSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Settings
+        fields = ['tolerance', 'badge', 'blocklist']

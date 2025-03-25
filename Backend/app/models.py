@@ -9,8 +9,9 @@ class Role(models.TextChoices):
     DEFAULT = 'default', 'Default'
 
 class Badge(models.TextChoices):
-    HUMAN = 'human', 'Human'
+    WITHOUT_VERIFICATION = 'without_verification', 'Without Verification'
     BOT = 'bot', 'Bot'
+    BOT_AND_WITHOUT_VERIFICATION = 'bot_and_without_verification', 'Bot and Without Verification'
     EMPTY = 'empty', 'Empty'
 
 class SocialType(models.TextChoices):

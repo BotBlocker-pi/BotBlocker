@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import botBadge from '../../assets/badges/botBadge.png';
 import unknownBadge from '../../assets/badges/unknownBadge.png';
+import {getSettingsAndBlacklist, areSettingsEqual, importSettingsFromSerializer,updateSettings } from '../../utils/cacheLogic'
+import { getUserSettings, sendUpdatedSettings } from "../../api/data";
+import { useEffect } from 'react';
 
 // Styled components
 const BlockingContainer = styled.div`
@@ -183,6 +186,116 @@ const BlockingSettings = () => {
         setIsSliding(false);
     };
 
+    const handleSave = async () => {
+        let badge = "empty";
+        if (blockAI && blockUnverified) {
+          badge = "bot_and_without_verification";
+        } else if (blockAI && !blockUnverified) {
+          badge = "bot";
+        } else if (!blockAI && blockUnverified) {
+          badge = "without_verification";
+        }
+      
+        // Update local cache
+        await updateSettings({
+          tolerance: blockPercentage,
+          badge,
+        });
+      
+        const { settings,blackList } = await getSettingsAndBlacklist();
+        console.log("Settings saved to local cache:", settings);
+      
+        const isSynced = localStorage.getItem("is_Sync") === "true";
+        if (isSynced) {
+          const result = await sendUpdatedSettings({
+            tolerance: blockPercentage,
+            badge: badge,
+            blocklist: blackList.map(([username, social]) => ({
+              username,
+              social,
+            })),
+          });
+      
+          if (result) {
+            console.log("Changes successfully synced with the backend.");
+          } else {
+            console.log("Failed to sync changes with the backend.");
+          }
+        } else {
+          console.log("Changes were saved locally but not sent to the backend (sync not active).");
+        }
+      };
+
+      useEffect(() => {
+        const fetchSettings = async () => {
+            const { settings } = await getSettingsAndBlacklist();
+    
+            if (settings) {
+                setBlockPercentage(settings.tolerance ?? 70);
+    
+                switch (settings.badge) {
+                    case 'bot_and_without_verification':
+                        setBlockAI(true);
+                        setBlockUnverified(true);
+                        break;
+                    case 'bot':
+                        setBlockAI(true);
+                        setBlockUnverified(false);
+                        break;
+                    case 'without_verification':
+                        setBlockAI(false);
+                        setBlockUnverified(true);
+                        break;
+                    case 'empty':
+                    default:
+                        setBlockAI(false);
+                        setBlockUnverified(false);
+                        break;
+                }
+            }
+        };
+
+        const fetchAndSync = async () => {
+            await fetchSettings();
+
+            const isFreshLogin = localStorage.getItem("is_new_login") === "true";
+        
+            if (!isFreshLogin) {
+              console.log("It's not a new login. No need to ask.");
+              return;
+            }
+        
+            const settingsFromAPI = await getUserSettings();
+            if (!settingsFromAPI) return;
+        
+            const isEqual = await areSettingsEqual(settingsFromAPI);
+        
+            if (!isEqual) {
+              const shouldSync = window.confirm("Foram detetadas diferenças entre as definições locais e do servidor. Deseja sincronizar?");
+              if (shouldSync) {
+                await importSettingsFromSerializer(settingsFromAPI);
+                console.log("Cache synchronized with backend settings.");
+                localStorage.setItem("is_Sync", "true");
+                await fetchSettings();
+  
+              } else {
+                console.log("User refused synchronization.");
+                localStorage.setItem("is_Sync", "false");
+              }
+            } else {
+              console.log("Cache is already synchronized.");
+              localStorage.setItem("is_Sync", "true");
+            }
+        
+                localStorage.setItem("is_new_login", "false");
+          };
+  
+        
+
+    
+        fetchAndSync();
+    }, []);
+
     return (
         <BlockingContainer>
             <Title>Blocking Settings</Title>
@@ -238,7 +351,7 @@ const BlockingSettings = () => {
             </CheckboxContainer>
 
             <ButtonContainer>
-                <SaveButton>
+                <SaveButton onClick={handleSave}>
                     Save Changes
                 </SaveButton>
             </ButtonContainer>
