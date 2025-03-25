@@ -73,47 +73,61 @@ function collectMentions() {
     }
 }
 
-function applyBlurToTweet(usernameElement, username) {
-    // Encontrar o container do tweet completo
-    const tweetContainer = usernameElement.closest('[data-testid="tweet"]');
-    if (!tweetContainer) return;
+function applyBlurToTweet(element) {
+    // Estamos recebendo o elemento diretamente (pode ser um article ou um elemento dentro dele)
+    const articleContainer = element.tagName === 'ARTICLE' ? element : element.closest('[role="article"]');
+    if (!articleContainer) return;
 
-    // Verificar se é um retweet
-    const isRetweet = tweetContainer.querySelector('[data-testid="repost"]');
+    // Vamos verificar se este artigo contém um repost
+    const repostText = articleContainer.textContent || '';
+    const repostMatch = repostText.match(/(\w+)\s+reposted/i);
     
-    // Verificar se o perfil deve ser bloqueado
-    const shouldBlock = perfisDaAPI.some(apiPerfil =>
-        apiPerfil.username.toLowerCase() === username.toLowerCase() &&
-        apiPerfil.percentage > 50
-    );
-
-    if (shouldBlock) {
-        // Aplicar blur ao tweet
-        tweetContainer.style.filter = 'blur(5px)';
-        tweetContainer.style.transition = 'filter 0.3s ease';
+    // Se encontrarmos algo como "Elon Musk reposted"
+    if (repostMatch && repostMatch[1]) {
+        const reposter = repostMatch[1].toLowerCase();
         
-        // Se for um retweet, aplicar blur também ao container do retweet
-        if (isRetweet) {
-            const retweetContainer = isRetweet.closest('[data-testid="repost"]');
-            if (retweetContainer) {
-                retweetContainer.style.filter = 'blur(5px)';
-            }
-        }
+        // Verificar se o reposter deve ser bloqueado
+        const shouldBlockReposter = perfisDaAPI.some(apiPerfil =>
+            apiPerfil.username.toLowerCase() === reposter.toLowerCase() &&
+            apiPerfil.percentage > 50
+        );
         
-        // Adicionar indicador de bloqueio ao tweet
-        addBlockIndicatorToTweet(tweetContainer);
-    } else {
-        // Remover blur se existir
-        tweetContainer.style.filter = 'none';
-        if (isRetweet) {
-            const retweetContainer = isRetweet.closest('[data-testid="repost"]');
-            if (retweetContainer) {
-                retweetContainer.style.filter = 'none';
-            }
+        if (shouldBlockReposter) {
+            // Aplicar blur ao artigo completo
+            articleContainer.style.filter = 'blur(5px)';
+            articleContainer.style.transition = 'filter 0.3s ease';
+            addBlockIndicatorToTweet(articleContainer);
+            return; // Não precisamos verificar mais nada
         }
-        removeBlockIndicatorFromTweet(tweetContainer);
     }
+    
+    // Além disso, verificamos o autor original pelo username
+    const usernameLinks = articleContainer.querySelectorAll('a[href^="/"]');
+    for (const link of usernameLinks) {
+        const username = link.getAttribute('href').replace('/', '');
+        if (username) {
+            // Verificar se o perfil deve ser bloqueado
+            const shouldBlock = perfisDaAPI.some(apiPerfil =>
+                apiPerfil.username.toLowerCase() === username.toLowerCase() &&
+                apiPerfil.percentage > 50
+            );
+
+            if (shouldBlock) {
+                // Aplicar blur ao artigo completo
+                articleContainer.style.filter = 'blur(5px)';
+                articleContainer.style.transition = 'filter 0.3s ease';
+                addBlockIndicatorToTweet(articleContainer);
+                return; // Encontramos, não precisamos continuar
+            }
+        }
+    }
+    
+    // Se chegamos aqui, não precisamos bloquear
+    articleContainer.style.filter = 'none';
+    removeBlockIndicatorFromTweet(articleContainer);
 }
+
+
 
 function addBlockIndicatorToTweet(tweetElement) {
     const indicator = tweetElement.querySelector('.bot-blocker-tweet-indicator');
