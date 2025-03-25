@@ -2,6 +2,8 @@ console.log("[Collect Mentions] Content script loaded and running");
 
 // Variável para armazenar os perfis da API
 let perfisDaAPI = [];
+// Armazenar perfis bloqueados para não repetir o bloqueio
+let perfisBlockeados = new Set();
 
 // Função simples para buscar perfis da API
 async function fetchPerfis() {
@@ -10,6 +12,12 @@ async function fetchPerfis() {
         if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
         const data = await response.json();
         perfisDaAPI = data.perfis;
+        
+        // Log específico para mostrar os perfis da API de forma clara
+        console.log('%c[LOGS SOLICITADOS] Perfis obtidos da API:', 'background: #2E86C1; color: white; padding: 2px 5px; border-radius: 3px;');
+        perfisDaAPI.forEach(perfil => {
+            console.log(`%c- @${perfil.username} (percentage: ${perfil.percentage}%)`, 'color: #2E86C1;');
+        });
     } catch (error) {
         console.error('[API] Erro ao buscar perfis:', error);
     }
@@ -23,30 +31,254 @@ function collectMentions() {
     const usernameElements = document.querySelectorAll('[data-testid="User-Name"]');
 
     if (usernameElements.length > 0) {
-        console.log(`[Collect Mentions] Found ${usernameElements.length} usernames`);
-
+        // Guarda os novos perfis encontrados nesta iteração
+        const newProfilesFound = [];
+        
         usernameElements.forEach(element => {
             const usernameLink = element.querySelector('a[href^="/"]');
             if (usernameLink) {
                 const mention = usernameLink.getAttribute("href").slice(1);
-                collectedMentions.add(`@${mention}`);
+                
+                // Verificar se este é um novo perfil que ainda não foi coletado
+                if (!collectedMentions.has(mention)) {
+                    newProfilesFound.push(mention);
+                }
+                collectedMentions.add(mention); // Removi o @ para facilitar a comparação
+                
+                // Verificar se deve aplicar blur ao tweet
+                applyBlurToTweet(element, mention);
             }
         });
+        
+        // Log dos novos perfis encontrados nesta iteração
+        if (newProfilesFound.length > 0) {
+            console.log(`%c[LOGS SOLICITADOS] Novos perfis encontrados no DOM (${newProfilesFound.length}):`, 'background: #27AE60; color: white; padding: 2px 5px; border-radius: 3px;');
+            newProfilesFound.forEach(perfil => {
+                console.log(`%c- @${perfil}`, 'color: #27AE60;');
+            });
+        }
+        
+        // Log de todos os perfis coletados até agora
+        if (collectedMentions.size > 0) {
+            console.log(`%c[LOGS SOLICITADOS] Total de perfis no DOM (${collectedMentions.size}):`, 'background: #16A085; color: white; padding: 2px 5px; border-radius: 3px;');
+            const perfisList = Array.from(collectedMentions);
+            perfisList.sort();
+            perfisList.forEach(perfil => {
+                console.log(`%c- @${perfil}`, 'color: #16A085;');
+            });
+        }
 
-        collectedMentions.forEach(mention => console.log(mention));
+        // Depois de coletar os perfis, verificar quais precisam ser bloqueados
+        verifyAndBlockProfiles();
     }
+}
+
+function applyBlurToTweet(usernameElement, username) {
+    // Encontrar o container do tweet completo
+    const tweetContainer = usernameElement.closest('[data-testid="tweet"]');
+    if (!tweetContainer) return;
+
+    // Verificar se é um retweet
+    const isRetweet = tweetContainer.querySelector('[data-testid="repost"]');
+    
+    // Verificar se o perfil deve ser bloqueado
+    const shouldBlock = perfisDaAPI.some(apiPerfil =>
+        apiPerfil.username.toLowerCase() === username.toLowerCase() &&
+        apiPerfil.percentage > 50
+    );
+
+    if (shouldBlock) {
+        // Aplicar blur ao tweet
+        tweetContainer.style.filter = 'blur(5px)';
+        tweetContainer.style.transition = 'filter 0.3s ease';
+        
+        // Se for um retweet, aplicar blur também ao container do retweet
+        if (isRetweet) {
+            const retweetContainer = isRetweet.closest('[data-testid="repost"]');
+            if (retweetContainer) {
+                retweetContainer.style.filter = 'blur(5px)';
+            }
+        }
+        
+        // Adicionar indicador de bloqueio ao tweet
+        addBlockIndicatorToTweet(tweetContainer);
+    } else {
+        // Remover blur se existir
+        tweetContainer.style.filter = 'none';
+        if (isRetweet) {
+            const retweetContainer = isRetweet.closest('[data-testid="repost"]');
+            if (retweetContainer) {
+                retweetContainer.style.filter = 'none';
+            }
+        }
+        removeBlockIndicatorFromTweet(tweetContainer);
+    }
+}
+
+function addBlockIndicatorToTweet(tweetElement) {
+    const indicator = tweetElement.querySelector('.bot-blocker-tweet-indicator');
+    if (indicator) return;
+
+    const indicatorDiv = document.createElement('div');
+    indicatorDiv.className = 'bot-blocker-tweet-indicator';
+    indicatorDiv.textContent = 'BLOCKED';
+    
+    Object.assign(indicatorDiv.style, {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: '#FF3A3A',
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '20px',
+        zIndex: '100',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        pointerEvents: 'none'
+    });
+
+    // Adiciona o estilo ao container do tweet
+    Object.assign(tweetElement.style, {
+        position: 'relative',
+        display: 'inline-block'
+    });
+
+    tweetElement.appendChild(indicatorDiv);
+}
+
+function removeBlockIndicatorFromTweet(tweetElement) {
+    const indicator = tweetElement.querySelector('.bot-blocker-tweet-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+function addStyles() {
+    const styles = `
+        .bot-blocker-tweet-indicator {
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(255, 58, 58, 0.5);
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
+
+// Nova função para verificar e bloquear perfis com base na API e percentage
+function verifyAndBlockProfiles() {
+    if (perfisDaAPI.length === 0) {
+        console.log('[BotBlocker] Nenhum perfil da API para comparar. Aguardando carregamento...');
+        return;
+    }
+
+    console.log('[BotBlocker] Verificando perfis para bloqueio...');
+    
+    // Log para mostrar a comparação
+    console.log('%c[LOGS SOLICITADOS] Comparação de perfis DOM vs. API:', 'background: #8E44AD; color: white; padding: 2px 5px; border-radius: 3px;');
+    
+    // Criar arrays para os resultados da comparação
+    const perfilComumComBloqueio = [];
+    const perfilComumSemBloqueio = [];
+    const perfilSomenteDOM = [];
+    const perfilSomenteAPI = [];
+    
+    // Verificar perfis encontrados no DOM que estão na API
+    collectedMentions.forEach(profileName => {
+        const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === profileName.toLowerCase());
+        
+        if (perfilAPI) {
+            if (perfilAPI.percentage > 50) {
+                perfilComumComBloqueio.push({
+                    username: profileName,
+                    percentage: perfilAPI.percentage
+                });
+            } else {
+                perfilComumSemBloqueio.push({
+                    username: profileName,
+                    percentage: perfilAPI.percentage
+                });
+            }
+        } else {
+            perfilSomenteDOM.push(profileName);
+        }
+    });
+    
+    // Encontrar perfis que estão apenas na API
+    perfisDaAPI.forEach(perfilAPI => {
+        const encontradoNoDOM = Array.from(collectedMentions).some(
+            p => p.toLowerCase() === perfilAPI.username.toLowerCase()
+        );
+        
+        if (!encontradoNoDOM) {
+            perfilSomenteAPI.push({
+                username: perfilAPI.username,
+                percentage: perfilAPI.percentage
+            });
+        }
+    });
+    
+    // Exibir os resultados da comparação
+    console.log('%c1. Perfis comuns (DOM e API) com percentage > 50% (Serão bloqueados):', 'color: #8E44AD; font-weight: bold;');
+    perfilComumComBloqueio.forEach(p => {
+        console.log(`%c   - @${p.username} (${p.percentage}%)`, 'color: #FF3A3A; font-weight: bold;');
+    });
+    
+    console.log('%c2. Perfis comuns (DOM e API) com percentage <= 50% (Não serão bloqueados):', 'color: #8E44AD; font-weight: bold;');
+    perfilComumSemBloqueio.forEach(p => {
+        console.log(`%c   - @${p.username} (${p.percentage}%)`, 'color: #3498DB;');
+    });
+    
+    console.log('%c3. Perfis apenas no DOM (Não na API):', 'color: #8E44AD; font-weight: bold;');
+    perfilSomenteDOM.forEach(p => {
+        console.log(`%c   - @${p}`, 'color: #27AE60;');
+    });
+    
+    console.log('%c4. Perfis apenas na API (Não no DOM atual):', 'color: #8E44AD; font-weight: bold;');
+    perfilSomenteAPI.forEach(p => {
+        const estilo = p.percentage > 50 ? 'color: #E67E22;' : 'color: #7F8C8D;';
+        console.log(`%c   - @${p.username} (${p.percentage}%)`, estilo);
+    });
+    
+    // Para cada perfil coletado no feed, verificar se está na lista da API
+    collectedMentions.forEach(profileName => {
+        // Verificar se já está na lista de bloqueados para não repetir
+        if (perfisBlockeados.has(profileName)) {
+            return;
+        }
+        
+        // Procurar o perfil na lista da API
+        const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === profileName.toLowerCase());
+        
+        if (perfilAPI && perfilAPI.percentage > 50) {
+            console.log(`[BotBlocker] Perfil ${profileName} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+            blockProfile(profileName);
+            perfisBlockeados.add(profileName);
+        }
+    });
 }
 
 const mentionsObserver = new MutationObserver((mutationsList) => {
     collectMentions();
 });
 
-const profileName = "elonmusk";
-
-// Armazenar a função fetch original fora da função blockInfiniteLoading
+// Armazenar a função fetch original
 let originalFetch = null;
 
-function removeArticles() {
+// Função para bloquear um perfil específico
+function blockProfile(profileName) {
+    // Verificar se estamos visualizando este perfil
+    const currentProfile = window.location.pathname.split("/")[1];
+    if (currentProfile === profileName) {
+        removeArticles(profileName);
+        blockInfiniteLoading(profileName);
+        addBlockedIndicator(profileName);
+    }
+}
+
+function removeArticles(profileName) {
     // Verificar se estamos no perfil alvo antes de remover artigos
     const currentProfile = window.location.pathname.split("/")[1];
     if (currentProfile !== profileName) {
@@ -55,7 +287,7 @@ function removeArticles() {
     
     const articles = document.querySelectorAll('[role="article"]');
     if (articles.length > 0) {
-        console.log(`[Auto Remove Articles] Found ${articles.length} articles to remove`);
+        console.log(`[Auto Remove Articles] Found ${articles.length} articles to remove for ${profileName}`);
         articles.forEach(article => {
             article.remove();
         });
@@ -65,9 +297,11 @@ function removeArticles() {
 let loadingBlocked = false;
 // Armazenar o observador para poder desconectá-lo quando sair do perfil
 let loadingObserver = null;
+// Perfil atualmente bloqueado
+let currentBlockedProfile = null;
 
-function blockInfiniteLoading() {
-    if (loadingBlocked) return;
+function blockInfiniteLoading(profileName) {
+    if (loadingBlocked && currentBlockedProfile === profileName) return;
     
     // Verificar se estamos no perfil alvo
     const currentProfile = window.location.pathname.split("/")[1];
@@ -76,7 +310,8 @@ function blockInfiniteLoading() {
     }
     
     loadingBlocked = true;
-    console.log('[Block Loading] Starting to block infinite loading');
+    currentBlockedProfile = profileName;
+    console.log(`[Block Loading] Starting to block infinite loading for ${profileName}`);
 
     // 1. Salvar a função fetch original se ainda não foi salva
     if (!originalFetch) {
@@ -97,7 +332,7 @@ function blockInfiniteLoading() {
             body && (body.includes('UserTweets') || 
                     body.includes('UserMedia') ||
                     body.includes('UserByScreenName'))) {
-            console.log('[Block Loading] Intercepted tweet load request');
+            console.log(`[Block Loading] Intercepted tweet load request for ${profileName}`);
             
             // Retornar uma resposta vazia mas válida
             return new Response(JSON.stringify({
@@ -134,7 +369,7 @@ function blockInfiniteLoading() {
         document.querySelectorAll('div[role="progressbar"]').forEach(el => {
             const loadingContainer = el.closest('[data-testid="cellInnerDiv"]');
             if (loadingContainer) {
-                console.log('[Block Loading] Removing loading indicator');
+                console.log(`[Block Loading] Removing loading indicator for ${profileName}`);
                 loadingContainer.remove();
             } else {
                 el.style.display = 'none';
@@ -148,7 +383,7 @@ function blockInfiniteLoading() {
                 button.textContent.includes('Mostrar mais'))) {
                 const buttonContainer = button.closest('[data-testid="cellInnerDiv"]');
                 if (buttonContainer) {
-                    console.log('[Block Loading] Removing "Show more" button');
+                    console.log(`[Block Loading] Removing "Show more" button for ${profileName}`);
                     buttonContainer.remove();
                 }
             }
@@ -160,13 +395,13 @@ function blockInfiniteLoading() {
         subtree: true
     });
     
-    console.log('[Block Loading] Tweet loading blocked successfully');
+    console.log(`[Block Loading] Tweet loading blocked successfully for ${profileName}`);
 }
 
 function unblockLoading() {
     if (!loadingBlocked) return;
     
-    console.log('[Block Loading] Unblocking infinite loading');
+    console.log(`[Block Loading] Unblocking infinite loading for ${currentBlockedProfile}`);
     
     // 1. Restaurar a função fetch original
     if (originalFetch) {
@@ -181,9 +416,10 @@ function unblockLoading() {
     }
     
     loadingBlocked = false;
+    currentBlockedProfile = null;
 }
 
-function addBlockedIndicator() {
+function addBlockedIndicator(profileName) {
     // Verificar se estamos no perfil alvo
     const currentProfile = window.location.pathname.split("/")[1];
     if (currentProfile !== profileName) {
@@ -195,11 +431,10 @@ function addBlockedIndicator() {
         return true;
     }
     
-    console.log('[BotBlocker] Attempting to add blocked indicator at username level');
+    console.log(`[BotBlocker] Attempting to add blocked indicator for ${profileName}`);
     
     // Procurar pelo elemento que contém o nome do perfil
     const profileNameElement = document.querySelector('[data-testid="UserName"]');
-    const followButton = document.querySelector('[data-testid="followButton"], [role="button"][data-testid="placementTracking"]');
     
     if (profileNameElement) {
         console.log('[BotBlocker] Found profile name element:', profileNameElement);
@@ -257,7 +492,7 @@ function addBlockedIndicator() {
             wrapper.appendChild(nameHeader);
             wrapper.appendChild(blockedIndicator);
             
-            console.log('[BotBlocker] Blocked indicator added successfully next to name header');
+            console.log(`[BotBlocker] Blocked indicator added successfully for ${profileName}`);
             return true;
         }
         
@@ -283,7 +518,7 @@ function addBlockedIndicator() {
             wrapper.appendChild(spanContainer);
             wrapper.appendChild(blockedIndicator);
             
-            console.log('[BotBlocker] Blocked indicator added successfully next to span wrapper');
+            console.log(`[BotBlocker] Blocked indicator added successfully for ${profileName}`);
             return true;
         }
         
@@ -301,7 +536,7 @@ function addBlockedIndicator() {
             badgesContainer.style.alignItems = 'center';
             badgesContainer.style.flexWrap = 'nowrap';
             
-            console.log('[BotBlocker] Blocked indicator added successfully after badges');
+            console.log(`[BotBlocker] Blocked indicator added successfully for ${profileName}`);
             return true;
         }
         
@@ -311,7 +546,7 @@ function addBlockedIndicator() {
         profileNameElement.style.alignItems = 'center';
         profileNameElement.style.flexWrap = 'nowrap';
         
-        console.log('[BotBlocker] Blocked indicator added directly to profile name element');
+        console.log(`[BotBlocker] Blocked indicator added directly for ${profileName}`);
         return true;
     }
     
@@ -364,7 +599,7 @@ function addBlockedIndicator() {
         wrapper.appendChild(profileHeader);
         wrapper.appendChild(blockedIndicator);
         
-        console.log('[BotBlocker] Blocked indicator added successfully using fallback method');
+        console.log(`[BotBlocker] Blocked indicator added successfully for ${profileName}`);
         return true;
     }
     
@@ -372,93 +607,92 @@ function addBlockedIndicator() {
     return false;
 }
 
-function checkProfileAndRemoveArticles() {
+function checkProfileAndProcessBlocking() {
     const currentProfile = window.location.pathname.split("/")[1];
     
-    // Se estamos no perfil alvo
-    if (currentProfile === profileName) {
-        console.log(`[Auto Remove Articles] Running on profile: ${profileName}`);
-        removeArticles();
-        blockInfiniteLoading();
+    // Verificar se o perfil atual está na lista de perfis para bloquear
+    if (perfisDaAPI.length > 0) {
+        const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === currentProfile.toLowerCase());
         
-        // Tentar adicionar o indicador várias vezes, pois a estrutura da página pode estar carregando
-        let indicatorAdded = addBlockedIndicator();
-        if (!indicatorAdded) {
-            // Se não conseguir adicionar imediatamente, tentar algumas vezes com intervalos
-            let attempts = 0;
-            const indicatorInterval = setInterval(() => {
-                if (attempts >= 5 || addBlockedIndicator()) {
-                    clearInterval(indicatorInterval);
-                    console.log(`[BotBlocker] Indicator added after ${attempts + 1} attempts`);
-                }
-                attempts++;
-            }, 1000);
-        }
-        
-        // Adicionar uma observação específica para remover novos tweets que apareçam
-        const tweetObserver = new MutationObserver(() => {
-            removeArticles();
-            // Verificar se o indicador ainda existe, se não, adicionar novamente
-            if (!document.getElementById('botblocker-indicator')) {
-                addBlockedIndicator();
+        if (perfilAPI && perfilAPI.percentage > 50) {
+            console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+            
+            removeArticles(currentProfile);
+            blockInfiniteLoading(currentProfile);
+            
+            // Tentar adicionar o indicador várias vezes, pois a estrutura da página pode estar carregando
+            let indicatorAdded = addBlockedIndicator(currentProfile);
+            if (!indicatorAdded) {
+                // Se não conseguir adicionar imediatamente, tentar algumas vezes com intervalos
+                let attempts = 0;
+                const indicatorInterval = setInterval(() => {
+                    if (attempts >= 5 || addBlockedIndicator(currentProfile)) {
+                        clearInterval(indicatorInterval);
+                        console.log(`[BotBlocker] Indicator added after ${attempts + 1} attempts`);
+                    }
+                    attempts++;
+                }, 1000);
             }
-        });
-        
-        // Encontrar o contêiner principal de tweets
-        const tweetContainer = document.querySelector('[data-testid="primaryColumn"]');
-        if (tweetContainer) {
-            tweetObserver.observe(tweetContainer, { childList: true, subtree: true });
+            
+            // Adicionar ao conjunto de perfis bloqueados
+            perfisBlockeados.add(currentProfile);
+        } else if (loadingBlocked && currentBlockedProfile === currentProfile) {
+            // Se estamos em um perfil que não precisa ser bloqueado mas está sendo bloqueado
+            console.log(`[BotBlocker] Perfil ${currentProfile} não precisa ser bloqueado. Desbloqueando...`);
+            unblockLoading();
+            
+            // Remover o indicador
+            const indicator = document.getElementById('botblocker-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
         }
     } else {
-        console.log(`[Auto Remove Articles] Not running on profile: ${currentProfile}`);
-        
-        // Remover o indicador se sair do perfil alvo
-        const indicator = document.getElementById('botblocker-indicator');
-        if (indicator) {
-            indicator.remove();
-        }
-        
-        // IMPORTANTE: Desbloquear o carregamento quando não estamos no perfil alvo
-        if (loadingBlocked) {
-            unblockLoading();
-        }
+        console.log('[BotBlocker] Aguardando carregamento de perfis da API...');
     }
 }
 
-const articlesObserver = new MutationObserver(() => {
-    checkProfileAndRemoveArticles();
+const pageObserver = new MutationObserver(() => {
+    checkProfileAndProcessBlocking();
+    collectMentions();
 });
 
 function initializeScripts() {
     collectMentions();
-    mentionsObserver.observe(document.body, { childList: true, subtree: true });
     
     // Esperar um pouco para que o DOM esteja mais carregado antes de verificar o perfil
     setTimeout(() => {
-        checkProfileAndRemoveArticles();
-        articlesObserver.observe(document.body, { childList: true, subtree: true });
+        checkProfileAndProcessBlocking();
+        pageObserver.observe(document.body, { childList: true, subtree: true });
     }, 1000);
 }
 
 let previousUrl = window.location.href;
 const urlCheckInterval = setInterval(() => {
     if (window.location.href !== previousUrl) {
-        console.log("[Both Scripts] URL changed from", previousUrl, "to", window.location.href);
+        console.log("[BotBlocker] URL changed from", previousUrl, "to", window.location.href);
         
-        // Verificar se estávamos no perfil bloqueado e agora não estamos mais
-        const oldProfile = previousUrl.split("/")[3]; // formato: https://twitter.com/username
-        const newPath = window.location.pathname.split("/")[1];
-        
-        if (oldProfile === profileName && newPath !== profileName) {
-            console.log("[Block Loading] Detected navigation away from blocked profile");
-            unblockLoading();
+        // Verificar se estávamos em um perfil bloqueado e agora não estamos mais
+        if (loadingBlocked) {
+            const currentProfile = window.location.pathname.split("/")[1];
+            if (currentProfile !== currentBlockedProfile) {
+                console.log("[Block Loading] Detected navigation away from blocked profile");
+                unblockLoading();
+                
+                // Remover o indicador
+                const indicator = document.getElementById('botblocker-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
         }
         
         previousUrl = window.location.href;
-        mentionsObserver.disconnect();
-        articlesObserver.disconnect();
+        pageObserver.disconnect();
         initializeScripts();
     }
 }, 1000);
 
+
+addStyles();
 initializeScripts();
