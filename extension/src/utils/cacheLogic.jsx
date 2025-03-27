@@ -63,13 +63,13 @@ export async function updateSettings({ tolerance, badge }) {
   };
 
   await setStorage({ settings: updatedSettings });
-  console.log("Settings atualizadas:", updatedSettings);
+  console.log("Settings updated:", updatedSettings);
 }
 
 // Clear the entire blacklist
 export async function clearBlacklist() {
   await setStorage({ blackList: [] });
-  console.log("Blacklist limpa com sucesso.");
+  console.log("Blacklist cleared successfully.");
 }
 
 // Add multiple user-platform pairs to the blacklist, avoiding duplicates
@@ -86,5 +86,44 @@ export async function addMultipleToBlacklist(users) {
   });
 
   await setStorage({ blackList });
-  console.log(`Adicionados ${addedCount} utilizadores à blacklist.`);
+  console.log(`Added ${addedCount} users to blacklist.`);
+}
+
+export async function importSettingsFromSerializer(serializerData) {
+  const { tolerance, badge, blocklist } = serializerData;
+
+  const blackList = blocklist.map(profile => [profile.username, profile.social]);
+
+  await setStorage({
+    settings: { tolerance, badge },
+    blackList
+  });
+
+  console.log("Settings imported from the API and stored in the cache:");
+  console.log("tolerance:", tolerance);
+  console.log("badge:", badge);
+  console.log("blackList:", blackList);
+}
+
+export async function areSettingsEqual(serializerData) {
+  const { settings, blackList } = await getSettingsAndBlacklist();
+
+  if (!settings) return false;
+
+  if (
+    settings.tolerance !== serializerData.tolerance ||
+    settings.badge !== serializerData.badge
+  ) {
+    return false;
+  }
+
+  const serializedBlocklist = serializerData.blocklist.map(({ username, social }) => [username, social]);
+
+  const sortList = (list) =>
+    list
+      .map(([u, p]) => `${u.toLowerCase()}|${p.toLowerCase()}`)
+      .sort()
+      .join(',');
+
+  return sortList(serializedBlocklist) === sortList(blackList);
 }

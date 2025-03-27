@@ -73,7 +73,10 @@ function collectMentions() {
     }
 }
 
-function applyBlurToTweet(element) {
+async function applyBlurToTweet(element) {
+    const { settings } = await getSettingsAndBlacklist();
+    const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
+
     // Estamos recebendo o elemento diretamente (pode ser um article ou um elemento dentro dele)
     const articleContainer = element.tagName === 'ARTICLE' ? element : element.closest('[role="article"]');
     if (!articleContainer) return;
@@ -89,7 +92,7 @@ function applyBlurToTweet(element) {
         // Verificar se o reposter deve ser bloqueado
         const shouldBlockReposter = perfisDaAPI.some(apiPerfil =>
             apiPerfil.username.toLowerCase() === reposter.toLowerCase() &&
-            apiPerfil.percentage > 50
+            apiPerfil.percentage > tolerance
         );
         
         if (shouldBlockReposter) {
@@ -109,7 +112,7 @@ function applyBlurToTweet(element) {
             // Verificar se o perfil deve ser bloqueado
             const shouldBlock = perfisDaAPI.some(apiPerfil =>
                 apiPerfil.username.toLowerCase() === username.toLowerCase() &&
-                apiPerfil.percentage > 50
+                apiPerfil.percentage > tolerance
             );
 
             if (shouldBlock) {
@@ -181,8 +184,30 @@ function addStyles() {
     document.head.appendChild(styleSheet);
 }
 
+// Função para buscar valores do chrome.storage.local
+function getStorage(keys) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(keys, resolve);
+    });
+  }
+  
+  // Função para recuperar configurações e lista de bloqueio
+  async function getSettingsAndBlacklist() {
+    const { settings, blackList = [] } = await getStorage(["settings", "blackList"]);
+    return { settings, blackList };
+  }
+
+
+  
+
 // Nova função para verificar e bloquear perfis com base na API e percentage
-function verifyAndBlockProfiles() {
+async function verifyAndBlockProfiles() {
+
+    const { settings, blackList } = await getSettingsAndBlacklist();
+
+    const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
+
+
     if (perfisDaAPI.length === 0) {
         console.log('[BotBlocker] Nenhum perfil da API para comparar. Aguardando carregamento...');
         return;
@@ -204,7 +229,7 @@ function verifyAndBlockProfiles() {
         const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === profileName.toLowerCase());
         
         if (perfilAPI) {
-            if (perfilAPI.percentage > 50) {
+            if (perfilAPI.percentage > tolerance) {
                 perfilComumComBloqueio.push({
                     username: profileName,
                     percentage: perfilAPI.percentage
@@ -266,7 +291,7 @@ function verifyAndBlockProfiles() {
         // Procurar o perfil na lista da API
         const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === profileName.toLowerCase());
         
-        if (perfilAPI && perfilAPI.percentage > 50) {
+        if (perfilAPI && perfilAPI.percentage > tolerance) {
             console.log(`[BotBlocker] Perfil ${profileName} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
             blockProfile(profileName);
             perfisBlockeados.add(profileName);
@@ -621,14 +646,16 @@ function addBlockedIndicator(profileName) {
     return false;
 }
 
-function checkProfileAndProcessBlocking() {
+async function checkProfileAndProcessBlocking() {
+    const { settings, blackList } = await getSettingsAndBlacklist();
+    const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
     const currentProfile = window.location.pathname.split("/")[1];
     
     // Verificar se o perfil atual está na lista de perfis para bloquear
     if (perfisDaAPI.length > 0) {
         const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === currentProfile.toLowerCase());
         
-        if (perfilAPI && perfilAPI.percentage > 50) {
+        if (perfilAPI && perfilAPI.percentage > tolerance) {
             console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
             
             removeArticles(currentProfile);

@@ -79,7 +79,7 @@ def criar_avaliacao(request):
 def get_perfis(request):
     print("GET /perfis")
     perfis = Profile.objects.all()
-    serializer = ProfileListSerializer(perfis, many=True)
+    serializer = ProfileShortSerializer(perfis, many=True)
     return Response({'perfis': serializer.data})  # Padronizando para sempre retornar um objeto com campo 'perfis'
 
 
@@ -110,6 +110,43 @@ class CustomTokenObtainView(APIView):
             }, status=status.HTTP_200_OK)
         
         return Response({"error": "Credenciais inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_settings(request):
+    try:
+        user_bb = User_BB.objects.get(user=request.user)
+    except User_BB.DoesNotExist:
+        return Response({'error': 'User_BB não encontrado para este utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    settings, created = Settings.objects.get_or_create(
+        user=user_bb,
+        defaults={
+            'tolerance': 50.0,
+            'badge': Badge.EMPTY
+        }
+    )
+
+    serializer = SettingsSerializer(settings)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_settings(request):
+    try:
+        user_bb = User_BB.objects.get(user=request.user)
+        settings = Settings.objects.get(user=user_bb)
+    except (User_BB.DoesNotExist, Settings.DoesNotExist):
+        return Response({'error': 'Settings ou utilizador não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = SettingsSerializer(settings, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

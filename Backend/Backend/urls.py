@@ -25,6 +25,8 @@ urlpatterns = [
     path('get_probability/', get_probability, name='get_probability'),
     path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
     path('perfis/', get_perfis, name='get_perfis'),
+    path('get_settings/', get_settings, name='get_settings'),
+    path('update_settings/', update_settings, name='update_settings'),
     path("api/token/", CustomTokenObtainView.as_view(), name="token_obtain"),
     path('api/protected/',ProtectedView.as_view(),name="ProtectedView")
 
