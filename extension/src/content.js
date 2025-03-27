@@ -76,6 +76,8 @@ function collectMentions() {
 async function applyBlurToTweet(element) {
     const { settings } = await getSettingsAndBlacklist();
     const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
+    const badge = settings.badge || 'empty'; // Valor padrão se não estiver definido
+    const blacklist = settings.blackList || []; // Lista de perfis a serem bloqueados
 
     // Estamos recebendo o elemento diretamente (pode ser um article ou um elemento dentro dele)
     const articleContainer = element.tagName === 'ARTICLE' ? element : element.closest('[role="article"]');
@@ -92,7 +94,7 @@ async function applyBlurToTweet(element) {
         // Verificar se o reposter deve ser bloqueado
         const shouldBlockReposter = perfisDaAPI.some(apiPerfil =>
             apiPerfil.username.toLowerCase() === reposter.toLowerCase() &&
-            apiPerfil.percentage > tolerance
+            apiPerfil.percentage > tolerance 
         );
         
         if (shouldBlockReposter) {
