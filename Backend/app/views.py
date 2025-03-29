@@ -148,6 +148,21 @@ def update_settings(request):
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def get_evaluation_history(request):
+    url = request.GET.get("url")
+    print("url",url)
+    username, platform = extractPerfilNameAndPlataformOfURL(url)
+    print(username, platform)
+
+    history = Evaluation.objects.filter(
+        profile__username=username,
+        profile__social__social=platform
+    ).order_by('-created_at')
+
+    serializer = EvaluationSerializer(history, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 def criar_dados_para_joao():

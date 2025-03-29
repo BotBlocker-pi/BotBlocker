@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Evaluation, User_BB, Profile, Social, Settings, Badge
 
 class EvaluationSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(write_only=True)  
+    user = serializers.CharField()  
     profile = serializers.CharField(write_only=True)  
     rede_social = serializers.CharField(write_only=True)
 
