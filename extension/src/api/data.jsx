@@ -25,6 +25,35 @@ export const getProfileData = async (url) => {
     }
 };
 
+export const createProfile = async (url) => {
+    try {
+      const apiUrl = `${API_BASE_URL}/create_profile/?url=${encodeURIComponent(
+        url
+      )}`;
+      console.log("Trying to create profile with:", apiUrl);
+  
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+  
+      if (!response.ok) {
+        console.error(
+          "Error creating profile:",
+          response.status,
+          response.statusText
+        );
+        return null;
+      }
+      const data = await response.json();
+      console.log("Profile created:", date);
+      return data;
+    } catch (error) {
+      console.error("Error creating profile:", error);
+      return null;
+    }
+  };
+
 export const sendEvaluationToBackend = async (evaluationData) => {
     const token = localStorage.getItem("access_token");
     if (!token){alert("The user is not authenticated"); return null;}
@@ -106,6 +135,7 @@ export const sendUpdatedSettings = async (settingsData) => {
 
 export default {
     getProfileData,
+    createProfile,
     sendEvaluationToBackend,
     getUserSettings,
     sendUpdatedSettings,

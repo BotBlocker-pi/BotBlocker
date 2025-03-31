@@ -3,7 +3,7 @@ import Navbar from "../components/popUp/Navbar.jsx";
 import styled from "styled-components";
 import SocialMediaProfile from "../components/popUp/SocialMediaProfileInfo.jsx";
 import AiAnalysis from "../components/popUp/AiAnalysis.jsx";
-import { getProfileData, sendEvaluationToBackend } from "../api/data.jsx";
+import { getProfileData, sendEvaluationToBackend, createProfile } from "../api/data.jsx";
 import QuestionnaireYes from "../components/popUp/voting/QuestionnaireYes.jsx";
 import QuestionnaireNo from "../components/popUp/voting/QuestionnaireNo.jsx";
 import Login from "./Login.jsx";
@@ -266,13 +266,21 @@ const HomePage = () => {
       setIsLoading(true);
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         if (tabs.length > 0) {
-          console.log(tabs[0].url);
+          const currentUrl = tabs[0].url;
+          console.log("Active page:", currentUrl);
           try {
-            const profileData = await getProfileData(tabs[0].url);
+            let profileData = await getProfileData(currentUrl);
+
+            if (!profileData) {
+              console.warn("Profile not found, trying to create...");
+              await createProfile(currentUrl);
+              profileData = await getProfileData(currentUrl);
+            }
+
             setData(profileData);
-            console.log(profileData);
+            console.log("Final data:", profileData);
           } catch (error) {
-            console.error("Error getting profile data:", error);
+            console.error("Error getting or creating profile:", error);
           } finally {
             setIsLoading(false);
           }

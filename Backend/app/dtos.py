@@ -5,21 +5,34 @@ from urllib.parse import urlparse
 def extractPerfilNameAndPlataformOfURL(url: str):
     parsed_url = urlparse(url)
     social_platforms = {
-        'instagram': ['instagram'],
-        'linkedin': ['linkedin'],
-        'x': ['x.com', 'twitter']
+        'instagram': ['instagram.com'],
+        'linkedin': ['linkedin.com'],
+        'x': ['x.com', 'twitter.com']
     }
 
-    plataform = None
-    for key, values in social_platforms.items():
-        if any(value in parsed_url.netloc.lower() for value in values):
-            plataform = key
+    plataforma = None
+    for key, domains in social_platforms.items():
+        if any(domain in parsed_url.netloc.lower() for domain in domains):
+            plataforma = key
             break
 
     path_segments = parsed_url.path.strip("/").split("/")
-    perfil_name = path_segments[-1] if path_segments else None  
-    
-    return perfil_name,plataform
+
+    perfil_name = None
+
+    if plataforma == 'x' and path_segments:
+        perfil_name = path_segments[0]
+
+    elif plataforma == 'linkedin':
+        # Suporta linkedin.com/in/..., linkedin.com/company/... e linkedin.com/school/...
+        if len(path_segments) >= 2 and path_segments[0] in ['in', 'company', 'school']:
+            perfil_name = path_segments[1]
+
+    elif plataforma == 'instagram' and path_segments:
+        perfil_name = path_segments[0]
+
+    return perfil_name, plataforma
+
 
 class ProfileDTO(serializers.Serializer):
     perfil_name= serializers.CharField() 

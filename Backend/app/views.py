@@ -33,8 +33,6 @@ def create_profile(username, platform, image=None):
     return profile
 
 def get_probability(request):
-
-
     url = request.GET.get("url")
     print("url",url)
     username, platform = extractPerfilNameAndPlataformOfURL(url)
@@ -43,11 +41,34 @@ def get_probability(request):
         return JsonResponse({'error': 'Invalid platform'}, status=400)
 
     if not Profile.objects.filter(username=username, social__social=platform).exists():
-        create_profile(username, platform)
+        # create_profile(username, platform)
+        return JsonResponse({'error': 'Profile not found'}, status=400)
 
     serializer = ProfileDTO(username, platform)
     return JsonResponse(serializer.initial_data, safe=False)
 
+
+def create_profile_view(request):
+    url = request.GET.get("url")
+    if not url:
+        return JsonResponse({'error': 'URL is required'}, status=400)
+
+    print("URL recebida:", url)
+
+    username, platform = extractPerfilNameAndPlataformOfURL(url)
+    print("Extraído:", username, platform)
+
+    if not platform or not username:
+        return JsonResponse({'error': 'Invalid or unsupported platform or username'}, status=400)
+
+    if not Profile.objects.filter(username=username, social__social=platform).exists():
+        create_profile(username, platform)
+
+    return JsonResponse({
+        'message': 'Profile created successfully (or already existed)',
+        'username': username,
+        'platform': platform
+    }, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

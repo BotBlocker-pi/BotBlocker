@@ -54,7 +54,7 @@ class Evaluation(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='evaluations') 
     is_bot = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    notas = models.TextField()
+    notas = models.TextField(blank=True)
 
     def __str__(self):
         return f"Evaluation by {self.user.user.username} for {self.profile.username} and {self.profile.social.social}"

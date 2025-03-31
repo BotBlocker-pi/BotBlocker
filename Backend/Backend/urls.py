@@ -23,6 +23,7 @@ urlpatterns = [
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('get_probability/', get_probability, name='get_probability'),
+    path('create_profile/', create_profile_view, name='create_profile_view'),
     path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
     path('perfis/', get_perfis, name='get_perfis'),
     path('get_settings/', get_settings, name='get_settings'),
