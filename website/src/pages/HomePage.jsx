@@ -14,6 +14,7 @@ const HomePage = () => {
     const [socialMedia, setSocialMedia] = useState('Twitter');
     const [evaluations, setEvaluations] = useState([]);
     const [data, setData] = useState(null);
+    const [userNotFound, setUserNotFound] = useState(false);
 
     // Sample evaluations data from backend, now with reasons
     const sampleEvaluations = [
@@ -52,37 +53,31 @@ const HomePage = () => {
         // Extract username from URL (simple example)
         let extractedUsername = '';
         let platform = 'Twitter';
+        setUserNotFound(false);
 
         try {
-            const url = new URL(searchUrl);
-            const hostname = url.hostname.toLowerCase();
+            const profileData = await getProfileData(searchUrl);
 
-            // Determine platform based on hostname
-            if (hostname.includes('twitter') || hostname.includes('x.com')) {
-                platform = 'Twitter';
-            } else if (hostname.includes('instagram')) {
-                platform = 'Instagram';
-            } else if (hostname.includes('facebook')) {
-                platform = 'Facebook';
-            } else if (hostname.includes('tiktok')) {
-                platform = 'TikTok';
-            } else if (hostname.includes('linkedin')) {
-                platform = 'LinkedIn';
-            } else if (hostname.includes('youtube')) {
-                platform = 'YouTube';
-            }
+            if (!profileData) {
+                setUserNotFound(true);
+                return;
+              }
 
+            setData(profileData);
+            extractedUsername=profileData.perfil_name
+            console.log(extractedUsername);
+            console.log(extractedUsername);
+            
+            platform=profileData.plataform   
             // Extract username from URL path
-            const pathParts = url.pathname.split('/').filter(Boolean);
-            if (pathParts.length > 0) {
-                extractedUsername = pathParts[pathParts.length - 1];
-            }
+           
         } catch (error) {
             // If not a valid URL, just use the input as username
-            extractedUsername = searchUrl.replace(/^@/, ''); // Remove @ if present
+                setUserNotFound(true);
+                extractedUsername = searchUrl.replace(/^@/, ''); // Remove @ if present
+                return
         }
-        const profileData = await getProfileData(searchUrl);
-        setData(profileData);
+    
         setUsername(extractedUsername || 'unknown_user');
         setSocialMedia(platform);
         setEvaluations(await getEvaluationHistory(searchUrl)); // In a real app, this would come from an API call
@@ -107,7 +102,11 @@ const HomePage = () => {
                     <a href="/contact" className="nav-link">CONTACT</a>
                 </nav>
             </header>
-
+            {userNotFound && (
+                <div className="error-message" style={{ color: 'red', textAlign: 'center', marginTop: '1rem' }}>
+                    ⚠️ User not found or error loading profile.
+                </div>
+                )}
             {!showProfile ? (
                 <main className="main-content">
                     <h1 className="headline">Your Voice Matters. Don't Let AI Drown It Out.</h1>

@@ -75,7 +75,7 @@ const ProfileEvaluation = ({ evaluations = [] }) => {
                         <div className="evaluation-reasons">
                             <span className="reasons-label">Reason(s):</span>
                             <ul className="reasons-list">
-                            <li>{evaluation.notas.replace(/^Other:*/i, "")}</li>
+                            <li>{evaluation.notas.replace(/Other:*/i, "")}</li>
                                 
                             </ul>
                         </div>
