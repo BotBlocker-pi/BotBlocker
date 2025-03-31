@@ -3,6 +3,8 @@ import '../css/HomePage.css';
 import botBlockerLogo from '../assets/logo.png'; // Adjust the path as needed
 import { Link } from 'react-router-dom';
 import ProfileInfo from '../components/ProfileInfo.jsx';
+import {getEvaluationHistory, getProfileData} from '../api/data.jsx';
+
 
 const HomePage = () => {
     const [searchUrl, setSearchUrl] = useState('');
@@ -11,6 +13,7 @@ const HomePage = () => {
     const [username, setUsername] = useState('');
     const [socialMedia, setSocialMedia] = useState('Twitter');
     const [evaluations, setEvaluations] = useState([]);
+    const [data, setData] = useState(null);
 
     // Sample evaluations data from backend, now with reasons
     const sampleEvaluations = [
@@ -41,7 +44,7 @@ const HomePage = () => {
         setSearchUrl(e.target.value);
     };
 
-    const handleSearchSubmit = (e) => {
+    const handleSearchSubmit = async (e) => {
         e.preventDefault();
         // Implement your search functionality here
         console.log('Searching for:', searchUrl);
@@ -78,10 +81,11 @@ const HomePage = () => {
             // If not a valid URL, just use the input as username
             extractedUsername = searchUrl.replace(/^@/, ''); // Remove @ if present
         }
-
+        const profileData = await getProfileData(searchUrl);
+        setData(profileData);
         setUsername(extractedUsername || 'unknown_user');
         setSocialMedia(platform);
-        setEvaluations(sampleEvaluations); // In a real app, this would come from an API call
+        setEvaluations(await getEvaluationHistory(searchUrl)); // In a real app, this would come from an API call
         setShowProfile(true);
     };
 
@@ -134,9 +138,9 @@ const HomePage = () => {
             ) : (
                 <div className="profile-info-section">
                     <ProfileInfo
-                        aiPercentage={15}
-                        votes={105}
-                        badge="human"
+                        aiPercentage={data.probability.toFixed(2)}
+                        votes={data.numberOfEvaluations}
+                        badge={data.badge}
                         username={username}
                         socialMedia={socialMedia}
                         evaluations={evaluations}
