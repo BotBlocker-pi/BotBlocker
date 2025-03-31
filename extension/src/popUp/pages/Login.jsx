@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { loginUser, checkAuth, logoutUser } from "../api/loginApi";
+import { loginUser, checkAuth, logoutUser } from "../../api/loginApi.jsx";
 
 // Using the same theme from HomePage for consistency
 const theme = {
@@ -201,7 +201,6 @@ const Login = ({ onBackToHome, onAuthChange  }) => {
     const data = await loginUser(username, password);
     if (data) {
       localStorage.setItem("access_token", data.access);
-      localStorage.setItem("is_new_login", "true");
       setMessage("✅ Login successful!");
       setIsAuthenticated(true);
       // Call the function to update parent state
