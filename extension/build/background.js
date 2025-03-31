@@ -7,7 +7,6 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
       );
     }
   });
-
 // Função para injetar o script de conteúdo na página do Twitter
 function injectContentScript() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
