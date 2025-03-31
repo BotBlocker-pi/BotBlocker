@@ -47,5 +47,7 @@ USER appuser
 # Expose the application port
 EXPOSE 8000
 
-# Run migrations and then start the application using Gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 --workers 3 Backend.wsgi:application"]
+CMD ["sh", "-c", "python manage.py makemigrations --noinput && \
+                  python manage.py migrate --noinput && \
+                  python manage.py collectstatic --noinput && \
+                  gunicorn --bind 0.0.0.0:8000 --workers 3 --reload Backend.wsgi:application"]
