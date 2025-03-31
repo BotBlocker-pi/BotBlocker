@@ -8,16 +8,14 @@
   },
   "permissions": ["tabs", "scripting", "storage"],
   "host_permissions": [
-    "https://x.com/*", 
-    "https://twitter.com/*" 
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "http://localhost:8000/*"
   ],
-  "content_scripts": [
-    {
-      "matches": ["*://twitter.com/*", "*://x.com/*"],
-      "js": ["content.js"],
-      "run_at": "document_end"
-    }
-  ],
-  
+
+
+  "background": {
+    "service_worker": "background.js"
+  },
   "options_page": "settings.html"
 }

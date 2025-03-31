@@ -78,10 +78,13 @@ def criar_avaliacao(request):
 @api_view(['GET'])
 def get_perfis(request):
     print("GET /perfis")
-    perfis = Profile.objects.all()
-    serializer = ProfileShortSerializer(perfis, many=True)
-    return Response({'perfis': serializer.data})  # Padronizando para sempre retornar um objeto com campo 'perfis'
-
+    try:
+        perfis = Profile.objects.all()
+        serializer = ProfileShortSerializer(perfis, many=True)
+        return Response({'perfis': serializer.data})
+    except Exception as e:
+        print(f"Error in get_perfis: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
@@ -187,3 +190,4 @@ def criar_dados_para_joao():
         print("✅ Profile 'matt_vanswol' criado")
     else:
         print("ℹ️ Profile 'matt_vanswol' já existia")
+
