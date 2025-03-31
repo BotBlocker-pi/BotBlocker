@@ -76,4 +76,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     }
+
+    if (request.action === 'blockProfile') {
+        const { username, platform } = request;
+
+        // URL for the blocking endpoint
+        const API_URL = 'http://localhost:8000/toggle_block_profile/';
+
+        // No authentication needed for this endpoint
+        fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                social: platform
+            }),
+            mode: 'cors'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('[BotBlocker Background] Profile blocked successfully:', data);
+                sendResponse({ success: true, data });
+            })
+            .catch(error => {
+                console.error('[BotBlocker Background] Error blocking profile:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+
+        return true; // Required to use sendResponse asynchronously
+    }
 });

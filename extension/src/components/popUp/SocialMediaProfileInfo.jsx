@@ -58,7 +58,37 @@ const BlockButton = styled.img`
     }
 `;
 
-const SocialMediaProfileInfo = ({ imageUrl, accountType, username }) => {
+import { addToBlacklist, removeFromBlacklist } from '../../utils/cacheLogic';
+
+const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) => {
+    const [isBlocking, setIsBlocking] = useState(false);
+
+    const handleBlockProfile = async () => {
+        try {
+            setIsBlocking(true);
+
+            // Send block request to background script
+            await new Promise(resolve => {
+                chrome.runtime.sendMessage({
+                    action: 'blockProfile',
+                    username,
+                    platform
+                }, resolve);
+            });
+
+            // Add to local blacklist
+            await addToBlacklist(username, platform);
+
+            // Optional: Show a success toast/notification
+            console.log(`Blocked profile: ${username} on ${platform}`);
+        } catch (error) {
+            console.error('Error blocking profile:', error);
+            // Optional: Show an error toast/notification
+        } finally {
+            setIsBlocking(false);
+        }
+    };
+
     return (
         <ProfileContainer>
             <LeftSection>
@@ -71,7 +101,12 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username }) => {
             </MiddleSection>
 
             <RightSection>
-                <BlockButton src={BlockIcon} alt="Block" />
+                <BlockButton
+                    src={BlockIcon}
+                    alt="Block"
+                    onClick={handleBlockProfile}
+                    isBlocking={isBlocking}
+                />
             </RightSection>
         </ProfileContainer>
     );

@@ -792,3 +792,35 @@ const urlCheckInterval = setInterval(() => {
 
 addStyles();
 initializeScripts();
+
+async function checkProfileAndProcessBlocking() {
+    const { settings, blackList } = await getSettingsAndBlacklist();
+    const tolerance = settings.tolerance || 50;
+    const currentProfile = window.location.pathname.split("/")[1];
+
+    // Send message to background script to check blocked status
+    chrome.runtime.sendMessage({
+        action: "checkBlockedStatus",
+        username: currentProfile,
+        social: 'x', // or dynamically determine the social platform
+        accessToken: localStorage.getItem('access_token')
+    }, (response) => {
+        if (response.success) {
+            if (response.isBlocked) {
+                console.log(`[BotBlocker] Profile ${currentProfile} is blocked`);
+                removeArticles(currentProfile);
+                blockInfiniteLoading(currentProfile);
+                addBlockedIndicator(currentProfile);
+            }
+        }
+    });
+
+    // Existing API-based blocking logic remains the same
+    if (perfisDaAPI.length > 0) {
+        const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === currentProfile.toLowerCase());
+
+        if (perfilAPI && perfilAPI.percentage > tolerance) {
+            // Existing blocking logic
+        }
+    }
+}
