@@ -1,28 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../css/ProfileEvaluation.css';
 
 const ProfileEvaluation = ({ evaluations = [] }) => {
-    // Default sample evaluations if none provided, following backend structure
-    const defaultEvaluations = [
-        {
-            id: 1,
-            user: "John",
-            is_bot: false,
-            notes: "Natural posting patterns",
-            created_at: "2025-01-24T14:08:23.696944",
-            reasons: ["Consistent writing style", "Regular posting intervals"]
-        },
-        {
-            id: 2,
-            user: "Angela Ribeiro",
-            is_bot: true,
-            notes: "Multiple inconsistencies detected",
-            created_at: "2025-02-20T11:02:00.000000",
-            reasons: ["AI-generated images", "Inconsistent posting", "Unnatural posting patterns"]
-        }
-    ];
+    // Use the provided evaluations
+    const allEvaluations = evaluations;
 
-    const displayEvaluations = evaluations.length > 0 ? evaluations : defaultEvaluations;
+    // State to track how many evaluations to show
+    const [visibleCount, setVisibleCount] = useState(6);
+    // Track if user has expanded the list at least once
+    const [hasExpanded, setHasExpanded] = useState(false);
+
+    // Function to load more evaluations
+    const handleLoadMore = () => {
+        setVisibleCount(prevCount => prevCount + 6);
+        setHasExpanded(true);
+    };
+
+    // Function to show fewer evaluations (6 at a time)
+    const handleShowLess = () => {
+        // Reduce by 6, but never go below 6
+        setVisibleCount(prevCount => Math.max(6, prevCount - 6));
+    };
+
+    // Get only the evaluations to display based on current count
+    const displayEvaluations = allEvaluations.slice(0, visibleCount);
+
+    // Check if there are more evaluations to load
+    const hasMoreToLoad = visibleCount < allEvaluations.length;
+
+    // Check if we can show less (if we're showing more than 6)
+    const canShowLess = visibleCount > 6;
 
     // Function to format date
     const formatDate = (dateString) => {
@@ -44,44 +51,67 @@ const ProfileEvaluation = ({ evaluations = [] }) => {
     };
 
     return (
-        <div className="profile-evaluation-container">
-            {displayEvaluations.map(evaluation => (
-                <div key={evaluation.id} className="evaluation-item">
-                    <div className="evaluation-header">
-                        <span className="evaluator-name">{evaluation.user}</span>
-                    </div>
-
-                    <div className="evaluation-conclusion">
-                        <span className={`conclusion-text ${evaluation.is_bot ? 'bot' : 'human'}`}>
-                            Considered this profile {evaluation.is_bot ? 'a bot' : 'a human'}.
-                        </span>
-                    </div>
-
-                    <div className="evaluation-date-time">
-                        On {formatDate(evaluation.created_at)} · {formatTime(evaluation.created_at)}
-                    </div>
-
-                    {/* {evaluation.reasons && evaluation.reasons.length > 0 && (
-                        <div className="evaluation-reasons">
-                            <span className="reasons-label">Reason(s):</span>
-                            <ul className="reasons-list">
-                                {evaluation.reasons.map((reason, index) => (
-                                    <li key={index}>{reason}</li>
-                                ))}
-                            </ul>
+        <div className="profile-evaluation-wrapper">
+            <div className="profile-evaluation-container">
+                {displayEvaluations.map(evaluation => (
+                    <div key={evaluation.id} className="evaluation-item">
+                        <div className="evaluation-header">
+                            <span className="evaluator-name">{evaluation.user}</span>
                         </div>
-                    )} */}
-                    {evaluation.notas && (
-                        <div className="evaluation-reasons">
-                            <span className="reasons-label">Reason(s):</span>
-                            <ul className="reasons-list">
-                            <li>{evaluation.notas.replace(/Other:*/i, "")}</li>
-                                
-                            </ul>
+
+                        <div className="evaluation-conclusion">
+                            <span className={`conclusion-text ${evaluation.is_bot ? 'bot' : 'human'}`}>
+                                Considered this profile {evaluation.is_bot ? 'a bot' : 'a human'}.
+                            </span>
                         </div>
-                    )}
-                </div>
-            ))}
+
+                        <div className="evaluation-date-time">
+                            On {formatDate(evaluation.created_at)} · {formatTime(evaluation.created_at)}
+                        </div>
+
+                        {evaluation.notas && (
+                            <div className="evaluation-reasons">
+                                <span className="reasons-label">Reason(s):</span>
+                                <ul className="reasons-list">
+                                    <li>{evaluation.notas.replace(/Other:*/i, "")}</li>
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Show reasons list if no notas but has reasons array */}
+                        {!evaluation.notas && evaluation.reasons && evaluation.reasons.length > 0 && (
+                            <div className="evaluation-reasons">
+                                <span className="reasons-label">Reason(s):</span>
+                                <ul className="reasons-list">
+                                    {evaluation.reasons.map((reason, index) => (
+                                        <li key={index}>{reason}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <div className="load-more-container">
+                {canShowLess && (
+                    <button
+                        className="load-less-button"
+                        onClick={handleShowLess}
+                    >
+                        See Less
+                    </button>
+                )}
+
+                {hasMoreToLoad && (
+                    <button
+                        className="load-more-button"
+                        onClick={handleLoadMore}
+                    >
+                        See More
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
