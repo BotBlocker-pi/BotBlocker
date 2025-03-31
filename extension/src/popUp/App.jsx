@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import HomePage from './pages/HomePage.jsx'; // Importa a HomePage
 
 const App = () => {

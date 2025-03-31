@@ -1,36 +1,9 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost/api";
 
 export const getProfileData = async (url) => {
     try {
         console.log("URL received for analysis:", url);
-
-        // First, extract the profile name from the URL
-        let profileName = null;
-        if (url.includes('twitter.com/') || url.includes('x.com/')) {
-            const urlParts = url.split('/');
-            // The profile name is after the domain, typically the 4th element in the array
-            for (let i = 0; i < urlParts.length; i++) {
-                if (urlParts[i].includes('twitter.com') || urlParts[i].includes('x.com')) {
-                    profileName = urlParts[i+1];
-                    break;
-                }
-            }
-
-            // Remove query parameters if any
-            if (profileName && profileName.includes('?')) {
-                profileName = profileName.split('?')[0];
-            }
-        }
-
-        console.log("Extracted profile name:", profileName);
-
-        if (!profileName) {
-            console.log("No profile name found in URL");
-            return null;
-        }
-
-        // Make request to API with the profile name
-        const apiUrl = `${API_BASE_URL}/get_probability/?username=${encodeURIComponent(profileName)}`;
+        const apiUrl = `${API_BASE_URL}/get_probability/?url=${encodeURIComponent(url)}`;
         console.log("Making request to:", apiUrl);
 
         const response = await fetch(apiUrl, {
@@ -48,30 +21,36 @@ export const getProfileData = async (url) => {
         return data;
     } catch (error) {
         console.error("Error getting profile data:", error);
+        return null;
+    }
+};
 
-        // If the API call fails, try to get data from content script via background
-        try {
-            return new Promise((resolve) => {
-                chrome.runtime.sendMessage({action: "getCurrentProfile"}, (response) => {
-                    if (response && response.profile) {
-                        // Create simplified data structure from content script response
-                        const mockData = {
-                            perfil_name: response.profile,
-                            plataform: "Twitter",
-                            probability: response.apiData ? response.apiData.percentage : 50,
-                            numberOfEvaluations: Math.floor(Math.random() * 100) + 10,
-                            badge: response.apiData && response.apiData.percentage > 50 ? "warning" : "verified"
-                        };
-                        resolve(mockData);
-                    } else {
-                        resolve(null);
-                    }
-                });
-            });
-        } catch (contentError) {
-            console.error("Error getting data from content script:", contentError);
+export const createProfile = async (url) => {
+    try {
+        const apiUrl = `${API_BASE_URL}/create_profile/?url=${encodeURIComponent(
+            url
+        )}`;
+        console.log("Trying to create profile with:", apiUrl);
+
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+            console.error(
+                "Error creating profile:",
+                response.status,
+                response.statusText
+            );
             return null;
         }
+        const data = await response.json();
+        console.log("Profile created:", date);
+        return data;
+    } catch (error) {
+        console.error("Error creating profile:", error);
+        return null;
     }
 };
 
@@ -129,33 +108,34 @@ export const getUserSettings = async () => {
 export const sendUpdatedSettings = async (settingsData) => {
     const token = localStorage.getItem("access_token");
     if (!token) {
-      console.log("User not authenticated");
-      return null;
+        console.log("User not authenticated");
+        return null;
     }
-  
+
     try {
-      const response = await fetch(`${API_BASE_URL}/update_settings/`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(settingsData)
-      });
-  
-      if (!response.ok) throw new Error("Erro ao atualizar settings");
-  
-      const data = await response.json();
-      console.log("Settings updated in backend:", data);
-      return data;
+        const response = await fetch(`${API_BASE_URL}/update_settings/`, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(settingsData)
+        });
+
+        if (!response.ok) throw new Error("Erro ao atualizar settings");
+
+        const data = await response.json();
+        console.log("Settings updated in backend:", data);
+        return data;
     } catch (error) {
-      console.error("Error sending settings to backend:", error);
-      return null;
+        console.error("Error sending settings to backend:", error);
+        return null;
     }
-  };
+};
 
 export default {
     getProfileData,
+    createProfile,
     sendEvaluationToBackend,
     getUserSettings,
     sendUpdatedSettings,
