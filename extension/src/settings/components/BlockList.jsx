@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import AccountItem from './AccountItem';
+import { getStorage } from '../../utils/cacheLogic';
 
 // Styled components
 const BlockListContainer = styled.div`
@@ -43,29 +44,97 @@ const ListContainer = styled.div`
     }
 `;
 
-const BlockList = ({ blockedAccounts: propBlockedAccounts = [] }) => {
-    // Use provided blockedAccounts prop or fallback to sample data
-    const [blockedAccounts, setBlockedAccounts] = useState(propBlockedAccounts.length > 0 ? propBlockedAccounts : [
-        { id: 1, username: 'JohnDoeOnInsta', type: 'Instagram account' },
-        { id: 2, username: 'JohnDoeOnFB', type: 'Facebook account' },
-        { id: 3, username: 'JohnDoeOnTwitter', type: 'X account' },
-        { id: 4, username: 'JaneDoeOnInsta', type: 'Instagram account' },
-        { id: 5, username: 'JaneDoeOnFB', type: 'Instagram account' },
-    ]);
+const EmptyMessage = styled.div`
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+`;
+
+const BlockList = () => {
+    const [blockedAccounts, setBlockedAccounts] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Carregar a lista de bloqueios do armazenamento local
+        const loadBlockedAccounts = async () => {
+            try {
+                const { blackList = [] } = await getStorage(['blackList']);
+
+                // Converter o formato do blackList para o formato utilizado pelo componente
+                const formattedAccounts = blackList.map(([username, platform], index) => {
+                    let accountType = 'X account';
+
+                    // Determinar o tipo com base na plataforma
+                    if (platform === 'instagram') {
+                        accountType = 'Instagram account';
+                    } else if (platform === 'linkedin') {
+                        accountType = 'LinkedIn account';
+                    } else if (platform === 'facebook' || platform === 'fb') {
+                        accountType = 'Facebook account';
+                    }
+
+                    return {
+                        id: index,
+                        username,
+                        platform,
+                        type: accountType
+                    };
+                });
+
+                setBlockedAccounts(formattedAccounts);
+            } catch (error) {
+                console.error('Error loading blocked accounts:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadBlockedAccounts();
+    }, []);
 
     // Handle unblocking an account
-    const handleUnblock = (id) => {
-        setBlockedAccounts(blockedAccounts.filter(account => account.id !== id));
+    const handleUnblock = async (account) => {
+        try {
+            // Send unblock request to background script
+            const response = await new Promise(resolve => {
+                chrome.runtime.sendMessage({
+                    action: 'unblockProfile',
+                    username: account.username,
+                    platform: account.platform
+                }, resolve);
+            });
+
+            if (response && response.success) {
+                // Remove account from local state
+                setBlockedAccounts(prev => prev.filter(item => item.id !== account.id));
+                console.log(`Unblocked profile: ${account.username}`);
+            } else {
+                console.error('Failed to unblock profile:', response?.error || 'Unknown error');
+            }
+        } catch (error) {
+            console.error('Error unblocking profile:', error);
+        }
     };
 
     return (
         <BlockListContainer>
-            <Title>Blocking List</Title>
+            <Title>Your Blacklist</Title>
 
             <ListContainer>
-                {blockedAccounts.map(account => (
-                    <AccountItem key={account.id} account={account} />
-                ))}
+                {loading ? (
+                    <EmptyMessage>Loading blocked accounts...</EmptyMessage>
+                ) : blockedAccounts.length > 0 ? (
+                    blockedAccounts.map(account => (
+                        <AccountItem
+                            key={account.id}
+                            account={account}
+                            onUnblock={() => handleUnblock(account)}
+                        />
+                    ))
+                ) : (
+                    <EmptyMessage>No blocked accounts found</EmptyMessage>
+                )}
             </ListContainer>
         </BlockListContainer>
     );

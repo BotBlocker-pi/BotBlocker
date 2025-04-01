@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const AccountItemContainer = styled.div`
@@ -43,13 +43,38 @@ const UnblockButton = styled.button`
     display: flex;
     align-items: center;
     gap: 6px;
+    opacity: ${props => props.isUnblocking ? 0.7 : 1};
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+
+    &:hover {
+        background-color: ${props => props.isUnblocking ? '#e74c3c' : '#c0392b'};
+    }
+    
+    &:disabled {
+        cursor: not-allowed;
+    }
 `;
 
 const XIcon = styled.span`
     font-weight: bold;
 `;
 
-const AccountItem = ({ account }) => {
+const AccountItem = ({ account, onUnblock }) => {
+    const [isUnblocking, setIsUnblocking] = useState(false);
+
+    const handleUnblock = async () => {
+        if (isUnblocking) return;
+
+        try {
+            setIsUnblocking(true);
+            await onUnblock();
+        } catch (error) {
+            console.error('Error unblocking account:', error);
+        } finally {
+            setIsUnblocking(false);
+        }
+    };
+
     return (
         <AccountItemContainer>
             <AccountInfo>
@@ -58,9 +83,13 @@ const AccountItem = ({ account }) => {
                     <AccountName>@{account.username}</AccountName>
                 </AccountDetails>
             </AccountInfo>
-            <UnblockButton>
+            <UnblockButton
+                onClick={handleUnblock}
+                disabled={isUnblocking}
+                isUnblocking={isUnblocking}
+            >
                 <XIcon>✕</XIcon>
-                Unblock
+                {isUnblocking ? 'Unblocking...' : 'Unblock'}
             </UnblockButton>
         </AccountItemContainer>
     );
