@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000"; // Define a URL base da API
+const API_BASE_URL = "http://localhost/api"; // Define a URL base da API
 
 
 // Função para autenticar utilizadores (Login)

@@ -224,8 +224,28 @@ function addStyles() {
 
 // Função para buscar valores do chrome.storage.local
 function getStorage(keys) {
+    try {
+        return new Promise((resolve) => {
+            chrome.storage.local.get(keys, resolve);
+        });
+    }
+    catch (error) {
+        setDefaultSettings();
+    }
+  }
+
+  async function setDefaultSettings() {
+    const settings = {
+      tolerance: 50,
+      badge: "empty",
+    };
+    const blackList = [];
+    await setStorage({ settings, blackList});
+  }
+
+  function setStorage(obj) {
     return new Promise((resolve) => {
-      chrome.storage.local.get(keys, resolve);
+      chrome.storage.local.set(obj, resolve);
     });
   }
 
@@ -336,10 +356,25 @@ async function verifyAndBlockProfiles() {
         console.log(`%c   - @${p.username} (${p.percentage}%)`, estilo);
     });
 
+    console.log('%c5. Perfis na blacklist:', 'color: #8E44AD; font-weight: bold;');
+    blackList.forEach(([blacklistedUsername, platform]) => {
+        console.log(`%c   - @${blacklistedUsername} (${platform})`, 'color: #E74C3C;');
+    });
+
     // Para cada perfil coletado no feed, verificar se está na lista da API
     collectedMentions.forEach(profileName => {
         // Verificar se já está na lista de bloqueados para não repetir
         if (perfisBlockeados.has(profileName)) {
+            return;
+        }
+
+        const isBlacklisted = blackList.some(([blacklistedUsername, platform]) => {
+            return blacklistedUsername.toLowerCase() === profileName.toLowerCase() && platform === 'twitter';
+        });
+        if (isBlacklisted) {
+            console.log(`[BotBlocker] Perfil ${profileName} está na blacklist. A bloquear...`);
+            blockProfile(profileName);
+            perfisBlockeados.add(profileName);
             return;
         }
 
