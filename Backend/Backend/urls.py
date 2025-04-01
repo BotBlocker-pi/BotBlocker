@@ -28,6 +28,7 @@ urlpatterns = [
     path('get_settings/', get_settings, name='get_settings'),
     path('update_settings/', update_settings, name='update_settings'),
     path('get_evaluation_history/', get_evaluation_history, name='get_evaluation_history'),
+    path('create_user/', createUserBB, name='createUserBB'),
     path("api/token/", CustomTokenObtainView.as_view(), name="token_obtain"),
     path('api/protected/',ProtectedView.as_view(),name="ProtectedView")
 

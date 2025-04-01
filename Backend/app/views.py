@@ -163,7 +163,33 @@ def get_evaluation_history(request):
     serializer = EvaluationSerializer(history, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def createUserBB(request):
+    username = request.data.get("username")
+    password = request.data.get("password")
+    email = request.data.get("email")
 
+    if not username or not password or not email:
+        return Response({"error": "Username, password and email are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "User already exists"}, status=status.HTTP_400_BAD_REQUEST)
+    if User_BB.objects.filter(email=email).exists():
+        return Response({"error": "The email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.create_user(username=username, password=password)
+
+    User_BB.objects.create(user=user, email=email)
+
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh)
+        }, status=status.HTTP_201_CREATED)
+
+    return Response({"error": "Authentication failed after user creation"}, status=status.HTTP_400_BAD_REQUEST)
 
 def criar_dados_para_joao():
     # Criar utilizador Django
