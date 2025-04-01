@@ -48,65 +48,111 @@ const Username = styled.span`
     color: #666;
 `;
 
-const BlockButton = styled.img`
+const ActionButton = styled.img`
     width: 50px;
     height: 50px;
-    cursor: pointer;
-    opacity: ${props => props.isBlocking ? '0.5' : '1'};
-    transition: opacity 0.3s;
+    cursor: ${props => props.isProcessing ? 'default' : 'pointer'};
+    opacity: ${props => props.isProcessing ? '0.5' : '1'};
+    transition: opacity 0.3s, filter 0.3s;
 
     &:hover {
-        opacity: ${props => props.isBlocking ? '0.5' : '0.8'};
+        opacity: ${props => props.isProcessing ? '0.5' : '0.8'};
     }
+`;
+
+const ButtonLabel = styled.div`
+    font-size: 12px;
+    text-align: center;
+    margin-top: 4px;
+    color: #666;
 `;
 
 import { getSettingsAndBlacklist } from '../../utils/cacheLogic';
 
 const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) => {
-    const [isBlocking, setIsBlocking] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
-    // Check if this profile is already blocked
+    // Verificar se o perfil já está bloqueado sempre que o componente for renderizado
+    // E também sempre que o estado isBlocked mudar
     useEffect(() => {
         const checkBlockStatus = async () => {
-            const { blackList } = await getSettingsAndBlacklist();
-            const blocked = blackList.some(([u, p]) =>
-                u.toLowerCase() === username.toLowerCase() && p === platform
-            );
-            setIsBlocked(blocked);
+            try {
+                const { blackList } = await getSettingsAndBlacklist();
+                // Verificar se existe na blacklist
+                const blocked = blackList.some(([u, p]) =>
+                    u.toLowerCase() === username.toLowerCase() &&
+                    (p === platform || p === 'x' || p === 'twitter')
+                );
+
+                // Só atualizar o estado se for diferente do atual
+                if (blocked !== isBlocked) {
+                    setIsBlocked(blocked);
+                    console.log(`[BotBlocker] Profile ${username} is ${blocked ? 'blocked' : 'not blocked'}`);
+                }
+            } catch (error) {
+                console.error('[BotBlocker] Error checking block status:', error);
+            }
         };
 
         checkBlockStatus();
-    }, [username, platform]);
+
+        // Verificar periodicamente a cada 2 segundos
+        const intervalId = setInterval(checkBlockStatus, 2000);
+
+        // Limpar intervalo ao desmontar o componente
+        return () => clearInterval(intervalId);
+    }, [username, platform, isBlocked]);
 
     const handleBlockProfile = async () => {
-        if (isBlocking || isBlocked) return;
+        if (isProcessing) return;
 
         try {
-            setIsBlocking(true);
+            setIsProcessing(true);
 
-            // Send block request to background script
-            const response = await new Promise(resolve => {
-                chrome.runtime.sendMessage({
-                    action: 'blockProfile',
-                    username,
-                    platform
-                }, resolve);
-            });
+            if (isBlocked) {
+                // Requisição para desbloquear
+                const response = await new Promise(resolve => {
+                    chrome.runtime.sendMessage({
+                        action: 'unblockProfile',
+                        username,
+                        platform
+                    }, resolve);
+                });
 
-            if (response.success) {
-                setIsBlocked(true);
-                console.log(`Successfully blocked profile: ${username} on ${platform}`);
+                if (response && response.success) {
+                    console.log(`Successfully unblocked profile: ${username} on ${platform}`);
+                    setIsBlocked(false);
+                } else {
+                    console.error('Error unblocking profile:', response?.error);
+                }
             } else {
-                console.error('Error blocking profile:', response.error);
-                // Show an error notification
+                // Requisição para bloquear
+                const response = await new Promise(resolve => {
+                    chrome.runtime.sendMessage({
+                        action: 'blockProfile',
+                        username,
+                        platform
+                    }, resolve);
+                });
+
+                if (response && response.success) {
+                    console.log(`Successfully blocked profile: ${username} on ${platform}`);
+                    setIsBlocked(true);
+                } else {
+                    console.error('Error blocking profile:', response?.error);
+                }
             }
         } catch (error) {
-            console.error('Error blocking profile:', error);
-            // Show an error notification
+            console.error(`Error ${isBlocked ? 'unblocking' : 'blocking'} profile:`, error);
         } finally {
-            setIsBlocking(false);
+            setIsProcessing(false);
         }
+    };
+
+    const buttonStyle = {
+        filter: isBlocked ? 'grayscale(100%) hue-rotate(180deg)' : 'none',
+        cursor: isProcessing ? 'default' : 'pointer'
     };
 
     return (
@@ -121,16 +167,20 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) =
             </MiddleSection>
 
             <RightSection>
-                <BlockButton
-                    src={BlockIcon}
-                    alt={isBlocked ? "Blocked" : "Block"}
-                    onClick={handleBlockProfile}
-                    isBlocking={isBlocking}
-                    style={{
-                        filter: isBlocked ? 'grayscale(100%)' : 'none',
-                        cursor: isBlocked ? 'default' : 'pointer'
-                    }}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <ActionButton
+                        src={BlockIcon}
+                        alt={isBlocked ? "Unblock" : "Block"}
+                        onClick={handleBlockProfile}
+                        isProcessing={isProcessing}
+                        style={buttonStyle}
+                    />
+                    <ButtonLabel>
+                        {isProcessing
+                            ? (isBlocked ? 'Unblocking...' : 'Blocking...')
+                            : (isBlocked ? 'Unblock' : 'Block')}
+                    </ButtonLabel>
+                </div>
             </RightSection>
         </ProfileContainer>
     );

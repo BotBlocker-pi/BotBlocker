@@ -42,6 +42,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         sendResponse({ success: true });
     }
+
+    if (request.action === "unblockProfileManually") {
+        console.log(`[BotBlocker] Manual unblock request for profile: ${request.username} on ${request.platform}`);
+
+        // Remover do conjunto de perfis bloqueados
+        perfisBlockeados.delete(request.username);
+
+        // Verificar se estamos visualizando este perfil
+        const currentProfile = window.location.pathname.split("/")[1];
+        if (currentProfile.toLowerCase() === request.username.toLowerCase()) {
+            console.log(`[BotBlocker] Currently viewing this profile. Applying unblocking...`);
+
+            // Restaurar carregamento normal
+            unblockLoading();
+
+            // Remover o indicador de bloqueio se existir
+            const indicator = document.getElementById('botblocker-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+
+            // Recarregar a página automaticamente para restaurar os tweets
+            window.location.reload();
+        }
+
+        // Remover blur de todos os tweets deste usuário
+        removeBlurFromUserTweets(request.username);
+
+        sendResponse({ success: true });
+    }
+
     return true;
 });
 
@@ -914,6 +945,28 @@ function applyBlurToAllTweetsFromUser(username) {
                 article.style.filter = 'blur(5px)';
                 article.style.transition = 'filter 0.3s ease';
                 addBlockIndicatorToTweet(article);
+                break;
+            }
+        }
+    });
+}
+
+function removeBlurFromUserTweets(username) {
+    console.log(`[BotBlocker] Removing blur from tweets by ${username}`);
+
+    // Encontrar todos os tweets na timeline
+    const articles = document.querySelectorAll('[role="article"]');
+
+    articles.forEach(article => {
+        const usernameLinks = article.querySelectorAll('a[href^="/"]');
+
+        for (const link of usernameLinks) {
+            const linkUsername = link.getAttribute('href').replace('/', '');
+
+            if (linkUsername.toLowerCase() === username.toLowerCase()) {
+                // Remover blur deste tweet
+                article.style.filter = 'none';
+                removeBlockIndicatorFromTweet(article);
                 break;
             }
         }

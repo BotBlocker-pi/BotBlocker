@@ -1,4 +1,5 @@
 // extension/src/background.js
+
 chrome.storage.onChanged.addListener((changes, namespace) => {
     for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
         console.log(
@@ -180,16 +181,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const data = await response.json();
                 console.log("[BotBlocker Background] Profile unblocked on API:", data);
 
-                // Notify content script to remove blocking
-                chrome.tabs.query({url: ["*://*.twitter.com/*", "*://*.x.com/*"]}, function(tabs) {
-                    tabs.forEach(tab => {
-                        chrome.tabs.sendMessage(tab.id, {
-                            action: "unblockProfileManually",
-                            username,
-                            platform
-                        });
+                // Notificar o content script para aplicar o desbloqueio
+                try {
+                    await sendMessageToTabs({
+                        action: "unblockProfileManually",
+                        username,
+                        platform
                     });
-                });
+                } catch (notifyError) {
+                    console.error("[BotBlocker Background] Error notifying tabs:", notifyError);
+                }
 
                 sendResponse({
                     success: true,
@@ -237,6 +238,33 @@ function addToBlacklist(username, platform = 'x') {
                 console.log(`[BotBlocker] ${username} (${platform}) already in blacklist`);
                 resolve(false);
             }
+        });
+    });
+}
+
+function removeFromBlacklist(username, platform = 'x') {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['blackList'], function(result) {
+            const blackList = result.blackList || [];
+
+            // Filtrar a lista para remover o item correspondente
+            const updatedList = blackList.filter(entry => {
+                if (Array.isArray(entry)) {
+                    return !(entry[0].toLowerCase() === username.toLowerCase() && entry[1] === platform);
+                }
+                return true;
+            });
+
+            // Salvar a lista atualizada
+            chrome.storage.local.set({ blackList: updatedList }, function() {
+                if (chrome.runtime.lastError) {
+                    console.error('[BotBlocker] Error saving to storage:', chrome.runtime.lastError);
+                    reject(chrome.runtime.lastError);
+                } else {
+                    console.log(`[BotBlocker] Removed ${username} (${platform}) from blacklist`);
+                    resolve(true);
+                }
+            });
         });
     });
 }

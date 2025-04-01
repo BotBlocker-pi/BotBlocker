@@ -30,7 +30,7 @@ export async function getSettingsAndBlacklist() {
 
 // Add a user-platform pair to the blacklist, if it doesn't already exist
 // Adicione esta função ao background.js se ela não estiver sendo importada
-async function addToBlacklist(username, platform) {
+export async function addToBlacklist(username, platform) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(["blackList"], function(result) {
       let blackList = result.blackList || [];
