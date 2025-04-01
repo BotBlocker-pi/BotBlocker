@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import '../css/HomePage.css';
 import botBlockerLogo from '../assets/logo.png'; // Adjust the path as needed
 import { Link } from 'react-router-dom';
 import ProfileInfo from '../components/ProfileInfo.jsx';
-import {getEvaluationHistory, getProfileData} from '../api/data.jsx';
-
+import { getEvaluationHistory, getProfileData } from '../api/data.jsx';
+import { checkAuth, logoutUser } from '../api/loginApi'; // Import the required authentication functions
 
 const HomePage = () => {
     const [searchUrl, setSearchUrl] = useState('');
@@ -15,31 +15,47 @@ const HomePage = () => {
     const [evaluations, setEvaluations] = useState([]);
     const [data, setData] = useState(null);
     const [userNotFound, setUserNotFound] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
-    // Sample evaluations data from backend, now with reasons
-    const sampleEvaluations = [
-        {
-            id: 1,
-            user: "John Smith",
-            is_bot: false,
-            notes: "Regular activity patterns",
-            created_at: "2025-01-24T14:08:23.696944",
-            reasons: ["Consistent writing style", "Regular posting intervals"]
-        },
-        {
-            id: 2,
-            user: "Angela Ribeiro",
-            is_bot: true,
-            notes: "Multiple inconsistencies detected",
-            created_at: "2025-02-20T11:02:00.000000",
-            reasons: ["AI-generated images", "Inconsistent posting", "Unnatural posting patterns"]
-        }
-    ];
-
+    // Check authentication status on component mount
     useEffect(() => {
-        // Add animation class after component mounts
+        const checkAuthStatus = async () => {
+            try {
+                const authStatus = await checkAuth();
+                setIsAuthenticated(authStatus);
+                // Store in localStorage for persistence
+                localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
+            } catch (error) {
+                console.error("Error checking auth status:", error);
+                setIsAuthenticated(false);
+            }
+        };
+
+        // First check localStorage
+        const storedAuth = localStorage.getItem('isAuthenticated');
+        if (storedAuth) {
+            setIsAuthenticated(JSON.parse(storedAuth));
+        }
+
+        // Then verify with the server
+        checkAuthStatus();
+
+        // Animation
         setIsLoaded(true);
     }, []);
+
+    const handleAuthChange = (status) => {
+        setIsAuthenticated(status);
+        localStorage.setItem('isAuthenticated', JSON.stringify(status));
+        setShowLoginModal(false); // Close the login modal after successful authentication
+    };
+
+    const handleLogout = () => {
+        logoutUser();
+        setIsAuthenticated(false);
+        localStorage.removeItem('isAuthenticated');
+    };
 
     const handleSearchChange = (e) => {
         setSearchUrl(e.target.value);
@@ -47,12 +63,9 @@ const HomePage = () => {
 
     const handleSearchSubmit = async (e) => {
         e.preventDefault();
-        // Implement your search functionality here
         console.log('Searching for:', searchUrl);
 
-        // Extract username from URL (simple example)
-        let extractedUsername = '';
-        let platform = 'Twitter';
+        // Reset state
         setUserNotFound(false);
 
         try {
@@ -61,31 +74,31 @@ const HomePage = () => {
             if (!profileData) {
                 setUserNotFound(true);
                 return;
-              }
+            }
 
             setData(profileData);
-            extractedUsername=profileData.perfil_name
-            console.log(extractedUsername);
-            console.log(extractedUsername);
-            
-            platform=profileData.plataform   
-            // Extract username from URL path
-           
+            const extractedUsername = profileData.perfil_name;
+            const platform = profileData.plataform;
+
+            setUsername(extractedUsername || 'unknown_user');
+            setSocialMedia(platform);
+            setEvaluations(await getEvaluationHistory(searchUrl));
+            setShowProfile(true);
         } catch (error) {
+            setUserNotFound(true);
             // If not a valid URL, just use the input as username
-                setUserNotFound(true);
-                extractedUsername = searchUrl.replace(/^@/, ''); // Remove @ if present
-                return
+            const extractedUsername = searchUrl.replace(/^@/, ''); // Remove @ if present
+            setUsername(extractedUsername);
+            return;
         }
-    
-        setUsername(extractedUsername || 'unknown_user');
-        setSocialMedia(platform);
-        setEvaluations(await getEvaluationHistory(searchUrl)); // In a real app, this would come from an API call
-        setShowProfile(true);
     };
 
     const handleCloseProfile = () => {
         setShowProfile(false);
+    };
+
+    const toggleLoginModal = () => {
+        setShowLoginModal(!showLoginModal);
     };
 
     return (
@@ -100,13 +113,39 @@ const HomePage = () => {
                     <a href="#" className="nav-link active">HOME</a>
                     <a href="/understand-bots" className="nav-link">UNDERSTAND BOTS</a>
                     <a href="/contact" className="nav-link">CONTACT</a>
+
+                    {/* Authentication controls */}
+                    {isAuthenticated ? (
+                        <div className="auth-controls">
+                            <span className="user-status">✓ Logged In</span>
+                            <button onClick={handleLogout} className="logout-button">Logout</button>
+                        </div>
+                    ) : (
+                        <button onClick={toggleLoginModal} className="login-button">Login</button>
+                    )}
                 </nav>
             </header>
+
+            {/* Login Modal */}
+            {showLoginModal && (
+                <div className="login-modal">
+                    <div className="login-modal-content">
+                        <div className="modal-header">
+                            <h2>Account Login</h2>
+                            <button onClick={toggleLoginModal} className="close-button">&times;</button>
+                        </div>
+
+                        <LoginForm onAuthChange={handleAuthChange} onClose={toggleLoginModal} />
+                    </div>
+                </div>
+            )}
+
             {userNotFound && (
                 <div className="error-message" style={{ color: 'red', textAlign: 'center', marginTop: '1rem' }}>
                     ⚠️ User not found or error loading profile.
                 </div>
-                )}
+            )}
+
             {!showProfile ? (
                 <main className="main-content">
                     <h1 className="headline">Your Voice Matters. Don't Let AI Drown It Out.</h1>
@@ -133,6 +172,16 @@ const HomePage = () => {
                         Search the social media URL of the profile you want to check<br />
                         whether it is managed by AI or a human.
                     </p>
+
+                    {/* Additional CTA for non-authenticated users */}
+                    {!isAuthenticated && (
+                        <div className="auth-cta">
+                            <p>Want to contribute to our community? Login to evaluate profiles and help identify AI bots.</p>
+                            <button onClick={toggleLoginModal} className="login-cta-button">
+                                Sign In To Participate
+                            </button>
+                        </div>
+                    )}
                 </main>
             ) : (
                 <div className="profile-info-section">
@@ -144,6 +193,8 @@ const HomePage = () => {
                         socialMedia={socialMedia}
                         evaluations={evaluations}
                         onClose={handleCloseProfile}
+                        isAuthenticated={isAuthenticated}
+                        onLoginClick={toggleLoginModal}
                     />
                 </div>
             )}
@@ -164,5 +215,80 @@ const HomePage = () => {
         </div>
     );
 };
+
+// Login Form Component
+const LoginForm = ({ onAuthChange, onClose }) => {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [message, setMessage] = useState("");
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setMessage("");
+
+        try {
+            const data = await loginUser(username, password);
+            if (data) {
+                localStorage.setItem("access_token", data.access);
+                localStorage.setItem("is_new_login", "true");
+                setMessage("✅ Login successful!");
+                onAuthChange(true);
+            } else {
+                setMessage("❌ Invalid credentials.");
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            setMessage("❌ Login failed. Please try again.");
+        }
+    };
+
+    return (
+        <div className="login-form-container">
+            {message && (
+                <div className={`message ${message.includes("✅") ? "success" : "error"}`}>
+                    {message}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="login-form">
+                <div className="form-group">
+                    <label htmlFor="username">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className={message.includes("❌") ? "error" : ""}
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={message.includes("❌") ? "error" : ""}
+                        required
+                    />
+                </div>
+
+                <div className="form-buttons">
+                    <button type="button" onClick={onClose} className="cancel-button">
+                        Cancel
+                    </button>
+                    <button type="submit" className="submit-button">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+// Import loginUser function - assuming it's from the same location as checkAuth
+import { loginUser } from '../api/loginApi';
 
 export default HomePage;

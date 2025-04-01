@@ -232,3 +232,276 @@
     width: 90%;
     max-width: 1200px; /* Aumentado para combinar com o ProfileInfo */
 }
+
+/* Add these styles to your existing HomePage.css file */
+
+/* Authentication controls in the header */
+.auth-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-status {
+    color: #3d5a80;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50px;
+}
+
+.login-button,
+.logout-button {
+    background-color: transparent;
+    border: 2px solid #5374a0;
+    color: #5374a0;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-button:hover {
+    background-color: #5374a0;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.logout-button {
+    background-color: transparent;
+    border: 2px solid #ef476f;
+    color: #ef476f;
+}
+
+.logout-button:hover {
+    background-color: #ef476f;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Login Modal */
+.login-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.login-modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+}
+
+.close-button:hover {
+    color: #ef476f;
+}
+
+/* Login Form */
+.login-form-container {
+    padding: 20px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-group input {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #5374a0;
+    box-shadow: 0 0 0 3px rgba(83, 116, 160, 0.2);
+}
+
+.form-group input.error {
+    border-color: #ef476f;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.submit-button,
+.cancel-button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-button {
+    background-color: #5374a0;
+    color: white;
+    border: none;
+}
+
+.submit-button:hover {
+    background-color: #3d5a80;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(83, 116, 160, 0.3);
+}
+
+.cancel-button {
+    background-color: transparent;
+    color: #6c757d;
+    border: 1px solid #e9ecef;
+}
+
+.cancel-button:hover {
+    background-color: #f8f9fa;
+    color: #4a5568;
+}
+
+/* Message Styling */
+.message {
+    text-align: center;
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.message.success {
+    background-color: rgba(6, 214, 160, 0.1);
+    color: #06d6a0;
+}
+
+.message.error {
+    background-color: rgba(239, 71, 111, 0.1);
+    color: #ef476f;
+}
+
+/* Authentication CTA in main content */
+.auth-cta {
+    margin-top: 40px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+}
+
+.auth-cta p {
+    color: #2c3e50;
+    margin-bottom: 16px;
+    font-size: 16px;
+}
+
+.login-cta-button {
+    background-color: #5374a0;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(83, 116, 160, 0.3);
+}
+
+.login-cta-button:hover {
+    background-color: #3d5a80;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(83, 116, 160, 0.4);
+}
+
+/* Update header for auth controls on smaller screens */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 20px;
+        padding: 15px 20px;
+    }
+
+    .navigation {
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .auth-controls {
+        margin-top: 10px;
+    }
+}
