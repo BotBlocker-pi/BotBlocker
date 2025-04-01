@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import AccountItem from './AccountItem';
 
 // Styled components
 const BlockListContainer = styled.div`
@@ -42,54 +43,6 @@ const ListContainer = styled.div`
     }
 `;
 
-const AccountItem = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: white;
-    border-radius: 8px;
-    padding: 12px 16px;
-`;
-
-const AccountInfo = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-`;
-
-const AccountDetails = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
-const AccountType = styled.span`
-    color: #777;
-    font-size: 14px;
-`;
-
-const AccountName = styled.span`
-    font-weight: 500;
-    font-size: 16px;
-`;
-
-const UnblockButton = styled.button`
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-`;
-
-const XIcon = styled.span`
-    font-weight: bold;
-`;
-
 const BlockList = ({ blockedAccounts: propBlockedAccounts = [] }) => {
     // Use provided blockedAccounts prop or fallback to sample data
     const [blockedAccounts, setBlockedAccounts] = useState(propBlockedAccounts.length > 0 ? propBlockedAccounts : [
@@ -111,18 +64,7 @@ const BlockList = ({ blockedAccounts: propBlockedAccounts = [] }) => {
 
             <ListContainer>
                 {blockedAccounts.map(account => (
-                    <AccountItem key={account.id}>
-                        <AccountInfo>
-                            <AccountDetails>
-                                <AccountType>{account.type}</AccountType>
-                                <AccountName>@{account.username}</AccountName>
-                            </AccountDetails>
-                        </AccountInfo>
-                        <UnblockButton>
-                            <XIcon>✕</XIcon>
-                            Unblock
-                        </UnblockButton>
-                    </AccountItem>
+                    <AccountItem key={account.id} account={account} />
                 ))}
             </ListContainer>
         </BlockListContainer>
