@@ -82,22 +82,95 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    if (request.action === 'blockProfile') {
+    if (request.action === "blockProfile") {
         (async () => {
             try {
-                const { username, platform } = request;
-                const API_URL = 'http://localhost/api/toggle_block_profile/';
+                const { username, platform = 'x' } = request;
+                console.log(`[BotBlocker Background] Blocking profile ${username} on ${platform}...`);
 
-                const response = await fetch(API_URL, {
-                    method: 'POST',
+                // Primeiro adiciona à lista negra local
+                let cacheSuccess = false;
+                try {
+                    cacheSuccess = await addToBlacklist(username, platform);
+                    console.log(`[BotBlocker Background] Cache update result: ${cacheSuccess ? 'Added to blacklist' : 'Already in blacklist'}`);
+                } catch (cacheError) {
+                    console.error("[BotBlocker Background] Error adding to local cache:", cacheError);
+                    // Continuar mesmo com erro no cache
+                }
+
+                // Chamar a API para registrar o bloqueio
+                let apiSuccess = false;
+                try {
+                    const response = await fetch("http://localhost/api/block_profile/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            username,
+                            platform
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error(`[BotBlocker Background] API Error (${response.status}):`, errorText);
+                    } else {
+                        const data = await response.json();
+                        console.log("[BotBlocker Background] Profile recorded in API:", data);
+                        apiSuccess = true;
+                    }
+                } catch (apiError) {
+                    console.error("[BotBlocker Background] API connection error:", apiError);
+                }
+
+                // Notificar o content script para aplicar o bloqueio
+                try {
+                    await sendMessageToTabs({
+                        action: "blockProfileManually",
+                        username,
+                        platform
+                    });
+                } catch (notifyError) {
+                    console.error("[BotBlocker Background] Error notifying tabs:", notifyError);
+                }
+
+                // Responder ao solicitante
+                sendResponse({
+                    success: cacheSuccess || apiSuccess,
+                    message: `Profile ${username} ${cacheSuccess ? 'blocked locally' : 'not added to local cache'}. ${apiSuccess ? 'Recorded in API.' : 'Not recorded in API.'}`
+                });
+            } catch (error) {
+                console.error("[BotBlocker Background] Error in block process:", error);
+                sendResponse({
+                    success: false,
+                    error: error.message
+                });
+            }
+        })();
+
+        return true; // Manter canal aberto para resposta assíncrona
+    }
+
+    if (request.action === "unblockProfile") {
+        (async () => {
+            try {
+                const { username, platform = 'x' } = request;
+                console.log(`[BotBlocker Background] Unblock request for: ${username} (${platform})`);
+
+                // First remove from local cache blacklist
+                await removeFromBlacklist(username, platform);
+
+                // Then call the API to record the unblock
+                const response = await fetch("http://localhost/api/unblock_profile/", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        username: username,
-                        social: platform
-                    }),
-                    mode: 'cors'
+                        username,
+                        platform
+                    })
                 });
 
                 if (!response.ok) {
@@ -105,14 +178,117 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
 
                 const data = await response.json();
-                console.log('[BotBlocker Background] Profile blocked successfully:', data);
-                sendResponse({ success: true, data });
+                console.log("[BotBlocker Background] Profile unblocked on API:", data);
+
+                // Notify content script to remove blocking
+                chrome.tabs.query({url: ["*://*.twitter.com/*", "*://*.x.com/*"]}, function(tabs) {
+                    tabs.forEach(tab => {
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: "unblockProfileManually",
+                            username,
+                            platform
+                        });
+                    });
+                });
+
+                sendResponse({
+                    success: true,
+                    message: `Profile ${username} unblocked successfully`
+                });
             } catch (error) {
-                console.error('[BotBlocker Background] Error blocking profile:', error);
-                sendResponse({ success: false, error: error.message });
+                console.error("[BotBlocker Background] Error unblocking profile:", error);
+                sendResponse({
+                    success: false,
+                    error: error.message
+                });
             }
         })();
 
-        return true; // Required to use sendResponse asynchronously
+        return true; // Keep channel open for async response
     }
+
 });
+
+function addToBlacklist(username, platform = 'x') {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['blackList'], function(result) {
+            const blackList = result.blackList || [];
+
+            // Verificar se já existe
+            const exists = blackList.some(entry => {
+                if (Array.isArray(entry)) {
+                    return entry[0].toLowerCase() === username.toLowerCase() && entry[1] === platform;
+                }
+                return false;
+            });
+
+            if (!exists) {
+                blackList.push([username, platform]);
+                chrome.storage.local.set({ blackList }, function() {
+                    if (chrome.runtime.lastError) {
+                        console.error('[BotBlocker] Error saving to storage:', chrome.runtime.lastError);
+                        reject(chrome.runtime.lastError);
+                    } else {
+                        console.log(`[BotBlocker] Added ${username} (${platform}) to blacklist`);
+                        resolve(true);
+                    }
+                });
+            } else {
+                console.log(`[BotBlocker] ${username} (${platform}) already in blacklist`);
+                resolve(false);
+            }
+        });
+    });
+}
+
+// Função para enviar mensagem para tabs com segurança
+function sendMessageToTabs(message) {
+    return new Promise((resolve) => {
+        chrome.tabs.query({url: ["*://*.twitter.com/*", "*://*.x.com/*"]}, function(tabs) {
+            if (!tabs || tabs.length === 0) {
+                console.log("[BotBlocker] No Twitter/X tabs found to notify");
+                resolve(false);
+                return;
+            }
+
+            console.log(`[BotBlocker] Found ${tabs.length} tabs to notify`);
+
+            // Array para acompanhar as respostas das tabs
+            const responses = [];
+            let waitingFor = tabs.length;
+
+            tabs.forEach(tab => {
+                try {
+                    chrome.tabs.sendMessage(tab.id, message, function(response) {
+                        // Capturar erros de comunicação
+                        if (chrome.runtime.lastError) {
+                            console.log(`[BotBlocker] Error sending message to tab ${tab.id}:`, chrome.runtime.lastError.message);
+                        } else if (response) {
+                            responses.push(response);
+                        }
+
+                        // Decrementar contador
+                        waitingFor--;
+                        if (waitingFor <= 0) {
+                            resolve(responses);
+                        }
+                    });
+                } catch (e) {
+                    console.error(`[BotBlocker] Exception sending message to tab ${tab.id}:`, e);
+                    waitingFor--;
+                    if (waitingFor <= 0) {
+                        resolve(responses);
+                    }
+                }
+            });
+
+            // Timeout para não esperar indefinidamente
+            setTimeout(() => {
+                if (waitingFor > 0) {
+                    console.log(`[BotBlocker] Timeout waiting for ${waitingFor} tabs to respond`);
+                    resolve(responses);
+                }
+            }, 1000);
+        });
+    });
+}

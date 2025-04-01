@@ -31,44 +31,62 @@ const RightSection = styled.div`
 `;
 
 const ProfileImage = styled.img`
-    width: 70px; 
+    width: 70px;
     height: 70px;
-    border-radius: 50%; 
+    border-radius: 50%;
 `;
 
 const AccountType = styled.span`
     font-size: 16px;
     font-weight: bold;
-    color: #666; 
-    margin-bottom: 10px; 
+    color: #666;
+    margin-bottom: 10px;
 `;
 
 const Username = styled.span`
-    font-size: 16px; 
-    color: #666; 
+    font-size: 16px;
+    color: #666;
 `;
 
 const BlockButton = styled.img`
-    width: 50px; 
+    width: 50px;
     height: 50px;
-    cursor: pointer; 
+    cursor: pointer;
+    opacity: ${props => props.isBlocking ? '0.5' : '1'};
+    transition: opacity 0.3s;
 
     &:hover {
-        opacity: 0.8; 
+        opacity: ${props => props.isBlocking ? '0.5' : '0.8'};
     }
 `;
 
-import { addToBlacklist, removeFromBlacklist } from '../../utils/cacheLogic';
+import { getSettingsAndBlacklist } from '../../utils/cacheLogic';
 
 const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) => {
     const [isBlocking, setIsBlocking] = useState(false);
+    const [isBlocked, setIsBlocked] = useState(false);
+
+    // Check if this profile is already blocked
+    useEffect(() => {
+        const checkBlockStatus = async () => {
+            const { blackList } = await getSettingsAndBlacklist();
+            const blocked = blackList.some(([u, p]) =>
+                u.toLowerCase() === username.toLowerCase() && p === platform
+            );
+            setIsBlocked(blocked);
+        };
+
+        checkBlockStatus();
+    }, [username, platform]);
 
     const handleBlockProfile = async () => {
+        if (isBlocking || isBlocked) return;
+
         try {
             setIsBlocking(true);
 
             // Send block request to background script
-            await new Promise(resolve => {
+            const response = await new Promise(resolve => {
                 chrome.runtime.sendMessage({
                     action: 'blockProfile',
                     username,
@@ -76,14 +94,16 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) =
                 }, resolve);
             });
 
-            // Add to local blacklist
-            await addToBlacklist(username, platform);
-
-            // Optional: Show a success toast/notification
-            console.log(`Blocked profile: ${username} on ${platform}`);
+            if (response.success) {
+                setIsBlocked(true);
+                console.log(`Successfully blocked profile: ${username} on ${platform}`);
+            } else {
+                console.error('Error blocking profile:', response.error);
+                // Show an error notification
+            }
         } catch (error) {
             console.error('Error blocking profile:', error);
-            // Optional: Show an error toast/notification
+            // Show an error notification
         } finally {
             setIsBlocking(false);
         }
@@ -103,9 +123,13 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) =
             <RightSection>
                 <BlockButton
                     src={BlockIcon}
-                    alt="Block"
+                    alt={isBlocked ? "Blocked" : "Block"}
                     onClick={handleBlockProfile}
                     isBlocking={isBlocking}
+                    style={{
+                        filter: isBlocked ? 'grayscale(100%)' : 'none',
+                        cursor: isBlocked ? 'default' : 'pointer'
+                    }}
                 />
             </RightSection>
         </ProfileContainer>

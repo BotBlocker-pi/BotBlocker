@@ -190,3 +190,61 @@ def criar_dados_para_joao():
         print("ℹ️ Profile 'matt_vanswol' já existia")
 
 
+@api_view(['POST'])
+def block_profile(request):
+    try:
+        # Get profile data from request
+        username = request.data.get('username')
+        platform = request.data.get('platform', 'x')  # Default to X/Twitter if not specified
+
+        if not username:
+            return Response({'error': 'É necessário fornecer um nome de utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get or create the profile
+        social_instance, _ = Social.objects.get_or_create(social=platform)
+        profile, created = Profile.objects.get_or_create(
+            username=username,
+            social=social_instance,
+            defaults={"url": f"https://{platform}.com/{username}"}
+        )
+
+        return Response({
+            'success': True,
+            'message': f'Perfil {username} bloqueado com sucesso',
+            'profile': {
+                'id': str(profile.id),
+                'username': profile.username,
+                'platform': platform
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        print(f"Error in block_profile: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def unblock_profile(request):
+    try:
+        # Get profile data from request
+        username = request.data.get('username')
+        platform = request.data.get('platform', 'x')  # Default to X/Twitter if not specified
+
+        if not username:
+            return Response({'error': 'É necessário fornecer um nome de utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find the profile
+        try:
+            social = Social.objects.get(social=platform)
+            profile = Profile.objects.get(username=username, social=social)
+        except (Social.DoesNotExist, Profile.DoesNotExist):
+            return Response({'error': 'Perfil não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'success': True,
+            'message': f'Perfil {username} desbloqueado com sucesso'
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"Error in unblock_profile: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

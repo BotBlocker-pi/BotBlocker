@@ -21,6 +21,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             apiData: profileData || null
         });
     }
+
+    if (request.action === "blockProfileManually") {
+        console.log(`[BotBlocker] Manual block request for profile: ${request.username} on ${request.platform}`);
+
+        // Add to the set of blocked profiles
+        perfisBlockeados.add(request.username);
+
+        // Check if we're currently viewing this profile
+        const currentProfile = window.location.pathname.split("/")[1];
+        if (currentProfile.toLowerCase() === request.username.toLowerCase()) {
+            console.log(`[BotBlocker] Currently viewing this profile. Applying blocking...`);
+            removeArticles(request.username);
+            blockInfiniteLoading(request.username);
+            addBlockedIndicator(request.username);
+        }
+
+        // Apply blur to any tweets from this user in the timeline
+        applyBlurToAllTweetsFromUser(request.username);
+
+        sendResponse({ success: true });
+    }
     return true;
 });
 
@@ -110,64 +131,68 @@ function collectMentions() {
 }
 
 async function applyBlurToTweet(element) {
-    const { settings } = await getSettingsAndBlacklist();
-    const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
-    const badge = settings.badge || 'empty'; // Valor padrão se não estiver definido
-    const blacklist = settings.blackList || []; // Lista de perfis a serem bloqueados
+    const { settings, blackList } = await getSettingsAndBlacklist();
+    const tolerance = settings.tolerance || 50; // Default value if not defined
 
-    // Estamos recebendo o elemento diretamente (pode ser um article ou um elemento dentro dele)
+    // Create a Set for quick lookup of blacklisted profiles
+    const manuallyBlockedSet = new Set(
+        blackList.map(([username, platform]) => `${username.toLowerCase()}|${platform.toLowerCase()}`)
+    );
+
+    // Get the closest article element
     const articleContainer = element.tagName === 'ARTICLE' ? element : element.closest('[role="article"]');
     if (!articleContainer) return;
 
-    // Vamos verificar se este artigo contém um repost
+    // Check if this article contains a repost
     const repostText = articleContainer.textContent || '';
     const repostMatch = repostText.match(/(\w+)\s+reposted/i);
 
-    // Se encontrarmos algo como "Elon Musk reposted"
+    // If we find something like "Elon Musk reposted"
     if (repostMatch && repostMatch[1]) {
         const reposter = repostMatch[1].toLowerCase();
 
-        // Verificar se o reposter deve ser bloqueado
-        const shouldBlockReposter = perfisDaAPI.some(apiPerfil =>
-            apiPerfil.username.toLowerCase() === reposter.toLowerCase() &&
-            apiPerfil.percentage > tolerance
+        // Check if the reposter should be blocked
+        const isManuallyBlocked = manuallyBlockedSet.has(`${reposter.toLowerCase()}|x`);
+        const shouldBlockReposter = isManuallyBlocked || perfisDaAPI.some(apiProfile =>
+            apiProfile.username.toLowerCase() === reposter.toLowerCase() &&
+            apiProfile.percentage > tolerance
         );
 
         if (shouldBlockReposter) {
-            // Aplicar blur ao artigo completo
+            // Apply blur to the entire article
             articleContainer.style.filter = 'blur(5px)';
             articleContainer.style.transition = 'filter 0.3s ease';
             addBlockIndicatorToTweet(articleContainer);
-            return; // Não precisamos verificar mais nada
+            return; // No need to check anything else
         }
     }
 
-    // Além disso, verificamos o autor original pelo username
+    // Also check the original author by username
     const usernameLinks = articleContainer.querySelectorAll('a[href^="/"]');
     for (const link of usernameLinks) {
         const username = link.getAttribute('href').replace('/', '');
         if (username) {
-            // Verificar se o perfil deve ser bloqueado
-            const shouldBlock = perfisDaAPI.some(apiPerfil =>
-                apiPerfil.username.toLowerCase() === username.toLowerCase() &&
-                apiPerfil.percentage > tolerance
+            // Check if the profile should be blocked
+            const isManuallyBlocked = manuallyBlockedSet.has(`${username.toLowerCase()}|x`);
+            const shouldBlock = isManuallyBlocked || perfisDaAPI.some(apiProfile =>
+                apiProfile.username.toLowerCase() === username.toLowerCase() &&
+                apiProfile.percentage > tolerance
             );
 
             if (shouldBlock) {
-                // Aplicar blur ao artigo completo
+                // Apply blur to the entire article
                 articleContainer.style.filter = 'blur(5px)';
                 articleContainer.style.transition = 'filter 0.3s ease';
                 addBlockIndicatorToTweet(articleContainer);
-                return; // Encontramos, não precisamos continuar
+                return; // We found it, no need to continue
             }
         }
     }
 
-    // Se chegamos aqui, não precisamos bloquear
+    // If we get here, we don't need to block
     articleContainer.style.filter = 'none';
     removeBlockIndicatorFromTweet(articleContainer);
 }
-
 
 
 function addBlockIndicatorToTweet(tweetElement) {
@@ -255,99 +280,137 @@ function getStorage(keys) {
 
 
 
-// Nova função para verificar e bloquear perfis com base na API e percentage
+// Update the verifyAndBlockProfiles function in content.js
+
 async function verifyAndBlockProfiles() {
-
     const { settings, blackList } = await getSettingsAndBlacklist();
-
-    const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
-
+    const tolerance = settings.tolerance || 50; // Default value if not defined
 
     if (perfisDaAPI.length === 0) {
-        console.log('[BotBlocker] Nenhum perfil da API para comparar. Aguardando carregamento...');
+        console.log('[BotBlocker] No profiles from API to compare. Waiting for loading...');
         return;
     }
 
-    console.log('[BotBlocker] Verificando perfis para bloqueio...');
+    console.log('[BotBlocker] Checking profiles for blocking...');
 
-    // Log para mostrar a comparação
-    console.log('%c[LOGS SOLICITADOS] Comparação de perfis DOM vs. API:', 'background: #8E44AD; color: white; padding: 2px 5px; border-radius: 3px;');
+    // Log for showing comparison
+    console.log('%c[LOGS SOLICITADOS] Comparison of DOM vs. API profiles:', 'background: #8E44AD; color: white; padding: 2px 5px; border-radius: 3px;');
 
-    // Criar arrays para os resultados da comparação
-    const perfilComumComBloqueio = [];
-    const perfilComumSemBloqueio = [];
-    const perfilSomenteDOM = [];
-    const perfilSomenteAPI = [];
+    // Create arrays for comparison results
+    const profilesBlockedAutomatically = [];
+    const profilesBlockedManually = [];
+    const profilesNotBlocked = [];
+    const profilesOnlyInDOM = [];
+    const profilesOnlyInAPI = [];
 
-    // Verificar perfis encontrados no DOM que estão na API
+    // Create a Set for quick lookup of blacklisted profiles
+    const manuallyBlockedSet = new Set(
+        blackList.map(([username, platform]) => `${username.toLowerCase()}|${platform.toLowerCase()}`)
+    );
+
+    // Check profiles found in DOM that are in the API
     collectedMentions.forEach(profileName => {
-        const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === profileName.toLowerCase());
+        const apiProfile = perfisDaAPI.find(p =>
+            p.username.toLowerCase() === profileName.toLowerCase()
+        );
 
-        if (perfilAPI) {
-            if (perfilAPI.percentage > tolerance) {
-                perfilComumComBloqueio.push({
+        const isManuallyBlocked = manuallyBlockedSet.has(`${profileName.toLowerCase()}|x`);
+
+        if (apiProfile) {
+            if (isManuallyBlocked) {
+                profilesBlockedManually.push({
                     username: profileName,
-                    percentage: perfilAPI.percentage
+                    percentage: apiProfile.percentage
+                });
+            } else if (apiProfile.percentage > tolerance) {
+                profilesBlockedAutomatically.push({
+                    username: profileName,
+                    percentage: apiProfile.percentage
                 });
             } else {
-                perfilComumSemBloqueio.push({
+                profilesNotBlocked.push({
                     username: profileName,
-                    percentage: perfilAPI.percentage
+                    percentage: apiProfile.percentage
                 });
             }
         } else {
-            perfilSomenteDOM.push(profileName);
+            if (isManuallyBlocked) {
+                profilesBlockedManually.push({
+                    username: profileName,
+                    percentage: null
+                });
+            } else {
+                profilesOnlyInDOM.push(profileName);
+            }
         }
     });
 
-    // Encontrar perfis que estão apenas na API
-    perfisDaAPI.forEach(perfilAPI => {
-        const encontradoNoDOM = Array.from(collectedMentions).some(
-            p => p.toLowerCase() === perfilAPI.username.toLowerCase()
+    // Find profiles that are only in the API
+    perfisDaAPI.forEach(apiProfile => {
+        const foundInDOM = Array.from(collectedMentions).some(
+            p => p.toLowerCase() === apiProfile.username.toLowerCase()
         );
 
-        if (!encontradoNoDOM) {
-            perfilSomenteAPI.push({
-                username: perfilAPI.username,
-                percentage: perfilAPI.percentage
+        if (!foundInDOM) {
+            profilesOnlyInAPI.push({
+                username: apiProfile.username,
+                percentage: apiProfile.percentage
             });
         }
     });
 
-    // Exibir os resultados da comparação
-    console.log('%c1. Perfis comuns (DOM e API) com percentage > 50% (Serão bloqueados):', 'color: #8E44AD; font-weight: bold;');
-    perfilComumComBloqueio.forEach(p => {
+    // Display comparison results
+    console.log('%c1. Profiles automatically blocked (percentage > tolerance):', 'color: #8E44AD; font-weight: bold;');
+    profilesBlockedAutomatically.forEach(p => {
         console.log(`%c   - @${p.username} (${p.percentage}%)`, 'color: #FF3A3A; font-weight: bold;');
     });
 
-    console.log('%c2. Perfis comuns (DOM e API) com percentage <= 50% (Não serão bloqueados):', 'color: #8E44AD; font-weight: bold;');
-    perfilComumSemBloqueio.forEach(p => {
+    console.log('%c2. Profiles manually blocked:', 'color: #8E44AD; font-weight: bold;');
+    profilesBlockedManually.forEach(p => {
+        console.log(`%c   - @${p.username} ${p.percentage ? `(${p.percentage}%)` : ''}`, 'color: #E74C3C; font-weight: bold;');
+    });
+
+    console.log('%c3. Profiles not blocked (percentage <= tolerance):', 'color: #8E44AD; font-weight: bold;');
+    profilesNotBlocked.forEach(p => {
         console.log(`%c   - @${p.username} (${p.percentage}%)`, 'color: #3498DB;');
     });
 
-    console.log('%c3. Perfis apenas no DOM (Não na API):', 'color: #8E44AD; font-weight: bold;');
-    perfilSomenteDOM.forEach(p => {
+    console.log('%c4. Profiles only in DOM (Not in API):', 'color: #8E44AD; font-weight: bold;');
+    profilesOnlyInDOM.forEach(p => {
         console.log(`%c   - @${p}`, 'color: #27AE60;');
     });
 
-    console.log('%c4. Perfis apenas na API (Não no DOM atual):', 'color: #8E44AD; font-weight: bold;');
-    perfilSomenteAPI.forEach(p => {
-        const estilo = p.percentage > 50 ? 'color: #E67E22;' : 'color: #7F8C8D;';
-        console.log(`%c   - @${p.username} (${p.percentage}%)`, estilo);
+    console.log('%c5. Profiles only in API (Not in current DOM):', 'color: #8E44AD; font-weight: bold;');
+    profilesOnlyInAPI.forEach(p => {
+        const style = p.percentage > tolerance ? 'color: #E67E22;' : 'color: #7F8C8D;';
+        console.log(`%c   - @${p.username} (${p.percentage}%)`, style);
     });
 
-    // Para cada perfil coletado no feed, verificar se está na lista da API
+    // Process each profile collected in the feed
     collectedMentions.forEach(profileName => {
-        // Verificar se já está na lista de bloqueados para não repetir
+        // Check if already in the blocked list to avoid repetition
         if (perfisBlockeados.has(profileName)) {
             return;
         }
 
-        // Procurar o perfil na lista da API
-        const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === profileName.toLowerCase());
+        // Check if manually blocked
+        const isManuallyBlocked = manuallyBlockedSet.has(`${profileName.toLowerCase()}|x`);
 
-        if (perfilAPI && perfilAPI.percentage > tolerance) {
-            console.log(`[BotBlocker] Perfil ${profileName} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+        // If manually blocked, apply blocking
+        if (isManuallyBlocked) {
+            console.log(`[BotBlocker] Profile ${profileName} is manually blocked. Blocking...`);
+            blockProfile(profileName);
+            perfisBlockeados.add(profileName);
+            return;
+        }
+
+        // Check if automatically blocked by percentage threshold
+        const apiProfile = perfisDaAPI.find(p =>
+            p.username.toLowerCase() === profileName.toLowerCase()
+        );
+
+        if (apiProfile && apiProfile.percentage > tolerance) {
+            console.log(`[BotBlocker] Profile ${profileName} found in API with percentage ${apiProfile.percentage}%. Automatically blocking...`);
             blockProfile(profileName);
             perfisBlockeados.add(profileName);
         }
@@ -793,34 +856,27 @@ const urlCheckInterval = setInterval(() => {
 addStyles();
 initializeScripts();
 
-// async function checkProfileAndProcessBlocking() {
-//     const { settings, blackList } = await getSettingsAndBlacklist();
-//     const tolerance = settings.tolerance || 50;
-//     const currentProfile = window.location.pathname.split("/")[1];
-//
-//     // Send message to background script to check blocked status
-//     chrome.runtime.sendMessage({
-//         action: "checkBlockedStatus",
-//         username: currentProfile,
-//         social: 'x', // or dynamically determine the social platform
-//         accessToken: localStorage.getItem('access_token')
-//     }, (response) => {
-//         if (response.success) {
-//             if (response.isBlocked) {
-//                 console.log(`[BotBlocker] Profile ${currentProfile} is blocked`);
-//                 removeArticles(currentProfile);
-//                 blockInfiniteLoading(currentProfile);
-//                 addBlockedIndicator(currentProfile);
-//             }
-//         }
-//     });
-//
-//     // Existing API-based blocking logic remains the same
-//     if (perfisDaAPI.length > 0) {
-//         const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === currentProfile.toLowerCase());
-//
-//         if (perfilAPI && perfilAPI.percentage > tolerance) {
-//             // Existing blocking logic
-//         }
-//     }
-// }
+
+// Function to apply blur to all tweets from a specific user
+function applyBlurToAllTweetsFromUser(username) {
+    console.log(`[BotBlocker] Applying blur to all tweets from ${username}`);
+
+    // Find all tweets in the timeline
+    const articles = document.querySelectorAll('[role="article"]');
+
+    articles.forEach(article => {
+        const usernameLinks = article.querySelectorAll('a[href^="/"]');
+
+        for (const link of usernameLinks) {
+            const linkUsername = link.getAttribute('href').replace('/', '');
+
+            if (linkUsername.toLowerCase() === username.toLowerCase()) {
+                // Apply blur to this tweet
+                article.style.filter = 'blur(5px)';
+                article.style.transition = 'filter 0.3s ease';
+                addBlockIndicatorToTweet(article);
+                break;
+            }
+        }
+    });
+}

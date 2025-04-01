@@ -29,17 +29,32 @@ export async function getSettingsAndBlacklist() {
 }
 
 // Add a user-platform pair to the blacklist, if it doesn't already exist
-export async function addToBlacklist(username, platform) {
-  const { blackList = [] } = await getStorage(["blackList"]);
+// Adicione esta função ao background.js se ela não estiver sendo importada
+async function addToBlacklist(username, platform) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(["blackList"], function(result) {
+      let blackList = result.blackList || [];
 
-  const exists = blackList.some(([u, p]) => u === username && p === platform);
-  if (!exists) {
-    blackList.push([username, platform]);
-    await setStorage({ blackList });
-    console.log(`Added ${username} (${platform}) to blacklist`);
-  } else {
-    console.log(`${username} (${platform}) is already blacklisted`);;
-  }
+      // Verificar se já existe na lista
+      const exists = blackList.some(item => {
+        if (Array.isArray(item)) {
+          return item[0].toLowerCase() === username.toLowerCase() && item[1] === platform;
+        }
+        return false;
+      });
+
+      if (!exists) {
+        blackList.push([username, platform]);
+        chrome.storage.local.set({ blackList }, function() {
+          console.log(`[BotBlocker Background] Added ${username} (${platform}) to blacklist`);
+          resolve(true);
+        });
+      } else {
+        console.log(`[BotBlocker Background] ${username} (${platform}) is already in blacklist`);
+        resolve(false);
+      }
+    });
+  });
 }
 
 // Remove a specific user-platform pair from the blacklist
