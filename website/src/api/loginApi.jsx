@@ -22,16 +22,15 @@ export const loginUser = async (username, password) => {
 // Função para registar um novo utilizador
 export const registerUser = async (username, email, password) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/register/`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password })
+        const response = await axios.post(`${API_BASE_URL}/create_user/`, {
+            username,
+            email,
+            password
         });
-
-        return await response.json();
+        return response.data;
     } catch (error) {
-        console.error("Error registering user:", error);
-        return null;
+        console.error('Registration error:', error.response ? error.response.data : error.message);
+        throw error;
     }
 };
 

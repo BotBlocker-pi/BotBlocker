@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import '../css/HomePage.css';
-import botBlockerLogo from '../assets/logo.png'; // Adjust the path as needed
+import botBlockerLogo from '../assets/logo.png';
 import { Link } from 'react-router-dom';
 import ProfileInfo from '../components/ProfileInfo.jsx';
 import { getEvaluationHistory, getProfileData } from '../api/data.jsx';
-import { checkAuth, logoutUser } from '../api/loginApi'; // Import the required authentication functions
+import LoginForm from "../components/LoginForm.jsx";
+import { checkAuth, logoutUser } from '../api/loginApi';
 
 const HomePage = () => {
     const [searchUrl, setSearchUrl] = useState('');
@@ -17,6 +18,7 @@ const HomePage = () => {
     const [userNotFound, setUserNotFound] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [initialLoginMode, setInitialLoginMode] = useState(false); // New state to control initial login mode
 
     // Check authentication status on component mount
     useEffect(() => {
@@ -24,7 +26,6 @@ const HomePage = () => {
             try {
                 const authStatus = await checkAuth();
                 setIsAuthenticated(authStatus);
-                // Store in localStorage for persistence
                 localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
             } catch (error) {
                 console.error("Error checking auth status:", error);
@@ -32,23 +33,19 @@ const HomePage = () => {
             }
         };
 
-        // First check localStorage
         const storedAuth = localStorage.getItem('isAuthenticated');
         if (storedAuth) {
             setIsAuthenticated(JSON.parse(storedAuth));
         }
 
-        // Then verify with the server
         checkAuthStatus();
-
-        // Animation
         setIsLoaded(true);
     }, []);
 
     const handleAuthChange = (status) => {
         setIsAuthenticated(status);
         localStorage.setItem('isAuthenticated', JSON.stringify(status));
-        setShowLoginModal(false); // Close the login modal after successful authentication
+        setShowLoginModal(false);
     };
 
     const handleLogout = () => {
@@ -64,8 +61,6 @@ const HomePage = () => {
     const handleSearchSubmit = async (e) => {
         e.preventDefault();
         console.log('Searching for:', searchUrl);
-
-        // Reset state
         setUserNotFound(false);
 
         try {
@@ -86,8 +81,7 @@ const HomePage = () => {
             setShowProfile(true);
         } catch (error) {
             setUserNotFound(true);
-            // If not a valid URL, just use the input as username
-            const extractedUsername = searchUrl.replace(/^@/, ''); // Remove @ if present
+            const extractedUsername = searchUrl.replace(/^@/, '');
             setUsername(extractedUsername);
             return;
         }
@@ -97,7 +91,8 @@ const HomePage = () => {
         setShowProfile(false);
     };
 
-    const toggleLoginModal = () => {
+    const toggleLoginModal = (registerMode = false) => {
+        setInitialLoginMode(registerMode);
         setShowLoginModal(!showLoginModal);
     };
 
@@ -114,14 +109,13 @@ const HomePage = () => {
                     <a href="/understand-bots" className="nav-link">UNDERSTAND BOTS</a>
                     <a href="/contact" className="nav-link">CONTACT</a>
 
-                    {/* Authentication controls */}
                     {isAuthenticated ? (
                         <div className="auth-controls">
                             <span className="user-status">✓ Logged In</span>
                             <button onClick={handleLogout} className="logout-button">Logout</button>
                         </div>
                     ) : (
-                        <button onClick={toggleLoginModal} className="login-button">Login</button>
+                        <button onClick={() => toggleLoginModal(false)} className="login-button">Login</button>
                     )}
                 </nav>
             </header>
@@ -132,10 +126,14 @@ const HomePage = () => {
                     <div className="login-modal-content">
                         <div className="modal-header">
                             <h2>Account Login</h2>
-                            <button onClick={toggleLoginModal} className="close-button">&times;</button>
+                            <button onClick={() => toggleLoginModal()} className="close-button">&times;</button>
                         </div>
 
-                        <LoginForm onAuthChange={handleAuthChange} onClose={toggleLoginModal} />
+                        <LoginForm
+                            onAuthChange={handleAuthChange}
+                            onClose={() => toggleLoginModal()}
+                            initialMode={initialLoginMode}
+                        />
                     </div>
                 </div>
             )}
@@ -177,7 +175,10 @@ const HomePage = () => {
                     {!isAuthenticated && (
                         <div className="auth-cta">
                             <p>Want to contribute to our community? Login to evaluate profiles and help identify AI bots.</p>
-                            <button onClick={toggleLoginModal} className="login-cta-button">
+                            <button
+                                onClick={() => toggleLoginModal(true)}
+                                className="login-cta-button"
+                            >
                                 Sign In To Participate
                             </button>
                         </div>
@@ -194,7 +195,7 @@ const HomePage = () => {
                         evaluations={evaluations}
                         onClose={handleCloseProfile}
                         isAuthenticated={isAuthenticated}
-                        onLoginClick={toggleLoginModal}
+                        onLoginClick={() => toggleLoginModal(true)}
                     />
                 </div>
             )}
@@ -215,80 +216,5 @@ const HomePage = () => {
         </div>
     );
 };
-
-// Login Form Component
-const LoginForm = ({ onAuthChange, onClose }) => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setMessage("");
-
-        try {
-            const data = await loginUser(username, password);
-            if (data) {
-                localStorage.setItem("access_token", data.access);
-                localStorage.setItem("is_new_login", "true");
-                setMessage("✅ Login successful!");
-                onAuthChange(true);
-            } else {
-                setMessage("❌ Invalid credentials.");
-            }
-        } catch (error) {
-            console.error("Login error:", error);
-            setMessage("❌ Login failed. Please try again.");
-        }
-    };
-
-    return (
-        <div className="login-form-container">
-            {message && (
-                <div className={`message ${message.includes("✅") ? "success" : "error"}`}>
-                    {message}
-                </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="login-form">
-                <div className="form-group">
-                    <label htmlFor="username">Username</label>
-                    <input
-                        type="text"
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className={message.includes("❌") ? "error" : ""}
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className={message.includes("❌") ? "error" : ""}
-                        required
-                    />
-                </div>
-
-                <div className="form-buttons">
-                    <button type="button" onClick={onClose} className="cancel-button">
-                        Cancel
-                    </button>
-                    <button type="submit" className="submit-button">
-                        Sign In
-                    </button>
-                </div>
-            </form>
-        </div>
-    );
-};
-
-// Import loginUser function - assuming it's from the same location as checkAuth
-import { loginUser } from '../api/loginApi';
 
 export default HomePage;

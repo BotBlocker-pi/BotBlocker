@@ -505,3 +505,34 @@
         margin-top: 10px;
     }
 }
+
+/* Additional styles for the new login/signup form */
+.form-toggle {
+    text-align: center;
+    margin-top: 16px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.toggle-mode-button {
+    background: none;
+    border: none;
+    color: #5374a0;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 5px;
+    transition: color 0.3s ease;
+}
+
+.toggle-mode-button:hover {
+    color: #3d5a80;
+}
+
+/* Adjust modal size for registration form */
+@media (max-width: 480px) {
+    .login-modal-content {
+        width: 95%;
+        max-width: 350px;
+    }
+}

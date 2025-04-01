@@ -88,18 +88,23 @@ class ProtectedView(APIView):
 
     def get(self, request):
         return JsonResponse({"auth": True})
-    
+
 
 class CustomTokenObtainView(APIView):
-    """
-    View para autenticação de utilizador e geração de tokens JWT.
-    """
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
-        print(username,password)
+        print(f"Login attempt - Username: {username}")
+
+        # Log all existing users for debugging
+        from django.contrib.auth.models import User
+        existing_users = User.objects.all()
+        print("Existing users:")
+        for user in existing_users:
+            print(f"- {user.username}")
+
         if not username or not password:
-            return Response({"error": "Email e senha são obrigatórios"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(username=username, password=password)
         if user:
@@ -108,8 +113,8 @@ class CustomTokenObtainView(APIView):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh)
             }, status=status.HTTP_200_OK)
-        
-        return Response({"error": "Credenciais inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['GET'])
