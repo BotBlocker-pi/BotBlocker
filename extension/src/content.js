@@ -249,8 +249,28 @@ function addStyles() {
 
 // Função para buscar valores do chrome.storage.local
 function getStorage(keys) {
+    try {
+        return new Promise((resolve) => {
+            chrome.storage.local.get(keys, resolve);
+        });
+    }
+    catch (error) {
+        setDefaultSettings();
+    }
+  }
+
+  async function setDefaultSettings() {
+    const settings = {
+      tolerance: 50,
+      badge: "empty",
+    };
+    const blackList = [];
+    await setStorage({ settings, blackList});
+  }
+
+  function setStorage(obj) {
     return new Promise((resolve) => {
-      chrome.storage.local.get(keys, resolve);
+      chrome.storage.local.set(obj, resolve);
     });
   }
 
@@ -386,10 +406,20 @@ async function verifyAndBlockProfiles() {
         console.log(`%c   - @${p.username} (${p.percentage}%)`, style);
     });
 
-    // Process each profile collected in the feed
+    // Para cada perfil coletado no feed, verificar se está na lista da API
     collectedMentions.forEach(profileName => {
         // Check if already in the blocked list to avoid repetition
         if (perfisBlockeados.has(profileName)) {
+            return;
+        }
+
+        const isBlacklisted = blackList.some(([blacklistedUsername, platform]) => {
+            return blacklistedUsername.toLowerCase() === profileName.toLowerCase() && platform === 'twitter';
+        });
+        if (isBlacklisted) {
+            console.log(`[BotBlocker] Perfil ${profileName} está na blacklist. A bloquear...`);
+            blockProfile(profileName);
+            perfisBlockeados.add(profileName);
             return;
         }
 
