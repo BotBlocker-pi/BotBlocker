@@ -238,7 +238,7 @@ const HomePage = () => {
   };
 
   const handleSubmitReason = (reason) => {
-    console.log(`[handleSubmitReason] Selected reason: ${reason}`);
+    console.log(`Selected reason: ${reason}`);
 
     const evaluationData = {
       profile: data.perfil_name,
