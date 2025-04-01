@@ -29,5 +29,5 @@ urlpatterns = [
     path('update_settings/', update_settings, name='update_settings'),
     path("api/token/", CustomTokenObtainView.as_view(), name="token_obtain"),
     path('api/protected/',ProtectedView.as_view(),name="ProtectedView"),
-    path('toggle_block_profile/', toggle_block_profile, name='toggle_block_profile'),
+    # path('toggle_block_profile/', toggle_block_profile, name='toggle_block_profile'),
 ]

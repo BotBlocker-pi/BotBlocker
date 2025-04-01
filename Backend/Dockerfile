@@ -23,16 +23,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Production stage
 FROM python:3.13-slim
 
-RUN useradd -m -r appuser && \
-   mkdir /app && \
-   chown -R appuser /app
+# Set the working directory
+WORKDIR /app
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/static /app/media && \
+    chmod 777 /app/static /app/media && \
+    useradd -m -r appuser && \
+    chown -R appuser:appuser /app
 
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
-
-# Set the working directory
-WORKDIR /app
 
 # Copy application code
 COPY --chown=appuser:appuser . .
@@ -47,7 +49,8 @@ USER appuser
 # Expose the application port
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py makemigrations --noinput && \
+# Make sure migrations are created first, then applied, then collect static files
+CMD ["sh", "-c", "python manage.py makemigrations app --noinput && \
                   python manage.py migrate --noinput && \
                   python manage.py collectstatic --noinput && \
                   gunicorn --bind 0.0.0.0:8000 --workers 3 --reload Backend.wsgi:application"]
