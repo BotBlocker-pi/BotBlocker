@@ -38,7 +38,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         // Apply blur to any tweets from this user in the timeline
-        applyBlurToAllTweetsFromUser(request.username);
+        // applyBlurToAllTweetsFromUser(request.username);
 
         sendResponse({ success: true });
     }
@@ -615,6 +615,7 @@ function addBlockedIndicator(profileName) {
 
     // Verificar se o indicador já existe para não duplicar
     if (document.getElementById('botblocker-indicator')) {
+        // console.log(`[BotBlocker] Blocked indicator already exists for ${profileName}`);
         return true;
     }
 
@@ -802,9 +803,17 @@ async function checkProfileAndProcessBlocking() {
     // Verificar se o perfil atual está na lista de perfis para bloquear
     if (perfisDaAPI.length > 0) {
         const perfilAPI = perfisDaAPI.find(p => p.username.toLowerCase() === currentProfile.toLowerCase());
+        const isManuallyBlocked = blackList.some(([username, platform]) =>
+            username.toLowerCase() === currentProfile.toLowerCase() && platform.toLowerCase() === 'x'
+        );
 
-        if (perfilAPI && perfilAPI.percentage > tolerance) {
-            console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+        if ((perfilAPI && perfilAPI.percentage > tolerance) || isManuallyBlocked) {
+            // Log diferente dependendo do tipo de bloqueio
+            if (isManuallyBlocked) {
+                console.log(`[BotBlocker] Perfil atual ${currentProfile} está manualmente bloqueado. Bloqueando...`);
+            } else {
+                console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+            }
 
             removeArticles(currentProfile);
             blockInfiniteLoading(currentProfile);
