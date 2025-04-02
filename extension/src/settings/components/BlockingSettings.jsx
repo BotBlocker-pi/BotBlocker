@@ -8,7 +8,8 @@ const BlockingContainer = styled.div`
     background-color: #f5f7fd;
     border-radius: 8px;
     padding: 24px;
-    width: 100%;
+    width: 100%; // This will now respect the parent container's width
+    box-sizing: border-box; // This ensures padding is included in the width calculation
 `;
 
 const Title = styled.h2`

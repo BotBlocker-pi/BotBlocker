@@ -29,17 +29,32 @@ export async function getSettingsAndBlacklist() {
 }
 
 // Add a user-platform pair to the blacklist, if it doesn't already exist
+// Adicione esta função ao background.js se ela não estiver sendo importada
 export async function addToBlacklist(username, platform) {
-  const { blackList = [] } = await getStorage(["blackList"]);
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(["blackList"], function(result) {
+      let blackList = result.blackList || [];
 
-  const exists = blackList.some(([u, p]) => u === username && p === platform);
-  if (!exists) {
-    blackList.push([username, platform]);
-    await setStorage({ blackList });
-    console.log(`Added ${username} (${platform}) to blacklist`);
-  } else {
-    console.log(`${username} (${platform}) is already blacklisted`);;
-  }
+      // Verificar se já existe na lista
+      const exists = blackList.some(item => {
+        if (Array.isArray(item)) {
+          return item[0].toLowerCase() === username.toLowerCase() && item[1] === platform;
+        }
+        return false;
+      });
+
+      if (!exists) {
+        blackList.push([username, platform]);
+        chrome.storage.local.set({ blackList }, function() {
+          console.log(`[BotBlocker Background] Added ${username} (${platform}) to blacklist`);
+          resolve(true);
+        });
+      } else {
+        console.log(`[BotBlocker Background] ${username} (${platform}) is already in blacklist`);
+        resolve(false);
+      }
+    });
+  });
 }
 
 // Remove a specific user-platform pair from the blacklist
@@ -63,13 +78,13 @@ export async function updateSettings({ tolerance, badge }) {
   };
 
   await setStorage({ settings: updatedSettings });
-  console.log("Settings atualizadas:", updatedSettings);
+  console.log("Settings updated:", updatedSettings);
 }
 
 // Clear the entire blacklist
 export async function clearBlacklist() {
   await setStorage({ blackList: [] });
-  console.log("Blacklist limpa com sucesso.");
+  console.log("Blacklist cleared successfully.");
 }
 
 // Add multiple user-platform pairs to the blacklist, avoiding duplicates
@@ -86,5 +101,44 @@ export async function addMultipleToBlacklist(users) {
   });
 
   await setStorage({ blackList });
-  console.log(`Adicionados ${addedCount} utilizadores à blacklist.`);
+  console.log(`Added ${addedCount} users to blacklist.`);
+}
+
+export async function importSettingsFromSerializer(serializerData) {
+  const { tolerance, badge, blocklist } = serializerData;
+
+  const blackList = blocklist.map(profile => [profile.username, profile.social]);
+
+  await setStorage({
+    settings: { tolerance, badge },
+    blackList
+  });
+
+  console.log("Settings imported from the API and stored in the cache:");
+  console.log("tolerance:", tolerance);
+  console.log("badge:", badge);
+  console.log("blackList:", blackList);
+}
+
+export async function areSettingsEqual(serializerData) {
+  const { settings, blackList } = await getSettingsAndBlacklist();
+
+  if (!settings) return false;
+
+  if (
+    settings.tolerance !== serializerData.tolerance ||
+    settings.badge !== serializerData.badge
+  ) {
+    return false;
+  }
+
+  const serializedBlocklist = serializerData.blocklist.map(({ username, social }) => [username, social]);
+
+  const sortList = (list) =>
+    list
+      .map(([u, p]) => `${u.toLowerCase()}|${p.toLowerCase()}`)
+      .sort()
+      .join(',');
+
+  return sortList(serializedBlocklist) === sortList(blackList);
 }

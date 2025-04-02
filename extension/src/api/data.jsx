@@ -2,9 +2,9 @@ const API_BASE_URL = "http://localhost/api";
 
 export const getProfileData = async (url) => {
     try {
-        console.log("URL recebida para análise:", url);
+        console.log("URL received for analysis:", url);
         const apiUrl = `${API_BASE_URL}/get_probability/?url=${encodeURIComponent(url)}`;
-        console.log("Fazendo requisição para:", apiUrl);
+        console.log("Making request to:", apiUrl);
 
         const response = await fetch(apiUrl, {
             method: "GET",
@@ -17,10 +17,39 @@ export const getProfileData = async (url) => {
         }
 
         const data = await response.json();
-        console.log("Dados retornados da API:", data);
+        console.log("Data returned from API:", data);
         return data;
     } catch (error) {
         console.error("Error getting profile data:", error);
+        return null;
+    }
+};
+
+export const createProfile = async (url) => {
+    try {
+        const apiUrl = `${API_BASE_URL}/create_profile/?url=${encodeURIComponent(
+            url
+        )}`;
+        console.log("Trying to create profile with:", apiUrl);
+
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+            console.error(
+                "Error creating profile:",
+                response.status,
+                response.statusText
+            );
+            return null;
+        }
+        const data = await response.json();
+        console.log("Profile created:", date);
+        return data;
+    } catch (error) {
+        console.error("Error creating profile:", error);
         return null;
     }
 };
@@ -44,7 +73,70 @@ export const sendEvaluationToBackend = async (evaluationData) => {
     }
 };
 
+export const getUserSettings = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        alert("The user is not authenticated");
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/get_settings/`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`Error getting settings: ${response.statusText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        console.log("User Settings:", data);
+        return data;
+
+    } catch (error) {
+        console.error("Error fetching settings:", error);
+        return null;
+    }
+};
+
+
+export const sendUpdatedSettings = async (settingsData) => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        console.log("User not authenticated");
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/update_settings/`, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(settingsData)
+        });
+
+        if (!response.ok) throw new Error("Erro ao atualizar settings");
+
+        const data = await response.json();
+        console.log("Settings updated in backend:", data);
+        return data;
+    } catch (error) {
+        console.error("Error sending settings to backend:", error);
+        return null;
+    }
+};
+
 export default {
     getProfileData,
+    createProfile,
     sendEvaluationToBackend,
+    getUserSettings,
+    sendUpdatedSettings,
 };

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Evaluation, User_BB, Profile, Social
+from .models import Evaluation, User_BB, Profile, Social, Settings, Badge
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField(write_only=True)  
@@ -21,6 +21,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
             profile = Profile.objects.get(username=validated_data["profile"], social__social=validated_data["rede_social"])
         except Profile.DoesNotExist:
             raise serializers.ValidationError({"profile": "Profile not found"})
+        
+        
 
         evaluation = Evaluation.objects.create(
             user=user,
@@ -30,4 +32,29 @@ class EvaluationSerializer(serializers.ModelSerializer):
             created_at=validated_data.get('created_at', None)
         )
 
+
+        total_evaluations = Evaluation.objects.filter(profile=profile).count()
+        bot_evaluations = Evaluation.objects.filter(profile=profile, is_bot=True).count()
+        
+        probability = (bot_evaluations / total_evaluations) * 100 if total_evaluations > 0 else 0
+
+        profile.percentage = probability
+
+        profile.save()
+
         return evaluation
+    
+class ProfileShortSerializer(serializers.ModelSerializer):
+    social = serializers.CharField(source='social.social')
+
+    class Meta:
+        model = Profile
+        fields = ['username', 'social', 'percentage', 'badge']
+
+class SettingsSerializer(serializers.ModelSerializer):
+    badge = serializers.ChoiceField(choices=Badge.choices)
+    blocklist = ProfileShortSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Settings
+        fields = ['tolerance', 'badge', 'blocklist']
