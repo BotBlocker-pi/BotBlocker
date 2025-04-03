@@ -6,6 +6,7 @@ import ProfileInfo from '../components/ProfileInfo.jsx';
 import { getEvaluationHistory, getProfileData } from '../api/data.jsx';
 import LoginForm from "../components/LoginForm.jsx";
 import { checkAuth, logoutUser } from '../api/loginApi';
+ 
 
 const HomePage = () => {
     const [searchUrl, setSearchUrl] = useState('');
@@ -19,6 +20,7 @@ const HomePage = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [initialLoginMode, setInitialLoginMode] = useState(false); // New state to control initial login mode
+    const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
 
     // Check authentication status on component mount
     useEffect(() => {
@@ -108,6 +110,11 @@ const HomePage = () => {
                     <a href="#" className="nav-link active">HOME</a>
                     <a href="/understand-bots" className="nav-link">UNDERSTAND BOTS</a>
                     <a href="/contact" className="nav-link">CONTACT</a>
+
+                    {userRole === 'verifier' && (
+                        <Link to="/verification-dashboard" className="nav-link">VERIFICATION DASHBOARD</Link>
+                    )}
+
 
                     {isAuthenticated ? (
                         <div className="auth-controls">

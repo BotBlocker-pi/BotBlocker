@@ -109,10 +109,14 @@ class CustomTokenObtainView(APIView):
 
         user = authenticate(username=username, password=password)
         if user:
+            # get user role
+            user_bb = User_BB.objects.filter(user=user).first()
+            role = user_bb.role if user_bb else None
             refresh = RefreshToken.for_user(user)
             return Response({
                 "access": str(refresh.access_token),
-                "refresh": str(refresh)
+                "refresh": str(refresh),
+                "role": role,
             }, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)

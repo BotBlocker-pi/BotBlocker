@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage.jsx";
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import UnderstandingBots from "./pages/UnderstandingBots.jsx";
 import Contact from "./pages/Contact.jsx"
+import VerifierDashboard from "./pages/VerifierDashboard.jsx";
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/understand-bots" element={<UnderstandingBots />} />
                 <Route path='/contact' element={<Contact />}/>
+                <Route path='/verification-dashboard' element={<VerifierDashboard />} />
             </Routes>
         </BrowserRouter>
     );

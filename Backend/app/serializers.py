@@ -68,27 +68,39 @@ class UserBBSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'role', 'email', 'settings']
 
     def update(self, instance, validated_data):
-        settings_data = validated_data.pop('settings')
-        blocklist_data = settings_data.pop('blocklist', None)
+        # Verificar se validated_data não é None
+        if validated_data is None:
+            return instance
 
-        # Update the User_BB instance
+        # Tratar settings de forma mais segura
+        settings_data = validated_data.pop('settings', {})
+        
+        # Verificar se settings_data não é None
+        if settings_data is None:
+            settings_data = {}
+
+        # Extrair blocklist separadamente e com segurança
+        blocklist_data = settings_data.pop('blocklist', [])
+
+        # Update User_BB instance
         instance.role = validated_data.get('role', instance.role)
         instance.email = validated_data.get('email', instance.email)
         instance.save()
 
-        # Update the Settings instance
-        settings_instance = instance.settings
-        settings_instance.tolerance = settings_data.get('tolerance', settings_instance.tolerance)
-        settings_instance.badge = settings_data.get('badge', settings_instance.badge)
-        settings_instance.save()
+        # Update Settings instance
+        if settings_data:
+            settings_instance = instance.settings
+            settings_instance.tolerance = settings_data.get('tolerance', settings_instance.tolerance)
+            settings_instance.badge = settings_data.get('badge', settings_instance.badge)
+            settings_instance.save()
 
-        # Update the blocklist
-        if blocklist_data is not None:
+        # Update blocklist
+        if blocklist_data:
             blocklist_ids = [profile['id'] for profile in blocklist_data]
-            settings_instance.blocklist.set(blocklist_ids)
+            instance.settings.blocklist.set(blocklist_ids)
 
         return instance
-    
+        
     def delete(self, instance):
         # Delete the related Profile instances
         instance.settings.blocklist.clear()

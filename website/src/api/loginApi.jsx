@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000"; // Define a URL base da API
+const API_BASE_URL = "http://localhost/api"; // Define a URL base da API
 
 
 // Função para autenticar utilizadores (Login)
@@ -62,6 +62,8 @@ export const checkAuth = async () => {
 export const logoutUser = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("role");
 };
 
 

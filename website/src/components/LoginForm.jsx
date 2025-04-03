@@ -53,6 +53,8 @@ const LoginForm = ({ onAuthChange, onClose, initialMode = false }) => {
                 if (data) {
                     localStorage.setItem("access_token", data.access);
                     localStorage.setItem("refresh_token", data.refresh);
+                    localStorage.setItem("user_id", data.user_id);
+                    localStorage.setItem("role", data.role);
 
                     setMessage("✅ Login successful!");
                     onAuthChange(true);

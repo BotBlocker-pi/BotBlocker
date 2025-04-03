@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../css/Contact.css';
 import botBlockerLogo from '../assets/logo.png'; // Adjust the path as needed
+import { Link } from 'react-router-dom';
 
 const Contact = () => {
     const [isLoaded, setIsLoaded] = useState(false);
@@ -12,6 +13,8 @@ const Contact = () => {
     });
     const [formErrors, setFormErrors] = useState({});
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
+
 
     useEffect(() => {
         // Add animation class after component mounts
@@ -89,6 +92,10 @@ const Contact = () => {
                     <a href="/" className="nav-link">HOME</a>
                     <a href="/understand-bots" className="nav-link">UNDERSTAND BOTS</a>
                     <a href="/contact" className="nav-link active">CONTACT</a>
+
+                    {userRole === 'verifier' && (
+                        <Link to="/verification-dashboard" className="nav-link">VERIFICATION DASHBOARD</Link>
+                    )}
                 </nav>
             </header>
 

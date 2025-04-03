@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import '../css/UnderstandingBots.css'
 import botBlockerLogo from '../assets/logo.png'; // Adjust the path as needed
+import { Link } from 'react-router-dom';
 
 const UnderstandBots = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [activeSection, setActiveSection] = useState('what-are-bots');
+    const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
+
 
     useEffect(() => {
         // Add animation class after component mounts
@@ -27,6 +30,10 @@ const UnderstandBots = () => {
                     <a href="/" className="nav-link">HOME</a>
                     <a href="/understand-bots" className="nav-link active">UNDERSTAND BOTS</a>
                     <a href="/contact" className="nav-link">CONTACT</a>
+
+                    {userRole === 'verifier' && (
+                        <Link to="/verification-dashboard" className="nav-link">VERIFICATION DASHBOARD</Link>
+                    )}
                 </nav>
             </header>
 
