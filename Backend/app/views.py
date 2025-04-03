@@ -217,44 +217,6 @@ def createUserBB(request):
 
     return Response({"error": "Authentication failed after user creation"}, status=status.HTTP_400_BAD_REQUEST)
 
-def criar_dados_para_joao():
-    # Criar utilizador Django
-    user, created = User.objects.get_or_create(
-        username="joao",
-        defaults={"email": "joao@example.com"}
-    )
-    if created:
-        user.set_password("1234")
-        user.save()
-        print("✅ Utilizador Django 'joao' criado")
-    else:
-        print("ℹ️ Utilizador 'joao' já existia")
-
-    # Criar User_BB associado
-    user_bb, created = User_BB.objects.get_or_create(user=user, email=user.email)
-    if created:
-        print("✅ User_BB criado")
-    else:
-        print("ℹ️ User_BB já existia")
-
-    # Criar rede social 'x'
-    social, created = Social.objects.get_or_create(social="x")
-    if created:
-        print("✅ Social 'x' criado")
-    else:
-        print("ℹ️ Social 'x' já existia")
-
-    # Criar perfil
-    profile, created = Profile.objects.get_or_create(
-        username="matt_vanswol",
-        social=social,
-        defaults={"url": "https://x.com/matt_vanswol"}
-    )
-    if created:
-        print("✅ Profile 'matt_vanswol' criado")
-    else:
-        print("ℹ️ Profile 'matt_vanswol' já existia")
-
 
 @api_view(['POST'])
 def block_profile(request):
@@ -313,4 +275,79 @@ def unblock_profile(request):
 
     except Exception as e:
         print(f"Error in unblock_profile: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['GET'])
+def get_users(request):
+    try:
+        users = User_BB.objects.all()
+        serializer = UserBBSerializer(users, many=True)
+        return Response({'users': serializer.data})
+    except Exception as e:
+        print(f"Error in get_users: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+def get_user(request, id):
+    try:
+        user = User_BB.objects.get(id=id)
+        serializer = UserBBSerializer(user)
+        return Response({'user': serializer.data})
+    except User_BB.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error in get_user: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['PUT'])
+def update_user(request, id):
+    try:
+        user = User_BB.objects.get(id=id)
+        serializer = UserBBSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'user': serializer.data})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except User_BB.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error in update_user: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['DELETE'])
+def delete_user(request, id):
+    try:
+        user = User_BB.objects.get(id=id)
+        user.delete()
+        return Response({'message': 'User deleted successfully'})
+    except User_BB.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error in delete_user: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+def get_evaluations(request):
+    try:
+        evaluations = Evaluation.objects.all()
+        serializer = EvaluationSerializer(evaluations, many=True)
+        return Response({'evaluations': serializer.data})
+    except Exception as e:
+        print(f"Error in get_evaluations: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+def get_profile(request, username):
+    try:
+        profile = Profile.objects.get(username=username)
+        serializer = ProfileShortSerializer(profile)
+        return Response({'profile': serializer.data})
+    except Profile.DoesNotExist:
+        return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error in get_profile: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

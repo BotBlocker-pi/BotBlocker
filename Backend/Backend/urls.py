@@ -22,6 +22,8 @@ urlpatterns = [
 ]
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # 
     path('get_probability/', get_probability, name='get_probability'),
     path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
     path('perfis/', get_perfis, name='get_perfis'),
@@ -33,4 +35,13 @@ urlpatterns = [
     path('api/protected/',ProtectedView.as_view(),name="ProtectedView"),
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),
+
+
+    path('get_users/', get_users, name='get_users'),                       # GET - Listar todos usuários
+    path('get_user/<uuid:id>/', get_user, name='get_user_by_id'),     # GET - Obter usuário específico
+    path('update_user/<uuid:id>/', update_user, name='update_user'),        # PUT - Atualizar usuário
+    path('delete_user/<uuid:id>/', delete_user, name='delete_user'),        # DELETE - Remover usuário
+    
+    path('get_profile/<str:username>/', get_profile, name='get_profile'),  # GET - Obter perfil específico
+    path('get_evaluations/', get_evaluations, name='get_evaluations'),
 ]
