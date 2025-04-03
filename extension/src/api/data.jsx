@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost/api";
 
 export const getProfileData = async (url) => {
     try {
@@ -21,6 +21,35 @@ export const getProfileData = async (url) => {
         return data;
     } catch (error) {
         console.error("Error getting profile data:", error);
+        return null;
+    }
+};
+
+export const createProfile = async (url) => {
+    try {
+        const apiUrl = `${API_BASE_URL}/create_profile/?url=${encodeURIComponent(
+            url
+        )}`;
+        console.log("Trying to create profile with:", apiUrl);
+
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+            console.error(
+                "Error creating profile:",
+                response.status,
+                response.statusText
+            );
+            return null;
+        }
+        const data = await response.json();
+        console.log("Profile created:", date);
+        return data;
+    } catch (error) {
+        console.error("Error creating profile:", error);
         return null;
     }
 };
@@ -79,33 +108,34 @@ export const getUserSettings = async () => {
 export const sendUpdatedSettings = async (settingsData) => {
     const token = localStorage.getItem("access_token");
     if (!token) {
-      console.log("User not authenticated");
-      return null;
+        console.log("User not authenticated");
+        return null;
     }
-  
+
     try {
-      const response = await fetch(`${API_BASE_URL}/update_settings/`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(settingsData)
-      });
-  
-      if (!response.ok) throw new Error("Erro ao atualizar settings");
-  
-      const data = await response.json();
-      console.log("Settings updated in backend:", data);
-      return data;
+        const response = await fetch(`${API_BASE_URL}/update_settings/`, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(settingsData)
+        });
+
+        if (!response.ok) throw new Error("Erro ao atualizar settings");
+
+        const data = await response.json();
+        console.log("Settings updated in backend:", data);
+        return data;
     } catch (error) {
-      console.error("Error sending settings to backend:", error);
-      return null;
+        console.error("Error sending settings to backend:", error);
+        return null;
     }
-  };
+};
 
 export default {
     getProfileData,
+    createProfile,
     sendEvaluationToBackend,
     getUserSettings,
     sendUpdatedSettings,

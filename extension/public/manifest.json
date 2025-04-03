@@ -8,16 +8,15 @@
   },
   "permissions": ["tabs", "scripting", "storage"],
   "host_permissions": [
-    "https://x.com/*", 
-    "https://twitter.com/*" 
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "http://localhost/*"
   ],
-  "content_scripts": [
-    {
-      "matches": ["*://twitter.com/*", "*://x.com/*"],
-      "js": ["content.js"],
-      "run_at": "document_end"
-    }
-  ],
-  
-  "options_page": "settings.html"
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "settings.html",
+    "open_in_tab": false
+  }
 }

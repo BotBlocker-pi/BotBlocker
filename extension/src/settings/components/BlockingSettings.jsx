@@ -11,7 +11,8 @@ const BlockingContainer = styled.div`
     background-color: #f5f7fd;
     border-radius: 8px;
     padding: 24px;
-    width: 100%;
+    width: 100%; // This will now respect the parent container's width
+    box-sizing: border-box; // This ensures padding is included in the width calculation
 `;
 
 const Title = styled.h2`
@@ -229,7 +230,9 @@ const BlockingSettings = () => {
       useEffect(() => {
         const fetchSettings = async () => {
             const { settings } = await getSettingsAndBlacklist();
-    
+            const { blackList } = await getSettingsAndBlacklist();
+            console.log({...settings,blackList});
+            
             if (settings) {
                 setBlockPercentage(settings.tolerance ?? 70);
     
@@ -277,7 +280,7 @@ const BlockingSettings = () => {
                 console.log("Cache synchronized with backend settings.");
                 localStorage.setItem("is_Sync", "true");
                 await fetchSettings();
-  
+                window.location.reload()
               } else {
                 console.log("User refused synchronization.");
                 localStorage.setItem("is_Sync", "false");

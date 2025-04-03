@@ -30,6 +30,7 @@ urlpatterns = [
     path('get_evaluation_history/', get_evaluation_history, name='get_evaluation_history'),
     path('create_user/', createUserBB, name='createUserBB'),
     path("api/token/", CustomTokenObtainView.as_view(), name="token_obtain"),
-    path('api/protected/',ProtectedView.as_view(),name="ProtectedView")
-
+    path('api/protected/',ProtectedView.as_view(),name="ProtectedView"),
+    path('block_profile/', block_profile, name='block_profile'),
+    path('unblock_profile/', unblock_profile, name='unblock_profile'),
 ]

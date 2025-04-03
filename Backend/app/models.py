@@ -64,8 +64,14 @@ class GlobalList(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profiles = models.ManyToManyField(Profile, related_name='global_lists')
 
+class BlockReason(models.TextChoices):
+    MANUAL = 'manual', 'Manual Block'
+    AUTOMATIC = 'automatic', 'Automatic Block (Threshold)'
+
 class Settings(models.Model):
-    user = models.OneToOneField(User_BB, on_delete=models.CASCADE, related_name="settings") 
+    user = models.OneToOneField(User_BB, on_delete=models.CASCADE, related_name="settings")
     tolerance = models.FloatField()
     badge = models.CharField(max_length=50, choices=Badge.choices, default=Badge.EMPTY)
     blocklist = models.ManyToManyField(Profile, related_name='blocked_by')
+
+

@@ -33,8 +33,6 @@ def create_profile(username, platform, image=None):
     return profile
 
 def get_probability(request):
-
-
     url = request.GET.get("url")
     print("url",url)
     username, platform = extractPerfilNameAndPlataformOfURL(url)
@@ -78,10 +76,13 @@ def criar_avaliacao(request):
 @api_view(['GET'])
 def get_perfis(request):
     print("GET /perfis")
-    perfis = Profile.objects.all()
-    serializer = ProfileShortSerializer(perfis, many=True)
-    return Response({'perfis': serializer.data})  # Padronizando para sempre retornar um objeto com campo 'perfis'
-
+    try:
+        perfis = Profile.objects.all()
+        serializer = ProfileShortSerializer(perfis, many=True)
+        return Response({'perfis': serializer.data})
+    except Exception as e:
+        print(f"Error in get_perfis: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
@@ -142,16 +143,36 @@ def get_settings(request):
 def update_settings(request):
     try:
         user_bb = User_BB.objects.get(user=request.user)
-        settings = Settings.objects.get(user=user_bb)
     except (User_BB.DoesNotExist, Settings.DoesNotExist):
-        return Response({'error': 'Settings ou utilizador não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Settings or user not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    settings, created = Settings.objects.get_or_create(
+        user=user_bb,
+        defaults={
+            'tolerance': 50.0,
+            'badge': Badge.EMPTY
+        }
+    )
+    blocklist_data = request.data.pop('blocklist', None)
 
-    serializer = SettingsSerializer(settings, data=request.data)
+    serializer = SettingsSerializer(settings, data=request.data, partial=True)
+
     if serializer.is_valid():
+        if blocklist_data is not None:
+            settings.blocklist.clear()
+            for profile_data in blocklist_data:
+                try:
+                    profile = Profile.objects.get(username=profile_data["username"], social__social=profile_data["social"])
+                    settings.blocklist.add(profile)
+                except Profile.DoesNotExist:
+                    continue
+        
         serializer.save()
+        
         return Response(serializer.data, status=status.HTTP_200_OK)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    print("Serializer errors:", serializer.errors)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def get_evaluation_history(request):
@@ -233,3 +254,63 @@ def criar_dados_para_joao():
         print("✅ Profile 'matt_vanswol' criado")
     else:
         print("ℹ️ Profile 'matt_vanswol' já existia")
+
+
+@api_view(['POST'])
+def block_profile(request):
+    try:
+        # Get profile data from request
+        username = request.data.get('username')
+        platform = request.data.get('platform', 'x')  # Default to X/Twitter if not specified
+
+        if not username:
+            return Response({'error': 'É necessário fornecer um nome de utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get or create the profile
+        social_instance, _ = Social.objects.get_or_create(social=platform)
+        profile, created = Profile.objects.get_or_create(
+            username=username,
+            social=social_instance,
+            defaults={"url": f"https://{platform}.com/{username}"}
+        )
+
+        return Response({
+            'success': True,
+            'message': f'Perfil {username} bloqueado com sucesso',
+            'profile': {
+                'id': str(profile.id),
+                'username': profile.username,
+                'platform': platform
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        print(f"Error in block_profile: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def unblock_profile(request):
+    try:
+        # Get profile data from request
+        username = request.data.get('username')
+        platform = request.data.get('platform', 'x')  # Default to X/Twitter if not specified
+
+        if not username:
+            return Response({'error': 'É necessário fornecer um nome de utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find the profile
+        try:
+            social = Social.objects.get(social=platform)
+            profile = Profile.objects.get(username=username, social=social)
+        except (Social.DoesNotExist, Profile.DoesNotExist):
+            return Response({'error': 'Perfil não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'success': True,
+            'message': f'Perfil {username} desbloqueado com sucesso'
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"Error in unblock_profile: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
