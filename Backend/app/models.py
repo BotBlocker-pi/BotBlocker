@@ -72,11 +72,6 @@ class Settings(models.Model):
     user = models.OneToOneField(User_BB, on_delete=models.CASCADE, related_name="settings")
     tolerance = models.FloatField()
     badge = models.CharField(max_length=50, choices=Badge.choices, default=Badge.EMPTY)
-    blocklist = models.ManyToManyField(Profile, related_name='blocked_by', through='ProfileBlock')
+    blocklist = models.ManyToManyField(Profile, related_name='blocked_by')
 
-class ProfileBlock(models.Model):
-    user_settings = models.ForeignKey(Settings, on_delete=models.CASCADE)
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    reason = models.CharField(max_length=50, choices=BlockReason.choices, default=BlockReason.MANUAL)
-    blocked_at = models.DateTimeField(auto_now_add=True)
 

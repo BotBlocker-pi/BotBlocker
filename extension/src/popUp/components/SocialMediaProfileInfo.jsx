@@ -68,6 +68,7 @@ const ButtonLabel = styled.div`
 `;
 
 import { getSettingsAndBlacklist } from '../../utils/cacheLogic';
+import { sendUpdatedSettings } from '../../api/data';
 
 const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) => {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -123,6 +124,18 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) =
                 if (response && response.success) {
                     console.log(`Successfully unblocked profile: ${username} on ${platform}`);
                     setIsBlocked(false);
+                    const { blackList } = await getSettingsAndBlacklist();
+                    const isSynced = localStorage.getItem("is_Sync") === "true";
+                    if (isSynced) {
+                        const result = await sendUpdatedSettings({
+                        blocklist: blackList.map(([username, social]) => ({
+                            username,
+                            social,
+                        }))
+                        });
+                    console.log("Synchronize blacklist:",result);
+                    
+                    }
                 } else {
                     console.error('Error unblocking profile:', response?.error);
                 }

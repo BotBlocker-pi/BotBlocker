@@ -138,16 +138,36 @@ def get_settings(request):
 def update_settings(request):
     try:
         user_bb = User_BB.objects.get(user=request.user)
-        settings = Settings.objects.get(user=user_bb)
     except (User_BB.DoesNotExist, Settings.DoesNotExist):
-        return Response({'error': 'Settings ou utilizador não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Settings or user not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    settings, created = Settings.objects.get_or_create(
+        user=user_bb,
+        defaults={
+            'tolerance': 50.0,
+            'badge': Badge.EMPTY
+        }
+    )
+    blocklist_data = request.data.pop('blocklist', None)
 
-    serializer = SettingsSerializer(settings, data=request.data)
+    serializer = SettingsSerializer(settings, data=request.data, partial=True)
+
     if serializer.is_valid():
+        if blocklist_data is not None:
+            settings.blocklist.clear()
+            for profile_data in blocklist_data:
+                try:
+                    profile = Profile.objects.get(username=profile_data["username"], social__social=profile_data["social"])
+                    settings.blocklist.add(profile)
+                except Profile.DoesNotExist:
+                    continue
+        
         serializer.save()
+        
         return Response(serializer.data, status=status.HTTP_200_OK)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    print("Serializer errors:", serializer.errors)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

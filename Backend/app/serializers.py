@@ -53,7 +53,7 @@ class ProfileShortSerializer(serializers.ModelSerializer):
 
 class SettingsSerializer(serializers.ModelSerializer):
     badge = serializers.ChoiceField(choices=Badge.choices)
-    blocklist = ProfileShortSerializer(many=True, read_only=True)
+    blocklist = ProfileShortSerializer(many=True)
 
     class Meta:
         model = Settings
