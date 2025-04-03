@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import AccountItem from './AccountItem';
-import { getStorage } from '../../utils/cacheLogic';
+import { getStorage,getSettingsAndBlacklist } from '../../utils/cacheLogic';
+import {sendUpdatedSettings } from '../../api/data'
 
 // Styled components
 const BlockListContainer = styled.div`
@@ -106,9 +107,21 @@ const BlockList = () => {
             });
 
             if (response && response.success) {
-                // Remove account from local state
                 setBlockedAccounts(prev => prev.filter(item => item.id !== account.id));
                 console.log(`Unblocked profile: ${account.username}`);
+                const { blackList } = await getSettingsAndBlacklist();
+                      
+                        const isSynced = localStorage.getItem("is_Sync") === "true";
+                        if (isSynced) {
+                          const result = await sendUpdatedSettings({
+                            blocklist: blackList.map(([username, social]) => ({
+                              username,
+                              social,
+                            }))
+                          });
+                        console.log("Synchronize blacklist. ",result);
+                        
+                        }
             } else {
                 console.error('Failed to unblock profile:', response?.error || 'Unknown error');
             }
