@@ -22,6 +22,7 @@ const HomePage = () => {
     const [initialLoginMode, setInitialLoginMode] = useState(false); // New state to control initial login mode
     const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
 
+
     // Check authentication status on component mount
     useEffect(() => {
         const checkAuthStatus = async () => {
@@ -29,15 +30,26 @@ const HomePage = () => {
                 const authStatus = await checkAuth();
                 setIsAuthenticated(authStatus);
                 localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
+                
+                // Se não estiver autenticado, remover o role do localStorage
+                if (!authStatus) {
+                    localStorage.removeItem('role');
+                }
             } catch (error) {
                 console.error("Error checking auth status:", error);
                 setIsAuthenticated(false);
+                localStorage.removeItem('role');
             }
         };
 
         const storedAuth = localStorage.getItem('isAuthenticated');
         if (storedAuth) {
             setIsAuthenticated(JSON.parse(storedAuth));
+            
+            // Verificar a autenticação ao carregar a página
+            if (!JSON.parse(storedAuth)) {
+                localStorage.removeItem('role');
+            }
         }
 
         checkAuthStatus();
@@ -47,6 +59,12 @@ const HomePage = () => {
     const handleAuthChange = (status) => {
         setIsAuthenticated(status);
         localStorage.setItem('isAuthenticated', JSON.stringify(status));
+        
+        // Se não estiver autenticado, remover o role
+        if (!status) {
+            localStorage.removeItem('role');
+        }
+        
         setShowLoginModal(false);
     };
 
@@ -54,6 +72,7 @@ const HomePage = () => {
         logoutUser();
         setIsAuthenticated(false);
         localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('role'); // Remover o role ao fazer logout
     };
 
     const handleSearchChange = (e) => {
