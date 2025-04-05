@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/protected/',ProtectedView.as_view(),name="ProtectedView"),
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),
+    path('give_badge/', give_badge, name='change_badge'),
 
 
     path('get_users/', get_users, name='get_users'),                       # GET - Listar todos usuários

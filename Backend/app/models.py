@@ -13,6 +13,7 @@ class Badge(models.TextChoices):
     BOT = 'bot', 'Bot'
     BOT_AND_WITHOUT_VERIFICATION = 'bot_and_without_verification', 'Bot and Without Verification'
     EMPTY = 'empty', 'Empty'
+    HUMAN = 'human', 'Human'
 
 class SocialType(models.TextChoices):
     INSTAGRAM = 'instagram', 'Instagram'

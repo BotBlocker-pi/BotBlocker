@@ -37,6 +37,7 @@ def extractPerfilNameAndPlataformOfURL(url: str):
     return perfil_name, plataform
 
 class ProfileDTO(serializers.Serializer):
+    perfil_id = serializers.UUIDField()
     perfil_name= serializers.CharField() 
     plataform = serializers.CharField() 
     badge = serializers.CharField()
@@ -53,6 +54,7 @@ class ProfileDTO(serializers.Serializer):
         total_evaluations = Evaluation.objects.filter(profile=profile).count()
 
         data = {
+            "perfil_id": profile.id,
             "perfil_name": profile.username,
             "plataform": profile.social.social,
             "badge": profile.badge,

@@ -355,3 +355,24 @@ def get_profile(request, username):
     except Exception as e:
         print(f"Error in get_profile: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['POST'])
+def give_badge(request):
+    try:
+        profile_id = request.data.get('user_id')
+        badge = request.data.get('badge')
+
+        try:
+            profile = Profile.objects.get(id=profile_id)
+        except User_BB.DoesNotExist:
+            return Response({'error': 'Perfil não encontrado para este utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.badge = badge
+        profile.save()
+
+        return Response({'success': True, 'message': f'Badge {badge} atribuída com sucesso ao perfil {profile.username}'}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"Error in give_badge: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
