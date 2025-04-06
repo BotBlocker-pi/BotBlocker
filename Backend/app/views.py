@@ -193,6 +193,19 @@ def get_evaluation_history(request):
     serializer = EvaluationSerializer(history, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+# FORMAT TO CREATE USER
+#{
+#    "username": "rita",
+#    "email": "1234@exemplo.com",
+#    "role": "verifier",
+#    "password": "12345678",
+#    "settings": {
+#        "tolerance": 50.0,
+#        "badge": "empty",
+#        "blocklist" : []
+#    }
+#}
+
 @api_view(['POST'])
 def createUserBB(request):
     username = request.data.get("username")

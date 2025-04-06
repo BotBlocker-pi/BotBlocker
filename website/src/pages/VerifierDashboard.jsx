@@ -259,18 +259,17 @@ const VerificationDashboard = () => {
         if (!evaluationsData || !Array.isArray(evaluationsData)) return [];
         
         return evaluationsData.map(item => {
-            // Extrair data e hora da propriedade date ou timestamp
-            const evalDate = new Date(item.date || item.timestamp || Date.now());
+            // Extract date and time from created_at property
+            const evalDate = new Date(item.created_at || Date.now());
             const formattedDate = evalDate.toLocaleDateString();
-            const formattedTime = item.time || 
-                `${evalDate.getHours().toString().padStart(2, '0')}:${evalDate.getMinutes().toString().padStart(2, '0')}`;
+            const formattedTime = `${evalDate.getHours().toString().padStart(2, '0')}:${evalDate.getMinutes().toString().padStart(2, '0')}`;
             
             return {
-                evaluator_name: item.evaluator_name || 'Anonymous',
+                evaluator_name: item.user || 'Anonymous',
                 is_bot: item.is_bot || false,
                 date: formattedDate,
                 time: formattedTime,
-                reasons: item.reasons || [item.reason || 'No reason provided']
+                reasons: [item.notas || 'No reason provided']
             };
         });
     };
