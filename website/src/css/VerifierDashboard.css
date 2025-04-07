@@ -1,502 +1,111 @@
-/* VerifierDashboard.css */
+/* VerifierDashboard.css - Updated for modular structure */
 
-/* Usando um seletor de escopo para limitar os estilos apenas à página do dashboard */
+/* Main container styling */
 .verification-dashboard {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #d4e0f0; /* Fundo azul claro como nas outras páginas */
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Eliminando margens e paddings para remover espaços */
-  .verification-dashboard * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  /* Container principal - sem espaçamento */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #c5d5ea 0%, #7a9bc7 100%);
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Eliminating margins and paddings to remove spaces */
+.verification-dashboard * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Main container - no spacing */
+.verification-dashboard .dashboard-container {
+  display: flex;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  margin-top: 0;
+  border-top: none;
+  min-height: calc(100vh - 80px);
+}
+
+/* Main content */
+.verification-dashboard .main-content {
+  flex: 1;
+  background: transparent;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 30px;
+  padding-top: 30px;
+}
+
+/* Specific adjustments to ensure no space between header and sidebar */
+.verification-dashboard .header {
+  margin-bottom: 0 !important;
+  border-bottom: none !important;
+}
+
+.verification-dashboard .header + .dashboard-container {
+  margin-top: 0 !important;
+}
+
+/* Navbar specific overrides */
+.verification-dashboard > .header {
+  margin: 0 !important;
+  padding: 20px 40px !important;
+}
+
+.verification-dashboard .logo {
+  width: 180px;
+  height: auto;
+}
+
+.verification-dashboard .logout-button {
+  background-color: transparent;
+  border: 2px solid #ef476f;
+  color: #ef476f;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.verification-dashboard .logout-button:hover {
+  background-color: #ef476f;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.verification-dashboard .header .nav-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 5px 10px;
+}
+
+.verification-dashboard .header .nav-link.active {
+  color: #1a1a1a;
+  border-bottom: 2px solid #1a1a1a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .verification-dashboard .dashboard-container {
-    display: flex;
-    flex: 1;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Sidebar */
-  .verification-dashboard .sidebar {
-    width: 180px; /* Reduzido levemente para se parecer mais com a imagem */
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    margin: 0;
-    padding: 0;
-    border-right: 1px solid #e0e0e0;
-  }
-  
-  .verification-dashboard .sidebar-menu {
-    display: flex;
     flex-direction: column;
   }
-  
-  .verification-dashboard .menu-item {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    cursor: pointer;
-    border-left: 3px solid transparent;
-    color: #333;
-    transition: background-color 0.2s;
-  }
-  
-  .verification-dashboard .menu-item:hover {
-    background-color: #f0f5ff;
-  }
-  
-  .verification-dashboard .menu-item.active {
-    background-color: #e6f2ff;
-    border-left-color: #4a6da7;
-  }
-  
-  .verification-dashboard .menu-icon {
-    margin-right: 12px;
-    font-size: 18px;
-  }
-  
-  .verification-dashboard .menu-text {
-    font-size: 14px;
-    color: #333;
-  }
-  
-  /* Conteúdo principal - ALTERADO para fundo azul */
+}
+
+@media (max-width: 480px) {
   .verification-dashboard .main-content {
-    flex: 1;
-    background-color: #d4e0f0; /* Alterado para azul claro como na homepage */
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 30px;
-    padding-top: 60px;
-  }
-  
-  /* Container de verificação */
-  .verification-dashboard .verification-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-width: 700px;
-    width: 100%;
-  }
-  
-  /* Caixa de pesquisa */
-  .verification-dashboard .search-box {
-    display: flex;
-    align-items: center;
-    background-color: #ffffff; /* Fundo branco para o campo de pesquisa */
-    border: 1px solid #e0e0e0;
-    border-radius: 50px;
-    padding: 5px;
-    width: 100%;
-    max-width: 500px;
-    margin: 10px 0;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Sombra sutil */
-  }
-  
-  .verification-dashboard .search-box input {
-    flex: 1;
-    border: none;
-    outline: none;
-    padding: 10px 15px;
-    font-size: 14px;
-    background-color: transparent;
-    color: #333;
-  }
-  
-  .verification-dashboard .search-box input::placeholder {
-    color: #777;
-  }
-  
-  .verification-dashboard .search-button {
-    background-color: #4a6da7;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 35px;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin-right: 3px;
-  }
-  
-  .verification-dashboard .instruction-text {
-    text-align: center;
-    color: #333; /* Escurecido para melhor contraste com fundo azul */
-    font-size: 14px;
-    margin: 15px 0;
-  }
-  
-  .verification-dashboard .search-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: #333; /* Escurecido para melhor contraste com fundo azul */
-    width: 100%;
-    margin: 15px 0;
-  }
-  
-  .verification-dashboard .search-divider::before,
-  .verification-dashboard .search-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #aabbd0; /* Mais escuro para melhor visibilidade no azul */
-  }
-  
-  .verification-dashboard .search-divider::before {
-    margin-right: 10px;
-  }
-  
-  .verification-dashboard .search-divider::after {
-    margin-left: 10px;
-  }
-  
-  /* Dropdown e busca */
-  .verification-dashboard .dropdown-search {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-    max-width: 500px;
-  }
-  
-  .verification-dashboard .dropdown {
-    flex: 1;
-    position: relative;
-  }
-  
-  .verification-dashboard .dropdown select {
-    width: 100%;
-    padding: 10px 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 50px;
-    background-color: #ffffff; /* Fundo branco para o dropdown */
-    appearance: none;
-    font-size: 14px;
-    cursor: pointer;
-    outline: none;
-    color: #333;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Sombra sutil */
-  }
-  
-  .verification-dashboard .dropdown::after {
-    content: '▼';
-    font-size: 12px;
-    color: #666;
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-  
-  /* Ajustes específicos para garantir que não haja espaço entre o header e a sidebar */
-  .verification-dashboard .header {
-    margin-bottom: 0 !important;
-    border-bottom: none !important;
-  }
-  
-  .verification-dashboard .header + .dashboard-container {
-    margin-top: 0 !important;
-  }
-  
-  /* Responsividade */
-  @media (max-width: 768px) {
-    .verification-dashboard .dashboard-container {
-      flex-direction: column;
-    }
-    
-    .verification-dashboard .sidebar {
-      width: 100%;
-    }
-    
-    .verification-dashboard .dropdown-search {
-      flex-direction: column;
-    }
-  }
-
-  /* Estilos para badges */
-.verification-dashboard .badge {
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: inline-block;
-  }
-  
-  .verification-dashboard .badge.human {
-    background-color: #28a745;
-    color: white;
-  }
-  
-  .verification-dashboard .badge.bot {
-    background-color: #dc3545;
-    color: white;
-  }
-  
-  /* Estilos para mensagens de verificação */
-  .verification-dashboard .verification-message {
-    margin-bottom: 20px;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: 500;
-    width: 100%;
-    max-width: 700px;
-  }
-  
-  .verification-dashboard .verification-message.success {
-    background-color: rgba(40, 167, 69, 0.1);
-    color: #28a745;
-    border: 1px solid #28a745;
-  }
-  
-  .verification-dashboard .verification-message.error {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
-    border: 1px solid #dc3545;
-  }
-  
-  /* Estilo para quando não houver avaliações */
-  .verification-dashboard .no-evaluations {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 30px;
-    color: #777;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    border: 1px dashed #ddd;
-  }
-  
-  /* Loading indicator */
-  .verification-dashboard .loading-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 20px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(255, 255, 255, 0.8);
-    z-index: 10;
-    border-radius: 8px;
-  }
-  
-  .verification-dashboard .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #4a6da7;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 10px;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  /* Estilos para botões de verificação quando já verificados */
-  .verification-dashboard .verify-human-btn:disabled,
-  .verification-dashboard .verify-bot-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  
-  /* Ajuste especial para quando não há avaliações */
-  .verification-dashboard .evaluations-grid:empty::before {
-    content: "No evaluations available for this profile.";
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 30px;
-    color: #777;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    border: 1px dashed #ddd;
-  }
-  /* Profile Details and Evaluations Section */
-.verification-dashboard .profile-container * {
-    color: #000;
-  }
-  
-  .verification-dashboard .profile-title {
-    color: #000;
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 10px;
-  }
-  
-  .verification-dashboard .profile-subtitle {
-    color: #000;
-    text-align: center;
-    margin-bottom: 20px;
-    opacity: 0.7;
-  }
-  
-  .verification-dashboard .analysis-title {
-    color: #000;
-    font-size: 18px;
-    margin-bottom: 15px;
-  }
-  
-  .verification-dashboard .profile-username {
-    text-align: center;
-    margin-bottom: 15px;
-  }
-  
-  .verification-dashboard .ai-probability-container {
-    background-color: #f0f0f0;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-  }
-  
-  .verification-dashboard .probability-value {
-    font-size: 32px;
-    font-weight: bold;
-    color: #000;
-    text-align: center;
-  }
-  
-  .verification-dashboard .probability-text {
-    color: #000;
-    text-align: center;
-    opacity: 0.7;
-  }
-  
-  .verification-dashboard .votes-count {
-    color: #000;
-    text-align: center;
-    opacity: 0.7;
-  }
-  
-  .verification-dashboard .status-indicator {
-    text-align: center;
-    margin-top: 10px;
-  }
-  
-  .verification-dashboard .status-icon {
-    display: inline-block;
-    background-color: #1da1f2;
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    text-align: center;
-    line-height: 24px;
-    margin-right: 10px;
-  }
-  
-  .verification-dashboard .evaluations-title {
-    color: #000;
-    margin-bottom: 15px;
-  }
-  
-  .verification-dashboard .evaluations-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-  }
-  
-  .verification-dashboard .evaluation-card {
-    background-color: #f0f0f0;
-    border-radius: 8px;
     padding: 15px;
   }
-  
-  .verification-dashboard .evaluator-name {
-    color: #000;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .verification-dashboard .evaluation-result {
-    margin-bottom: 10px;
-  }
-  
-  .verification-dashboard .evaluation-result.human {
-    color: #28a745;
-  }
-  
-  .verification-dashboard .evaluation-result.bot {
-    color: #dc3545;
-  }
-  
-  .verification-dashboard .evaluation-date {
-    color: #666;
-    margin-bottom: 10px;
-  }
-  
-  .verification-dashboard .evaluation-reason {
-    color: #000;
-  }
-  
-  .verification-dashboard .evaluation-reason ul {
-    padding-left: 20px;
-    margin-top: 5px;
-  }
-  
-  .verification-dashboard .evaluation-reason li {
-    color: #000;
-    margin-bottom: 5px;
-  }
-  
-  .verification-dashboard .verifier-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 15px;
-  }
-  
-  .verification-dashboard .verify-human-btn,
-  .verification-dashboard .verify-bot-btn {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  
-  .verification-dashboard .verify-human-btn {
-    background-color: #28a745;
-  }
-  
-  .verification-dashboard .verify-bot-btn {
-    background-color: #dc3545;
-  }
-  
-  .verification-dashboard .verify-human-btn:disabled,
-  .verification-dashboard .verify-bot-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .verification-dashboard .evaluations-grid {
-      grid-template-columns: 1fr;
-    }
-  
-    .verification-dashboard .verifier-actions {
-      flex-direction: column;
-    }
-  }
-
-  
+}

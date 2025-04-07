@@ -5,6 +5,11 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 40px;
+    background: transparent;
+    position: relative;
+    z-index: 10;
+    margin-bottom: 0;
+    width: 100%;
 }
 
 .logo-container {
@@ -17,6 +22,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    text-decoration: none;
 }
 
 .logo {
@@ -28,6 +34,7 @@
 
 .navigation {
     display: flex;
+    align-items: center;
     gap: 20px;
 }
 
@@ -47,6 +54,55 @@
 
 .nav-link:hover {
     color: #1a1a1a;
+}
+
+/* Authentication buttons styling */
+.login-button,
+.logout-button {
+    background-color: transparent;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-button {
+    border: 2px solid #5374a0;
+    color: #5374a0;
+}
+
+.login-button:hover {
+    background-color: #5374a0;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.logout-button {
+    border: 2px solid #ef476f;
+    color: #ef476f;
+}
+
+.logout-button:hover {
+    background-color: #ef476f;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Make sure the navbar size is consistent regardless of page */
+.homepage-container .header,
+.verification-dashboard .header {
+    padding: 20px 40px;
+    height: auto;
+    min-height: 80px;
+    box-sizing: border-box;
+}
+
+/* Make sure the verification dashboard doesn't have additional spacing */
+.verification-dashboard .header {
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
 }
 
 /* Responsive adjustments */

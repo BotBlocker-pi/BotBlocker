@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import '../css/HomePage.css';
-import botBlockerLogo from '../assets/logo.png';
-import { Link } from 'react-router-dom';
 import ProfileInfo from '../components/ProfileInfo.jsx';
 import { getEvaluationHistory, getProfileData } from '../api/data.jsx';
 import LoginForm from "../components/LoginForm.jsx";
 import { checkAuth, logoutUser } from '../api/loginApi';
- 
+import Navbar from '../components/Navbar'; // Import the Navbar component
 
 const HomePage = () => {
     const [searchUrl, setSearchUrl] = useState('');
@@ -22,7 +20,6 @@ const HomePage = () => {
     const [initialLoginMode, setInitialLoginMode] = useState(false); // New state to control initial login mode
     const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
 
-
     // Check authentication status on component mount
     useEffect(() => {
         const checkAuthStatus = async () => {
@@ -30,7 +27,7 @@ const HomePage = () => {
                 const authStatus = await checkAuth();
                 setIsAuthenticated(authStatus);
                 localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
-                
+
                 // Se não estiver autenticado, remover o role do localStorage
                 if (!authStatus) {
                     localStorage.removeItem('role');
@@ -45,7 +42,7 @@ const HomePage = () => {
         const storedAuth = localStorage.getItem('isAuthenticated');
         if (storedAuth) {
             setIsAuthenticated(JSON.parse(storedAuth));
-            
+
             // Verificar a autenticação ao carregar a página
             if (!JSON.parse(storedAuth)) {
                 localStorage.removeItem('role');
@@ -59,12 +56,12 @@ const HomePage = () => {
     const handleAuthChange = (status) => {
         setIsAuthenticated(status);
         localStorage.setItem('isAuthenticated', JSON.stringify(status));
-        
+
         // Se não estiver autenticado, remover o role
         if (!status) {
             localStorage.removeItem('role');
         }
-        
+
         setShowLoginModal(false);
     };
 
@@ -119,32 +116,13 @@ const HomePage = () => {
 
     return (
         <div className={`homepage-container ${isLoaded ? 'fade-in' : ''}`}>
-            <header className="header">
-                <div className="logo-container">
-                    <div className="logo-wrapper">
-                        <img src={botBlockerLogo} alt="BotBlocker Logo" className="logo" />
-                    </div>
-                </div>
-                <nav className="navigation">
-                    <a href="#" className="nav-link active">HOME</a>
-                    <a href="/understand-bots" className="nav-link">UNDERSTAND BOTS</a>
-                    <a href="/contact" className="nav-link">CONTACT</a>
-
-                    {userRole === 'verifier' && (
-                        <Link to="/verification-dashboard" className="nav-link">VERIFICATION DASHBOARD</Link>
-                    )}
-
-
-                    {isAuthenticated ? (
-                        <div className="auth-controls">
-                            <span className="user-status">✓ Logged In</span>
-                            <button onClick={handleLogout} className="logout-button">Logout</button>
-                        </div>
-                    ) : (
-                        <button onClick={() => toggleLoginModal(false)} className="login-button">Login</button>
-                    )}
-                </nav>
-            </header>
+            {/* Use the Navbar component instead of embedding the navbar */}
+            <Navbar
+                isAuthenticated={isAuthenticated}
+                userRole={userRole}
+                onLogout={handleLogout}
+                toggleLoginModal={toggleLoginModal}
+            />
 
             {/* Login Modal */}
             {showLoginModal && (

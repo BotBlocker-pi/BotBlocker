@@ -1,56 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import botBlockerLogo from '../assets/logo.png';
+import '../css/Navbar.css';
 
-const Navbar = ({ onLogout }) => {
-    
-
-    const renderNavLinks = () => {
-
-        // Links comuns para todos os usuários
-        const commonLinks = [
-            { to: '/', label: 'HOME' },
-            { to: '/understand-bots', label: 'UNDERSTAND BOTS' },
-            { to: '/contact', label: 'CONTACT' }
-        ];
-
-
-        
-
-        return commonLinks;
-    };
-
+const Navbar = ({ isAuthenticated, userRole, onLogout, toggleLoginModal }) => {
     return (
         <header className="header">
             <div className="logo-container">
-                <div className="logo-wrapper">
+                <Link to="/" className="logo-wrapper">
                     <img src={botBlockerLogo} alt="BotBlocker Logo" className="logo" />
-                </div>
+                </Link>
             </div>
             <nav className="navigation">
-                {renderNavLinks().map((link) => (
-                    <Link 
-                        key={link.to} 
-                        to={link.to} 
-                        className="nav-link"
+                <Link to="/" className={`nav-link ${window.location.pathname === '/' ? 'active' : ''}`}>HOME</Link>
+                <Link to="/understand-bots" className={`nav-link ${window.location.pathname === '/understand-bots' ? 'active' : ''}`}>UNDERSTAND BOTS</Link>
+                <Link to="/contact" className={`nav-link ${window.location.pathname === '/contact' ? 'active' : ''}`}>CONTACT</Link>
+
+                {userRole === 'verifier' && (
+                    <Link
+                        to="/verification-dashboard"
+                        className={`nav-link ${window.location.pathname === '/verification-dashboard' ? 'active' : ''}`}
                     >
-                        {link.label}
+                        VERIFICATION DASHBOARD
                     </Link>
-                ))}
-                
-                {/* Links de autenticação */}
-                {user ? (
-                    <>
-                        <Link to="/profile" className="nav-link">PROFILE</Link>
-                        <button 
-                            onClick={onLogout} 
-                            className="nav-link logout-btn"
-                        >
-                            LOGOUT
-                        </button>
-                    </>
+                )}
+
+                {isAuthenticated ? (
+                    <button onClick={onLogout} className="logout-button">Logout</button>
                 ) : (
-                    <Link to="/login" className="nav-link">LOGIN</Link>
+                    <button onClick={() => toggleLoginModal(false)} className="login-button">Login</button>
                 )}
             </nav>
         </header>
