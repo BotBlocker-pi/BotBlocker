@@ -11,8 +11,7 @@ export const loginUser = async (username, password) => {
         });
 
         if (!response.ok) throw new Error("Credenciais inválidas");
-        
-        localStorage.setItem('is_new_login', "true");
+
         return await response.json(); // Retorna os tokens (access e refresh)
     } catch (error) {
         console.error("Error logging in:", error);
@@ -28,19 +27,18 @@ export const registerUser = async (username, email, password) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: username, email: email, password })
         });
-        
-        localStorage.setItem('is_new_login', "true");   
-        return await response.json();
+        const reposta=await response.json();
+        return reposta;
     } catch (error) {
-        console.error("Error registering user:", error);
-        return null;
+        console.error('Registration error:', error.response ? error.response.data : error.message);
+        throw error;
     }
 };
 
 // Função para verificar se o utilizador está autenticado
 export const checkAuth = async () => {
     const token = localStorage.getItem("access_token");
-    
+
     if (!token) return false;
     console.log(1);
 
@@ -64,6 +62,8 @@ export const checkAuth = async () => {
 export const logoutUser = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("role");
 };
 
 

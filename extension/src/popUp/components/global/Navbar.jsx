@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Logo from '../../../assets/logo.png';
-import { FaCog } from 'react-icons/fa';
+import { FaCog, FaUserPlus } from 'react-icons/fa';
 
 const Nav = styled.nav`
     display: flex;
@@ -18,17 +18,47 @@ const LogoImage = styled.img`
     height: 40px;
 `;
 
+const IconContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+`;
+
 const GearIcon = styled(FaCog)`
     font-size: 24px;
     color: white;
     cursor: pointer;
-
+    
     &:hover {
         opacity: 0.8;
     }
 `;
 
-const Navbar = () => {
+const SignUpIcon = styled(FaUserPlus)`
+    font-size: 22px;
+    color: white;
+    cursor: pointer;
+    
+    &:hover {
+        opacity: 0.8;
+    }
+`;
+
+const BackButton = styled.button`
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    
+    &:hover {
+        opacity: 0.8;
+    }
+`;
+
+const Navbar = ({ onSignUpClick, showBackButton = false, onBack }) => {
     const handleSettingsClick = () => {
         chrome.tabs.create({ url: chrome.runtime.getURL('settings.html') });
     };
@@ -36,12 +66,21 @@ const Navbar = () => {
     return (
         <Nav>
             <div>
-                <LogoImage src={Logo} alt="Logo" />
+                {showBackButton ? (
+                    <BackButton onClick={onBack}>
+                        ← Back
+                    </BackButton>
+                ) : (
+                    <LogoImage src={Logo} alt="Logo" />
+                )}
             </div>
 
-            <div>
-                <GearIcon onClick={handleSettingsClick} />
-            </div>
+            <IconContainer>
+                {!showBackButton && onSignUpClick && (
+                    <SignUpIcon onClick={onSignUpClick} title="Sign Up" />
+                )}
+                <GearIcon onClick={handleSettingsClick} title="Settings" />
+            </IconContainer>
         </Nav>
     );
 };

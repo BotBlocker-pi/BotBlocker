@@ -39,7 +39,7 @@ const BadgeContainer = styled.div`
 const Badge = styled.img`
     width: 50px;
     height: 50px;
-    cursor: pointer; 
+    cursor: pointer;
 `;
 
 const Tooltip = styled.div`
@@ -54,7 +54,7 @@ const Tooltip = styled.div`
     z-index: 1;
     bottom: 90%;
     left: 50%;
-    transform: translateX(-70%); 
+    transform: translateX(-70%);
     opacity: 0;
     transition: opacity 0.3s;
 
@@ -65,6 +65,9 @@ const Tooltip = styled.div`
 `;
 
 const AiAnalysis = ({ botPercentage, numberVotes, badge }) => {
+    // Format the percentage to always show 2 decimal places
+    const formattedPercentage = parseFloat(botPercentage).toFixed(2);
+
     let badgeSrc, tooltipMessage;
     switch (badge) {
         case 'bot':
@@ -88,7 +91,7 @@ const AiAnalysis = ({ botPercentage, numberVotes, badge }) => {
         <AiAnalysisContainer>
             {/* Textos: Porcentagem e votos */}
             <TextContainer>
-                <Percentage>{botPercentage}% chance of being AI</Percentage>
+                <Percentage>{formattedPercentage}% chance of being AI</Percentage>
                 <Votes>({numberVotes} votes)</Votes>
             </TextContainer>
 

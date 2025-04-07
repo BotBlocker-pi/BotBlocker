@@ -1,0 +1,105 @@
+/* AIAnalysis.css */
+
+.ai-analysis-container {
+    width: 100%;
+    margin-top: 30px;
+    padding: 0 20px;
+}
+
+.ai-analysis-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 20px;
+}
+
+/* Estilo para o nome de usuário da rede social */
+.social-username {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.social-platform {
+    font-size: 18px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.username-display {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+}
+
+.ai-analysis-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+    padding: 25px;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+}
+
+.left-section {
+    display: flex;
+    flex-direction: column;
+    padding-right: 25px; /* Aumentado de 15px para 25px */
+    border-right: 2px solid #eee; /* Aumentado de 1px para 2px */
+    margin-right: 25px; /* Aumentado de 15px para 25px */
+}
+
+.percentage-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px; /* Aumentado de 8px para 10px */
+}
+
+.percentage-text {
+    font-size: 42px; /* Aumentado de 32px para 42px */
+    font-weight: 700;
+    line-height: 1.2;
+    color: #000;
+}
+
+.chance-text {
+    font-size: 18px; /* Aumentado de 16px para 18px */
+    color: #000;
+}
+
+.votes-count {
+    font-size: 16px; /* Aumentado de 14px para 16px */
+    color: #666;
+    margin-top: 8px; /* Aumentado de 5px para 8px */
+}
+
+.verification-container {
+    display: flex;
+    align-items: center;
+    padding-left: 10px; /* Aumentado de 5px para 10px */
+}
+
+.badge-icon {
+    margin-right: 15px; /* Aumentado de 10px para 15px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-image {
+    width: 48px; /* Aumentado de 36px para 48px */
+    height: 48px; /* Aumentado de 36px para 48px */
+    object-fit: contain;
+}
+
+.verification-text p {
+    margin: 0;
+    font-size: 16px; /* Aumentado de 14px para 16px */
+    color: #666;
+    line-height: 1.4;
+}
