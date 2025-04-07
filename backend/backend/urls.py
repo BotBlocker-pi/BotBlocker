@@ -33,6 +33,8 @@ urlpatterns = [
     path('create_user/', createUserBB, name='createUserBB'),
     path("token/", CustomTokenObtainView.as_view(), name="token_obtain"),
     path('protected/',ProtectedView.as_view(),name="ProtectedView"),
+    path('post_img/', post_img, name='post_img'),
+
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),
     path('give_badge/', give_badge, name='change_badge'),

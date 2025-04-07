@@ -3,38 +3,36 @@ from .models import Profile,Evaluation,Social
 from urllib.parse import urlparse
 
 def extractPerfilNameAndPlataformOfURL(url: str):
-    # Make sure url is a string, not bytes
-    if isinstance(url, bytes):
-        url = url.decode('utf-8')
-
     parsed_url = urlparse(url)
 
-    # Convert netloc to string if it's bytes
-    netloc = parsed_url.netloc
-    if isinstance(netloc, bytes):
-        netloc = netloc.decode('utf-8')
-
     social_platforms = {
-        'instagram': ['instagram'],
-        'linkedin': ['linkedin'],
-        'x': ['x.com', 'twitter']
+        'instagram': ['instagram.com'],
+        'linkedin': ['linkedin.com'],
+        'x': ['x.com', 'twitter.com']
     }
 
-    plataform = None
-    for key, values in social_platforms.items():
-        if any(value in netloc.lower() for value in values):
-            plataform = key
+    plataforma = None
+    for key, domains in social_platforms.items():
+        if any(domain in parsed_url.netloc.lower() for domain in domains):
+            plataforma = key
             break
 
-    # Convert path to string if it's bytes
-    path = parsed_url.path
-    if isinstance(path, bytes):
-        path = path.decode('utf-8')
+    path_segments = parsed_url.path.strip("/").split("/")
 
-    path_segments = path.strip("/").split("/")
-    perfil_name = path_segments[-1] if path_segments else None
+    perfil_name = None
 
-    return perfil_name, plataform
+    if plataforma == 'x' and path_segments:
+        perfil_name = path_segments[0]
+
+    elif plataforma == 'linkedin':
+        # Suporta linkedin.com/in/..., linkedin.com/company/... e linkedin.com/school/...
+        if len(path_segments) >= 2 and path_segments[0] in ['in', 'company', 'school']:
+            perfil_name = path_segments[1]
+
+    elif plataforma == 'instagram' and path_segments:
+        perfil_name = path_segments[0]
+
+    return perfil_name, plataforma
 
 class ProfileDTO(serializers.Serializer):
     perfil_id = serializers.UUIDField()
@@ -43,6 +41,7 @@ class ProfileDTO(serializers.Serializer):
     badge = serializers.CharField()
     probability = serializers.FloatField()
     numberOfEvaluations = serializers.IntegerField()
+    avatar_url = serializers.URLField()
 
     def __init__(self, username, social__social):
         try:
@@ -59,7 +58,8 @@ class ProfileDTO(serializers.Serializer):
             "plataform": profile.social.social,
             "badge": profile.badge,
             "probability": probability, 
-            "numberOfEvaluations":total_evaluations
+            "numberOfEvaluations":total_evaluations,
+            "avatar_url":profile.avatar_url
         }
 
         super().__init__(data=data)
