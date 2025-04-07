@@ -1,3 +1,44 @@
+const waitForImage = setInterval(() => {
+    const image = document.querySelector('img[alt="Opens profile photo"]');
+    if (image) {
+      console.log("Image found:", image.src);
+  
+      // Save it to chrome.storage.local so your React popup can access it
+      chrome.storage.local.set({ avatarUrl: image.src });
+  
+      clearInterval(waitForImage);
+    }
+  }, 500);
+  
+  function detectProfileImage() {
+    const avatarImgs = document.querySelectorAll('img.css-9pa8cd');
+  
+    for (const img of avatarImgs) {
+      const alt = img.getAttribute("alt")?.toLowerCase();
+      const src = img.getAttribute("src");
+  
+      // Verifica se o alt indica que é uma imagem de perfil
+      if (alt && src && alt.includes("profile photo")) {
+        chrome.storage.local.set({ avatarUrl: src });
+        return;
+      }
+    }
+  }
+  
+  
+  // Detect changes on the page (SPA navigation)
+  const observer2 = new MutationObserver(() => {
+    detectProfileImage();
+  });
+  
+  observer2.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+  
+  detectProfileImage();
+  
+
 console.log("[Collect Mentions] Content script loaded and running");
 
 // Variável para armazenar os perfis da API

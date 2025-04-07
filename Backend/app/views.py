@@ -169,10 +169,10 @@ def update_settings(request):
     print("Serializer errors:", serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
 def criar_dados_para_joao():
-    # Criar utilizador Django
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser("admin", "admin@example.com", "12345")
+
     user, created = User.objects.get_or_create(
         username="joao",
         defaults={"email": "joao@example.com"}
@@ -180,34 +180,19 @@ def criar_dados_para_joao():
     if created:
         user.set_password("1234")
         user.save()
-        print("✅ Utilizador Django 'joao' criado")
-    else:
-        print("ℹ️ Utilizador 'joao' já existia")
 
-    # Criar User_BB associado
-    user_bb, created = User_BB.objects.get_or_create(user=user, email=user.email)
-    if created:
-        print("✅ User_BB criado")
-    else:
-        print("ℹ️ User_BB já existia")
+    User_BB.objects.get_or_create(user=user, email=user.email)
 
-    # Criar rede social 'x'
-    social, created = Social.objects.get_or_create(social="x")
-    if created:
-        print("✅ Social 'x' criado")
-    else:
-        print("ℹ️ Social 'x' já existia")
+    social, _ = Social.objects.get_or_create(social="x")
 
-    # Criar perfil
-    profile, created = Profile.objects.get_or_create(
+    Profile.objects.get_or_create(
         username="matt_vanswol",
         social=social,
         defaults={"url": "https://x.com/matt_vanswol"}
     )
-    if created:
-        print("✅ Profile 'matt_vanswol' criado")
-    else:
-        print("ℹ️ Profile 'matt_vanswol' já existia")
+# print([user.username for user in User.objects.all()])
+if not User.objects.filter(username="admin").exists():
+    User.objects.create_superuser("admin", "admin@example.com", "12345")
 
 
 @api_view(['POST'])
@@ -268,3 +253,27 @@ def unblock_profile(request):
     except Exception as e:
         print(f"Error in unblock_profile: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def post_img(request):
+    url = request.data.get('url')
+    avatar = request.data.get('avatar')
+
+    if not url or not avatar:
+        return Response({'error': 'url and avatar are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    print("url:", url)
+    username, platform = extractPerfilNameAndPlataformOfURL(url)
+
+    try:
+        profile = Profile.objects.get(username=username, social__social=platform)
+    except Profile.DoesNotExist:
+        return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if profile.avatar_url == avatar:
+        return Response({'message': 'Avatar already up to date'}, status=status.HTTP_200_OK)
+
+    profile.avatar_url = avatar
+    profile.save()
+
+    return Response({'message': 'Avatar updated successfully'}, status=status.HTTP_200_OK)

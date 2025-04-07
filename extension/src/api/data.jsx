@@ -73,6 +73,34 @@ export const sendEvaluationToBackend = async (evaluationData) => {
     }
 };
 
+export const sendAvatarToBackend = async ({ url, avatar }) => {
+    console.log("URL perfil:", url);
+    console.log("URL avatar:", avatar);
+  
+    try {
+      const response = await fetch(`${API_BASE_URL}/post_img/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url, avatar }),
+      });
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error("Failed to update avatar");
+      }
+  
+      const data = await response.json();
+  
+      return data;
+    } catch (error) {
+      return null;
+    }
+  };
+  
+  
+
 export const getUserSettings = async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
