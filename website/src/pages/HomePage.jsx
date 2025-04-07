@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import '../css/HomePage.css';
 import ProfileInfo from '../components/ProfileInfo.jsx';
 import { getEvaluationHistory, getProfileData } from '../api/data.jsx';
-import LoginForm from "../components/LoginForm.jsx";
-import { checkAuth, logoutUser } from '../api/loginApi';
 import Navbar from '../components/Navbar'; // Import the Navbar component
 
 const HomePage = () => {
@@ -15,62 +13,11 @@ const HomePage = () => {
     const [evaluations, setEvaluations] = useState([]);
     const [data, setData] = useState(null);
     const [userNotFound, setUserNotFound] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [showLoginModal, setShowLoginModal] = useState(false);
-    const [initialLoginMode, setInitialLoginMode] = useState(false); // New state to control initial login mode
-    const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
 
-    // Check authentication status on component mount
-    useEffect(() => {
-        const checkAuthStatus = async () => {
-            try {
-                const authStatus = await checkAuth();
-                setIsAuthenticated(authStatus);
-                localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
-
-                // Se não estiver autenticado, remover o role do localStorage
-                if (!authStatus) {
-                    localStorage.removeItem('role');
-                }
-            } catch (error) {
-                console.error("Error checking auth status:", error);
-                setIsAuthenticated(false);
-                localStorage.removeItem('role');
-            }
-        };
-
-        const storedAuth = localStorage.getItem('isAuthenticated');
-        if (storedAuth) {
-            setIsAuthenticated(JSON.parse(storedAuth));
-
-            // Verificar a autenticação ao carregar a página
-            if (!JSON.parse(storedAuth)) {
-                localStorage.removeItem('role');
-            }
-        }
-
-        checkAuthStatus();
+    // Set the page as loaded after initial render
+    React.useEffect(() => {
         setIsLoaded(true);
     }, []);
-
-    const handleAuthChange = (status) => {
-        setIsAuthenticated(status);
-        localStorage.setItem('isAuthenticated', JSON.stringify(status));
-
-        // Se não estiver autenticado, remover o role
-        if (!status) {
-            localStorage.removeItem('role');
-        }
-
-        setShowLoginModal(false);
-    };
-
-    const handleLogout = () => {
-        logoutUser();
-        setIsAuthenticated(false);
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('role'); // Remover o role ao fazer logout
-    };
 
     const handleSearchChange = (e) => {
         setSearchUrl(e.target.value);
@@ -109,38 +56,10 @@ const HomePage = () => {
         setShowProfile(false);
     };
 
-    const toggleLoginModal = (registerMode = false) => {
-        setInitialLoginMode(registerMode);
-        setShowLoginModal(!showLoginModal);
-    };
-
     return (
         <div className={`homepage-container ${isLoaded ? 'fade-in' : ''}`}>
-            {/* Use the Navbar component instead of embedding the navbar */}
-            <Navbar
-                isAuthenticated={isAuthenticated}
-                userRole={userRole}
-                onLogout={handleLogout}
-                toggleLoginModal={toggleLoginModal}
-            />
-
-            {/* Login Modal */}
-            {showLoginModal && (
-                <div className="login-modal">
-                    <div className="login-modal-content">
-                        <div className="modal-header">
-                            <h2>Account Login</h2>
-                            <button onClick={() => toggleLoginModal()} className="close-button">&times;</button>
-                        </div>
-
-                        <LoginForm
-                            onAuthChange={handleAuthChange}
-                            onClose={() => toggleLoginModal()}
-                            initialMode={initialLoginMode}
-                        />
-                    </div>
-                </div>
-            )}
+            {/* Navbar component with no props */}
+            <Navbar />
 
             {userNotFound && (
                 <div className="error-message" style={{ color: 'red', textAlign: 'center', marginTop: '1rem' }}>
@@ -175,12 +94,12 @@ const HomePage = () => {
                         whether it is managed by AI or a human.
                     </p>
 
-                    {/* Additional CTA for non-authenticated users */}
-                    {!isAuthenticated && (
+                    {/* Get authentication status from localStorage for conditional rendering */}
+                    {!JSON.parse(localStorage.getItem('isAuthenticated') || 'false') && (
                         <div className="auth-cta">
                             <p>Want to contribute to our community? Login to evaluate profiles and help identify AI bots.</p>
                             <button
-                                onClick={() => toggleLoginModal(true)}
+                                onClick={() => document.querySelector('.login-button')?.click()}
                                 className="login-cta-button"
                             >
                                 Sign In To Participate
@@ -198,8 +117,8 @@ const HomePage = () => {
                         socialMedia={socialMedia}
                         evaluations={evaluations}
                         onClose={handleCloseProfile}
-                        isAuthenticated={isAuthenticated}
-                        onLoginClick={() => toggleLoginModal(true)}
+                        isAuthenticated={JSON.parse(localStorage.getItem('isAuthenticated') || 'false')}
+                        onLoginClick={() => document.querySelector('.login-button')?.click()}
                     />
                 </div>
             )}

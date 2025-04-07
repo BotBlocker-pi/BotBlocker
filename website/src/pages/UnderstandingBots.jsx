@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import '../css/UnderstandingBots.css'
-import botBlockerLogo from '../assets/logo.png'; // Adjust the path as needed
-import { Link } from 'react-router-dom';
+import '../css/UnderstandingBots.css';
+import Navbar from '../components/Navbar'; // Import the Navbar component
 
 const UnderstandBots = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [activeSection, setActiveSection] = useState('what-are-bots');
-    const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
-
 
     useEffect(() => {
         // Add animation class after component mounts
@@ -20,22 +17,8 @@ const UnderstandBots = () => {
 
     return (
         <div className={`understand-container ${isLoaded ? 'fade-in' : ''}`}>
-            <header className="header">
-                <div className="logo-container">
-                    <div className="logo-wrapper">
-                        <img src={botBlockerLogo} alt="BotBlocker Logo" className="logo" />
-                    </div>
-                </div>
-                <nav className="navigation">
-                    <a href="/" className="nav-link">HOME</a>
-                    <a href="/understand-bots" className="nav-link active">UNDERSTAND BOTS</a>
-                    <a href="/contact" className="nav-link">CONTACT</a>
-
-                    {userRole === 'verifier' && (
-                        <Link to="/verification-dashboard" className="nav-link">VERIFICATION DASHBOARD</Link>
-                    )}
-                </nav>
-            </header>
+            {/* Use the Navbar component instead of embedded header */}
+            <Navbar />
 
             <main className="understand-content">
                 <h1 className="page-title">Understanding Social Media Bots</h1>
@@ -94,6 +77,7 @@ const UnderstandBots = () => {
                                     </p>
                                 </div>
 
+                                {/* Rest of the what-are-bots section content unchanged */}
                                 <div className="info-card">
                                     <div className="card-header">
                                         <svg className="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -137,8 +121,11 @@ const UnderstandBots = () => {
                             </div>
                         )}
 
+                        {/* Keep all the other sections unchanged */}
                         {activeSection === 'how-to-identify' && (
+                            /* How to identify section content */
                             <div className="section">
+                                {/* Content unchanged */}
                                 <h2>How to Identify Social Media Bots</h2>
                                 <div className="info-card">
                                     <div className="card-header">
@@ -162,7 +149,9 @@ const UnderstandBots = () => {
                                     </ul>
                                 </div>
 
+                                {/* Example comparisons section remains the same */}
                                 <div className="example-container">
+                                    {/* Content unchanged */}
                                     <div className="example-card human">
                                         <h4>Human Account Example</h4>
                                         <div className="profile-example">
@@ -222,7 +211,9 @@ const UnderstandBots = () => {
                         )}
 
                         {activeSection === 'impacts' && (
+                            /* Impacts section content */
                             <div className="section">
+                                {/* Content unchanged */}
                                 <h2>Impact of Bots on Social Media</h2>
                                 <div className="impact-grid">
                                     <div className="impact-card negative">
@@ -285,7 +276,9 @@ const UnderstandBots = () => {
                         )}
 
                         {activeSection === 'our-tech' && (
+                            /* Our tech section content */
                             <div className="section">
+                                {/* Content unchanged */}
                                 <h2>Our Bot Detection Technology</h2>
                                 <div className="tech-overview">
                                     <p className="tech-intro">
@@ -336,7 +329,6 @@ const UnderstandBots = () => {
                                         </div>
                                     </div>
                                 </div>
-
 
                                 <div className="try-it-container">
                                     <h3>Try BotBlocker Today</h3>
