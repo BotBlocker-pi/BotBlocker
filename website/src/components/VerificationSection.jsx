@@ -21,6 +21,20 @@ const VerificationSection = ({ setActiveSection }) => {
     const [verificationMessage, setVerificationMessage] = useState(null);
     const [selectedBadge, setSelectedBadge] = useState('');
 
+    // Add new state for visible evaluations - changed from 6 to 9
+    const [visibleEvaluations, setVisibleEvaluations] = useState(9);
+
+    // Function to load more evaluations - changed from 6 to 9
+    const handleSeeMore = () => {
+        setVisibleEvaluations(prevCount => prevCount + 9);
+    };
+
+    // Function to see fewer evaluations - changed from 6 to 9
+    const handleSeeLess = () => {
+        // Reduce visible evaluations by 9, but never below 9
+        setVisibleEvaluations(prevCount => Math.max(9, prevCount - 9));
+    };
+
     // Handler for the field of search by URL
     const handleSearchChange = (e) => {
         setSearchUrl(e.target.value);
@@ -48,6 +62,7 @@ const VerificationSection = ({ setActiveSection }) => {
         setUserNotFound(false);
         setVerificationMessage(null);
         setIsLoading(true);
+        setVisibleEvaluations(9); // Reset visible evaluations count to 9
 
         try {
             const profileData = await getProfileData(searchUrl);
@@ -89,12 +104,13 @@ const VerificationSection = ({ setActiveSection }) => {
         e.preventDefault();
         setVerificationMessage(null);
         if (!selectedSocialMedia || !usernameSearch) {
-            alert("Por favor, selecione uma rede social e insira um nome de usuário.");
+            alert("Please select a social media platform and enter a username.");
             return;
         }
 
         console.log('Searching for username:', usernameSearch, 'on', selectedSocialMedia);
         setUserNotFound(false);
+        setVisibleEvaluations(9); // Reset visible evaluations count to 9
 
         // Build the complete URL based on selected social media
         let fullUrl = '';
@@ -165,7 +181,7 @@ const VerificationSection = ({ setActiveSection }) => {
         if (!data?.perfil_id) {
             setVerificationMessage({
                 type: 'error',
-                text: 'Não foi possível atribuir o badge: ID do perfil não disponível'
+                text: 'Unable to assign badge: Profile ID not available'
             });
             return;
         }
@@ -196,7 +212,7 @@ const VerificationSection = ({ setActiveSection }) => {
             console.error("Error assigning badge:", error);
             setVerificationMessage({
                 type: 'error',
-                text: 'Erro ao processar verificação'
+                text: 'Error processing verification'
             });
         } finally {
             setIsLoading(false);
@@ -279,7 +295,7 @@ const VerificationSection = ({ setActiveSection }) => {
                             </select>
                         </div>
 
-                        <div className="search-box" style={{ marginBottom: 0 }}>
+                        <div className="search-box username-search">
                             <input
                                 type="text"
                                 placeholder="Username. Example: @BotBlocker"
@@ -297,6 +313,8 @@ const VerificationSection = ({ setActiveSection }) => {
     // Render profile details using new design
     const renderProfileDetails = () => {
         const badgeInfo = getBadgeInfo(selectedBadge || data.badge);
+        const formattedEvaluations = formatEvaluations(evaluations);
+        const hasMoreEvaluations = formattedEvaluations.length > visibleEvaluations;
 
         return (
             <div className="profile-container">
@@ -361,11 +379,11 @@ const VerificationSection = ({ setActiveSection }) => {
                     </div>
                 </div>
 
-                {evaluations && evaluations.length > 0 && (
+                {formattedEvaluations && formattedEvaluations.length > 0 && (
                     <div className="evaluations-section">
                         <h2 className="evaluations-title">Latest evaluations</h2>
                         <div className="evaluations-grid">
-                            {formatEvaluations(evaluations).map((evaluation, index) => (
+                            {formattedEvaluations.slice(0, visibleEvaluations).map((evaluation, index) => (
                                 <div key={index} className="evaluation-card">
                                     <div className="evaluator-name">{evaluation.evaluator_name}</div>
                                     <div className={`evaluation-result ${evaluation.is_bot ? 'bot' : 'human'}`}>
@@ -386,6 +404,19 @@ const VerificationSection = ({ setActiveSection }) => {
                                 </div>
                             ))}
                         </div>
+
+                        <div className="actions-container">
+                            {visibleEvaluations > 9 && (
+                                <button className="action-button see-less-button" onClick={handleSeeLess}>
+                                    See Less
+                                </button>
+                            )}
+                            {hasMoreEvaluations && (
+                                <button className="action-button see-more-button" onClick={handleSeeMore}>
+                                    See More
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -397,7 +428,7 @@ const VerificationSection = ({ setActiveSection }) => {
         return (
             <div className="loading-indicator">
                 <div className="spinner"></div>
-                <p>Carregando...</p>
+                <p>Loading...</p>
             </div>
         );
     }

@@ -1,4 +1,4 @@
-/* VerifierSideBar.css */
+/* VerifierSideBar.css - fully updated */
 
 .sidebar {
     width: 180px;
@@ -7,7 +7,12 @@
     margin: 0;
     padding: 0;
     border-right: 1px solid #e0e0e0;
-    height: 100%;
+    position: fixed;
+    top: 80px; /* Adjust based on your navbar height */
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+    overflow-y: auto;
 }
 
 .sidebar-menu {
@@ -52,6 +57,7 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .sidebar {
+        position: static;
         width: 100%;
         height: auto;
         border-right: none;

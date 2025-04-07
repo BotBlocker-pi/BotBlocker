@@ -30,6 +30,7 @@
   margin-top: 0;
   border-top: none;
   min-height: calc(100vh - 80px);
+  padding-left: 180px; /* Add this to account for fixed sidebar */
 }
 
 /* Main content */
@@ -43,6 +44,8 @@
   justify-content: flex-start;
   padding: 30px;
   padding-top: 30px;
+  padding-bottom: 60px; /* Add bottom padding to create space */
+  width: 100%;
 }
 
 /* Specific adjustments to ensure no space between header and sidebar */
@@ -101,6 +104,12 @@
 @media (max-width: 768px) {
   .verification-dashboard .dashboard-container {
     flex-direction: column;
+    padding-left: 0;
+  }
+
+  .verification-dashboard .main-content {
+    margin-left: 0;
+    width: 100%;
   }
 }
 
