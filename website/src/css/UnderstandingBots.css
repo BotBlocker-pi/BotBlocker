@@ -1,6 +1,5 @@
-/* UnderstandBots.css */
+/* UnderstandingBots.css */
 
-/* Import the same general styles from HomePage.css */
 * {
     margin: 0;
     padding: 0;
@@ -24,64 +23,6 @@ html, body {
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-}
-
-/* Header styles similar to HomePage */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 40px;
-    background-color: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    z-index: 10;
-}
-
-.logo-container {
-    display: flex;
-    align-items: center;
-}
-
-.logo-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.logo {
-    width: 180px;
-    height: auto;
-    object-fit: contain;
-    vertical-align: middle;
-}
-
-.navigation {
-    display: flex;
-    gap: 30px;
-}
-
-.nav-link {
-    text-decoration: none;
-    color: #2c3e50;
-    font-weight: 600;
-    font-size: 15px;
-    padding: 8px 15px;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-    letter-spacing: 0.5px;
-}
-
-.nav-link.active {
-    color: #fff;
-    background-color: #5374a0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.nav-link:hover {
-    color: #5374a0;
-    transform: translateY(-2px);
 }
 
 /* Main content styles */
@@ -579,52 +520,6 @@ html, body {
     font-size: 15px;
 }
 
-/* Accuracy section */
-.accuracy-container {
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-}
-
-.accuracy-container h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 15px;
-}
-
-.accuracy-meter {
-    height: 30px;
-    background-color: #e9ecef;
-    border-radius: 15px;
-    margin-bottom: 15px;
-    overflow: hidden;
-}
-
-.accuracy-bar {
-    height: 100%;
-    background-color: #4CAF50;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 15px;
-    transition: width 1s ease-in-out;
-}
-
-.accuracy-value {
-    color: white;
-    font-weight: 600;
-}
-
-.accuracy-note {
-    color: #4a5568;
-    line-height: 1.6;
-    font-size: 15px;
-}
-
 /* Try it section */
 .try-it-container {
     background-color: #5374a0;
@@ -744,19 +639,6 @@ html, body {
 
 /* Responsive styles */
 @media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 20px;
-        padding: 15px 20px;
-    }
-
-    .navigation {
-        width: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
     .understand-content {
         padding: 20px;
     }
@@ -796,16 +678,9 @@ html, body {
         display: flex;
         flex-direction: column;
     }
-
 }
 
 @media (max-width: 480px) {
-    .navigation {
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-    }
-
     .page-title {
         font-size: 22px;
     }

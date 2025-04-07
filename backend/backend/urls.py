@@ -28,6 +28,7 @@ urlpatterns = [
     path('avaliacao/', criar_avaliacao, name='criar_avaliacao'),
     path('perfis/', get_perfis, name='get_perfis'),
     path('get_settings/', get_settings, name='get_settings'),
+    path('userWasVote/', userWasVote, name='userWasVote'),
     path('update_settings/', update_settings, name='update_settings'),
     path('get_evaluation_history/', get_evaluation_history, name='get_evaluation_history'),
     path('create_user/', createUserBB, name='createUserBB'),
