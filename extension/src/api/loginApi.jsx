@@ -4,7 +4,7 @@ const API_BASE_URL = "http://localhost/api"; // Define a URL base da API
 // Função para autenticar utilizadores (Login)
 export const loginUser = async (username, password) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/token/`, {
+        const response = await fetch(`${API_BASE_URL}/token/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: username, password })
@@ -22,10 +22,10 @@ export const loginUser = async (username, password) => {
 // Função para registar um novo utilizador
 export const registerUser = async (username, email, password) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/register/`, {
+        const response = await fetch(`${API_BASE_URL}/create_user/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password })
+            body: JSON.stringify({ username: username, email: email, password })
         });
 
         return await response.json();
@@ -44,7 +44,7 @@ export const checkAuth = async () => {
 
     try {
         console.log(1);
-        const response = await fetch(`${API_BASE_URL}/api/protected/`, {
+        const response = await fetch(`${API_BASE_URL}/protected/`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
         });
