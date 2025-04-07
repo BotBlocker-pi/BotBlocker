@@ -11,7 +11,8 @@ export const loginUser = async (username, password) => {
         });
 
         if (!response.ok) throw new Error("Credenciais inválidas");
-
+        
+        localStorage.setItem('is_new_login', "true");
         return await response.json(); // Retorna os tokens (access e refresh)
     } catch (error) {
         console.error("Error logging in:", error);
@@ -27,7 +28,8 @@ export const registerUser = async (username, email, password) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: username, email: email, password })
         });
-
+        
+        localStorage.setItem('is_new_login', "true");   
         return await response.json();
     } catch (error) {
         console.error("Error registering user:", error);
