@@ -389,3 +389,29 @@ def give_badge(request):
     except Exception as e:
         print(f"Error in give_badge: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+ 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def userWasVote(request):
+    username = request.GET.get("username")
+    platform = request.GET.get("platform")
+
+    try:
+        user_bb = User_BB.objects.get(user=request.user)
+        print(f"Found User_BB: {user_bb.id}")
+    except User_BB.DoesNotExist:
+        print("User_BB not found for this user.")
+        return Response({'error': 'User_BB não encontrado para este utilizador'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        was_vote = Evaluation.objects.filter(
+            user=user_bb,
+            profile__username=username,
+            profile__social__social=platform
+        ).exists()
+        print(f"Vote exists: {was_vote}")
+    except Exception as e:
+        print(f"Error checking Evaluation: {str(e)}")
+        return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({'was_vote': was_vote}, status=status.HTTP_200_OK)

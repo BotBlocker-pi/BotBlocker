@@ -133,10 +133,46 @@ export const sendUpdatedSettings = async (settingsData) => {
     }
 };
 
+export const getUserWasVote = async ({ username, platform }) => {
+    const token = localStorage.getItem("access_token");
+  
+    if (!token) {
+      alert("User is not authenticated");
+      return null;
+    }
+  
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/userWasVote/?username=${encodeURIComponent(username)}&platform=${encodeURIComponent(platform)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (!response.ok) {
+        console.error(`Error checking vote status: ${response.status} ${response.statusText}`);
+        return null;
+      }
+  
+      const data = await response.json();
+      console.log("Vote check response:", data);
+  
+      return data.was_vote;
+    } catch (error) {
+      console.error("Error fetching vote status:", error);
+      return null;
+    }
+  };  
+
 export default {
     getProfileData,
     createProfile,
     sendEvaluationToBackend,
     getUserSettings,
     sendUpdatedSettings,
+    getUserWasVote,
 };

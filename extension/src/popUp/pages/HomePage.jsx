@@ -3,7 +3,7 @@ import styled from "styled-components";
 import Navbar from "../components/global/Navbar.jsx";
 import SocialMediaProfile from "../components/SocialMediaProfileInfo.jsx";
 import AiAnalysis from "../components/AiAnalysis.jsx";
-import { getProfileData, sendEvaluationToBackend } from "../../api/data.jsx";
+import { getProfileData, sendEvaluationToBackend, getUserWasVote } from "../../api/data.jsx";
 import QuestionnaireYes from "../components/voting/QuestionnaireYes.jsx";
 import QuestionnaireNo from "../components/voting/QuestionnaireNo.jsx";
 import Login from "./Login.jsx";
@@ -201,6 +201,7 @@ const HomePage = () => {
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [hasVoted, setHasVoted] = useState(false);
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -272,7 +273,7 @@ const HomePage = () => {
     // Show feedback message
     setSuccessMessage("Thank you for your contribution!");
     setShowSuccessMessage(true);
-
+    setHasVoted(true);
     // Hide the message after 3 seconds
     setTimeout(() => {
       setShowSuccessMessage(false);
@@ -312,6 +313,22 @@ const HomePage = () => {
       });
     }
   }, [showLoginPage]);
+
+  useEffect(() => {
+    if (data && isAuthenticated) {
+      const checkUserVote = async () => {
+        try {
+          const voted = await getUserWasVote({username:data.perfil_name, platform:data.plataform});
+          setHasVoted(voted);
+        } catch (error) {
+          console.error("Error checking if user has voted:", error);
+        }
+      };
+  
+      checkUserVote();
+    }
+  }, [data, isAuthenticated]);
+  
 
   if (showLoginPage) {
     return (
@@ -364,27 +381,37 @@ const HomePage = () => {
               )
           )}
 
-          {isAuthenticated ? (
-              !showQuestionnaire ? (
-                  <VotingContainer>
-                    <TextContainer>Is this profile AI?</TextContainer>
-                    <ButtonContainer>
-                      <Button $vote="Yes" onClick={() => handleVote("Yes")}>Yes</Button>
-                      <Button $vote="No" onClick={() => handleVote("No")}>No</Button>
-                    </ButtonContainer>
-                  </VotingContainer>
-              ) : vote === "Yes" ? (
-                  <QuestionnaireYes onSubmit={handleSubmitReason} />
-              ) : (
-                  <QuestionnaireNo onSubmit={handleSubmitReason} />
-              )
+        {isAuthenticated ? (
+          hasVoted ? (
+            <VotingContainer>
+              <TextContainer>
+                You have already voted for this profile.
+              </TextContainer>
+            </VotingContainer>
+          ) : !showQuestionnaire ? (
+            <VotingContainer>
+              <TextContainer>Is this profile AI?</TextContainer>
+              <ButtonContainer>
+                <Button $vote="Yes" onClick={() => handleVote("Yes")}>
+                  Yes
+                </Button>
+                <Button $vote="No" onClick={() => handleVote("No")}>
+                  No
+                </Button>
+              </ButtonContainer>
+            </VotingContainer>
+          ) : vote === "Yes" ? (
+            <QuestionnaireYes onSubmit={handleSubmitReason} />
           ) : (
-              <div style={{ textAlign: 'center', margin: '24px 0' }}>
-                <LoginButton onClick={() => handleLoginClick(false)}>
-                  Login to Continue
-                </LoginButton>
-              </div>
-          )}
+            <QuestionnaireNo onSubmit={handleSubmitReason} />
+          )
+        ) : (
+          <div style={{ textAlign: 'center', margin: '24px 0' }}>
+            <LoginButton onClick={() => handleLoginClick(false)}>
+              Login to Continue
+            </LoginButton>
+          </div>
+        )}
 
           {/* Add user status display and logout button if authenticated */}
           {isAuthenticated && (
