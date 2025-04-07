@@ -27,6 +27,7 @@ urlpatterns = [
     path('perfis/', get_perfis, name='get_perfis'),
     path('get_settings/', get_settings, name='get_settings'),
     path('update_settings/', update_settings, name='update_settings'),
+    path('post_img/', post_img, name='post_img'),
     path("api/token/", CustomTokenObtainView.as_view(), name="token_obtain"),
     path('api/protected/',ProtectedView.as_view(),name="ProtectedView"),
     path('block_profile/', block_profile, name='block_profile'),

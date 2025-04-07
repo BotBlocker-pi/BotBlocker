@@ -3,7 +3,7 @@ import Navbar from "../components/global/Navbar.jsx";
 import styled from "styled-components";
 import SocialMediaProfile from "../components/SocialMediaProfileInfo.jsx";
 import AiAnalysis from "../components/AiAnalysis.jsx";
-import { getProfileData, sendEvaluationToBackend } from "../../api/data.jsx";
+import { getProfileData, sendEvaluationToBackend, sendAvatarToBackend} from "../../api/data.jsx";
 import QuestionnaireYes from "../components/voting/QuestionnaireYes.jsx";
 import QuestionnaireNo from "../components/voting/QuestionnaireNo.jsx";
 import Login from "./Login.jsx";
@@ -189,6 +189,8 @@ const UserStatus = styled.div`
 
 const HomePage = () => {
   const [data, setData] = useState(null);
+  const [img, setImg] = useState(null);
+  const [url, setUrl] = useState(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [vote, setVote] = useState(null);
   const [showLoginPage, setShowLoginPage] = useState(false);
@@ -269,6 +271,7 @@ const HomePage = () => {
           console.log("URL atual:", tabs[0].url);
           try {
             console.log("Fazendo requisição para obter dados do perfil...");
+            setUrl(tabs[0].url);
             const profileData = await getProfileData(tabs[0].url);
             console.log("Dados recebidos da API:", profileData);
             setData(profileData);
@@ -280,7 +283,40 @@ const HomePage = () => {
         }
       });
     }
-  }, [showLoginPage]);
+  }, [showLoginPage,showQuestionnaire]);
+
+  useEffect(() => {
+    chrome.storage.local.get("avatarUrl", (result) => {
+      if (result.avatarUrl) {
+        setImg(result.avatarUrl);
+      }
+    });
+  
+    const listener = (changes, area) => {
+      if (area === "local" && changes.avatarUrl) {
+        const newUrl = changes.avatarUrl.newValue;
+        setImg(newUrl);
+      }
+    };
+  
+    chrome.storage.onChanged.addListener(listener);
+  
+    return () => {
+      chrome.storage.onChanged.removeListener(listener);
+    };
+  }, []);
+  
+  useEffect(() => {
+    console.log(1,img,url);
+    
+    if (img && url && data) {
+      if (data.avatar_url) return;
+      sendAvatarToBackend({
+        url: url,
+        avatar: img,
+      });
+    }
+  }, [img,url,data]);
 
   if (showLoginPage) {
     return (
@@ -308,7 +344,7 @@ const HomePage = () => {
               data && (
                   <>
                     <SocialMediaProfile
-                        imageUrl="https://via.placeholder.com/50"
+                        imageUrl={img||"https://via.placeholder.com/50"}
                         accountType={data.plataform}
                         username={data.perfil_name}
                     />
