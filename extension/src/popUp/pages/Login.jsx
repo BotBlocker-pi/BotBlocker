@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { loginUser, checkAuth, logoutUser } from "../../api/loginApi.jsx";
+import { loginUser, registerUser, checkAuth, logoutUser } from "../../api/loginApi.jsx";
 
-// Using the same theme from HomePage for consistency
+// Theme from your existing component
 const theme = {
   primary: "#4361ee",
   primaryHover: "#3a56d4",
@@ -55,6 +55,15 @@ const Form = styled.form`
 
 const InputGroup = styled.div`
   position: relative;
+`;
+
+const Label = styled.label`
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: ${theme.text};
+  text-align: left;
 `;
 
 const Input = styled.input`
@@ -170,7 +179,25 @@ const Divider = styled.div`
   width: 100%;
   height: 1px;
   background-color: #e9ecef;
-  margin: 8px 0;
+  margin: 16px 0;
+`;
+
+const ToggleContainer = styled.div`
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: ${theme.lightText};
+`;
+
+const ToggleLink = styled.span`
+  color: ${theme.primary};
+  cursor: pointer;
+  font-weight: 600;
+  margin-left: 5px;
+  
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const UserInfoBox = styled.div`
@@ -180,11 +207,14 @@ const UserInfoBox = styled.div`
   margin-bottom: 16px;
 `;
 
-const Login = ({ onBackToHome, onAuthChange  }) => {
+const Login = ({ onBackToHome, onAuthChange, initialMode = false }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSignUpMode, setIsSignUpMode] = useState(initialMode);
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -194,19 +224,97 @@ const Login = ({ onBackToHome, onAuthChange  }) => {
     checkAuthentication();
   }, []);
 
+  // Update sign-up mode if initialMode changes
+  useEffect(() => {
+    setIsSignUpMode(initialMode);
+  }, [initialMode]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setMessage("");
 
-    const data = await loginUser(username, password);
-    if (data) {
-      localStorage.setItem("access_token", data.access);
-      setMessage("✅ Login successful!");
-      setIsAuthenticated(true);
-      // Call the function to update parent state
-      if (onAuthChange) onAuthChange(true);
-    } else {
-      setMessage("❌ Invalid credentials.");
+    if (!username || !password) {
+      setMessage("❌ Username and password are required.");
+      return;
+    }
+
+    try {
+      const data = await loginUser(username, password);
+      if (data && data.access) {
+        localStorage.setItem("access_token", data.access);
+        if (data.refresh) {
+          localStorage.setItem("refresh_token", data.refresh);
+        }
+        setMessage("✅ Login successful!");
+        setIsAuthenticated(true);
+        // Call the function to update parent state
+        if (onAuthChange) onAuthChange(true);
+      } else {
+        setMessage("❌ Invalid credentials.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setMessage("❌ Login failed. Please try again.");
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    // Validation
+    if (!username || !email || !password || !confirmPassword) {
+      setMessage("❌ All fields are required.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("❌ Passwords do not match.");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessage("❌ Invalid email format.");
+      return;
+    }
+
+    try {
+      // Register the user
+      const registrationResponse = await registerUser(username, email, password);
+
+      if (registrationResponse && registrationResponse.access) {
+        // If registration is successful and returns tokens directly
+        localStorage.setItem('access_token', registrationResponse.access);
+        if (registrationResponse.refresh) {
+          localStorage.setItem('refresh_token', registrationResponse.refresh);
+        }
+
+        setMessage("✅ Account created successfully!");
+        setIsAuthenticated(true);
+        if (onAuthChange) onAuthChange(true);
+      } else {
+        // If registration is successful but doesn't return tokens, try to login
+        const loginResponse = await loginUser(username, password);
+
+        if (loginResponse && loginResponse.access) {
+          localStorage.setItem('access_token', loginResponse.access);
+          if (loginResponse.refresh) {
+            localStorage.setItem('refresh_token', loginResponse.refresh);
+          }
+
+          setMessage("✅ Account created and logged in!");
+          setIsAuthenticated(true);
+          if (onAuthChange) onAuthChange(true);
+        } else {
+          setMessage("✅ Account created! Please log in.");
+          toggleMode(); // Switch to login mode
+        }
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      setMessage("❌ Registration failed. Please try again.");
     }
   };
 
@@ -218,6 +326,8 @@ const Login = ({ onBackToHome, onAuthChange  }) => {
     if (onAuthChange) onAuthChange(false);
     setUsername("");
     setPassword("");
+    setEmail("");
+    setConfirmPassword("");
   };
 
   const handleBackToHome = (e) => {
@@ -227,45 +337,57 @@ const Login = ({ onBackToHome, onAuthChange  }) => {
     }
   };
 
+  const toggleMode = () => {
+    setIsSignUpMode(!isSignUpMode);
+    setMessage(""); // Clear messages when toggling
+  };
+
+  if (isAuthenticated) {
+    return (
+        <Container>
+          <AuthContainer>
+            <AuthMessage>
+              <StatusIcon>✓</StatusIcon>
+              Authenticated User
+            </AuthMessage>
+
+            <UserInfoBox>
+              You are currently logged in to your account.
+            </UserInfoBox>
+
+            <Divider />
+
+            <ButtonGroup>
+              <BackButton onClick={handleBackToHome}>
+                Back to Home
+              </BackButton>
+              <LogoutButton onClick={handleLogout}>
+                Logout
+              </LogoutButton>
+            </ButtonGroup>
+          </AuthContainer>
+        </Container>
+    );
+  }
+
   return (
       <Container>
-        {isAuthenticated ? (
-            <AuthContainer>
-              <AuthMessage>
-                <StatusIcon>✓</StatusIcon>
-                Authenticated User
-              </AuthMessage>
+        <LoginContainer>
+          <Title>{isSignUpMode ? "Create Account" : "Account Login"}</Title>
 
-              <UserInfoBox>
-                You are currently logged in to your account.
-              </UserInfoBox>
+          {message && (
+              <Message $success={message.includes("✅")}>
+                {message}
+              </Message>
+          )}
 
-              <Divider />
-
-              <ButtonGroup>
-                <BackButton onClick={handleBackToHome}>
-                  Back to Home
-                </BackButton>
-                <LogoutButton onClick={handleLogout}>
-                  Logout
-                </LogoutButton>
-              </ButtonGroup>
-            </AuthContainer>
-        ) : (
-            <LoginContainer>
-              <Title>Account Login</Title>
-
-              {message && (
-                  <Message $success={message.includes("✅")}>
-                    {message}
-                  </Message>
-              )}
-
-              <Form onSubmit={handleLogin}>
+          {isSignUpMode ? (
+              <Form onSubmit={handleSignUp}>
                 <InputGroup>
+                  <Label htmlFor="username">Username</Label>
                   <Input
+                      id="username"
                       type="text"
-                      placeholder="Username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
@@ -274,9 +396,66 @@ const Login = ({ onBackToHome, onAuthChange  }) => {
                 </InputGroup>
 
                 <InputGroup>
+                  <Label htmlFor="email">Email</Label>
                   <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      $error={message.includes("❌")}
+                  />
+                </InputGroup>
+
+                <InputGroup>
+                  <Label htmlFor="password">Create Password</Label>
+                  <Input
+                      id="password"
                       type="password"
-                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      $error={message.includes("❌")}
+                  />
+                </InputGroup>
+
+                <InputGroup>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      $error={message.includes("❌")}
+                  />
+                </InputGroup>
+
+                <LoginButton type="submit">
+                  Sign Up
+                </LoginButton>
+              </Form>
+          ) : (
+              <Form onSubmit={handleLogin}>
+                <InputGroup>
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                      id="username"
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                      $error={message.includes("❌")}
+                  />
+                </InputGroup>
+
+                <InputGroup>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                      id="password"
+                      type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -288,8 +467,15 @@ const Login = ({ onBackToHome, onAuthChange  }) => {
                   Sign In
                 </LoginButton>
               </Form>
-            </LoginContainer>
-        )}
+          )}
+
+          <ToggleContainer>
+            {isSignUpMode ? "Already have an account?" : "Don't have an account?"}
+            <ToggleLink onClick={toggleMode}>
+              {isSignUpMode ? "Log In" : "Sign Up"}
+            </ToggleLink>
+          </ToggleContainer>
+        </LoginContainer>
       </Container>
   );
 };

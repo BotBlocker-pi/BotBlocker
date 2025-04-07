@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/global/Navbar.jsx";
 import styled from "styled-components";
+import Navbar from "../components/global/Navbar.jsx";
 import SocialMediaProfile from "../components/SocialMediaProfileInfo.jsx";
 import AiAnalysis from "../components/AiAnalysis.jsx";
 import { getProfileData, sendEvaluationToBackend } from "../../api/data.jsx";
 import QuestionnaireYes from "../components/voting/QuestionnaireYes.jsx";
 import QuestionnaireNo from "../components/voting/QuestionnaireNo.jsx";
 import Login from "./Login.jsx";
-import { checkAuth, logoutUser } from "../../api/loginApi.jsx"; // Import the required functions
+import { checkAuth, logoutUser } from "../../api/loginApi.jsx";
 
 // Enhanced colors and theme
 const theme = {
   primary: "#4361ee",
   primaryHover: "#3a56d4",
   secondary: "#f72585",
-  error: "#ef476f", // Added for logout button
+  error: "#ef476f",
+  success: "#06d6a0",
   background: "#ffffff",
   backgroundSecondary: "#f8f9fa",
   text: "#2b2d42",
@@ -24,8 +25,7 @@ const theme = {
   borderRadius: "12px",
 };
 
-// Rest of your styled components remain the same as in the previous version
-
+// Styled components (using your existing styles)
 const Container = styled.div`
   background-color: ${theme.background};
   border-radius: ${theme.borderRadius};
@@ -76,11 +76,6 @@ const WebsiteLink = styled.p`
   &:hover {
     color: ${theme.primaryHover};
   }
-`;
-
-const LoginLink = styled(WebsiteLink)`
-  padding-top: 10px;
-  margin-bottom: 15px;
 `;
 
 const VotingContainer = styled.div`
@@ -169,7 +164,6 @@ const LogoutButton = styled.button`
   }
 `;
 
-// Add a container for user status
 const UserStatusContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -187,6 +181,16 @@ const UserStatus = styled.div`
   font-weight: 500;
 `;
 
+const SuccessMessage = styled.div`
+  background-color: rgba(6, 214, 160, 0.1);
+  color: ${theme.success};
+  padding: 12px;
+  margin: 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+`;
+
 const HomePage = () => {
   const [data, setData] = useState(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
@@ -194,6 +198,9 @@ const HomePage = () => {
   const [showLoginPage, setShowLoginPage] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -201,10 +208,11 @@ const HomePage = () => {
       try {
         const authStatus = await checkAuth();
         setIsAuthenticated(authStatus);
-        // Optionally store in localStorage
         localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
       } catch (error) {
         console.error("Error checking auth status:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -218,10 +226,20 @@ const HomePage = () => {
     checkAuthStatus();
   }, []);
 
-  // Update handleAuthChange to also update localStorage
   const handleAuthChange = (status) => {
     setIsAuthenticated(status);
     localStorage.setItem('isAuthenticated', JSON.stringify(status));
+
+    if (status) {
+      // Show success message when user logs in or signs up
+      setSuccessMessage("Successfully authenticated!");
+      setShowSuccessMessage(true);
+
+      // Hide the message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+    }
   };
 
   const handleVote = (voteValue) => {
@@ -233,7 +251,6 @@ const HomePage = () => {
   const handleLogout = () => {
     logoutUser();
     setIsAuthenticated(false);
-    // If you're using localStorage to persist auth state
     localStorage.removeItem('isAuthenticated');
   };
 
@@ -251,9 +268,19 @@ const HomePage = () => {
     sendEvaluationToBackend(evaluationData);
     setShowQuestionnaire(false);
     setVote(null);
+
+    // Show feedback message
+    setSuccessMessage("Thank you for your contribution!");
+    setShowSuccessMessage(true);
+
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 3000);
   };
 
-  const handleLoginClick = () => {
+  const handleLoginClick = (signUpMode = false) => {
+    setIsSignUpMode(signUpMode);
     setShowLoginPage(true);
   };
 
@@ -261,19 +288,23 @@ const HomePage = () => {
     setShowLoginPage(false);
   };
 
+  const handleSignUpClick = () => {
+    handleLoginClick(true); // Open login page in signup mode
+  };
+
   useEffect(() => {
     if (!showLoginPage) {
       setIsLoading(true);
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         if (tabs.length > 0) {
-          console.log("URL atual:", tabs[0].url);
+          console.log("Current URL:", tabs[0].url);
           try {
-            console.log("Fazendo requisição para obter dados do perfil...");
+            console.log("Requesting profile data...");
             const profileData = await getProfileData(tabs[0].url);
-            console.log("Dados recebidos da API:", profileData);
+            console.log("Data received from API:", profileData);
             setData(profileData);
           } catch (error) {
-            console.error("Erro ao obter dados do perfil:", error);
+            console.error("Error fetching profile data:", error);
           } finally {
             setIsLoading(false);
           }
@@ -285,10 +316,14 @@ const HomePage = () => {
   if (showLoginPage) {
     return (
         <Container>
-          <Navbar onBack={handleBackToMain} showBackButton={true} />
+          <Navbar
+              onBack={handleBackToMain}
+              showBackButton={true}
+          />
           <Login
               onBackToHome={handleBackToMain}
-              onAuthChange={handleAuthChange} // Pass the handler here
+              onAuthChange={handleAuthChange}
+              initialMode={isSignUpMode}
           />
         </Container>
     );
@@ -296,7 +331,14 @@ const HomePage = () => {
 
   return (
       <Container>
-        <Navbar />
+        <Navbar onSignUpClick={handleSignUpClick} />
+
+        {showSuccessMessage && (
+            <SuccessMessage>
+              {successMessage}
+            </SuccessMessage>
+        )}
+
         <WebsiteLink>
           Visit our website for more details on this account.
         </WebsiteLink>
@@ -338,11 +380,12 @@ const HomePage = () => {
               )
           ) : (
               <div style={{ textAlign: 'center', margin: '24px 0' }}>
-                <LoginButton onClick={handleLoginClick}>
+                <LoginButton onClick={() => handleLoginClick(false)}>
                   Login to Continue
                 </LoginButton>
               </div>
           )}
+
           {/* Add user status display and logout button if authenticated */}
           {isAuthenticated && (
               <UserStatusContainer>
