@@ -301,6 +301,14 @@ const HomePage = () => {
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         if (tabs.length > 0) {
           console.log("Current URL:", tabs[0].url);
+
+          // Adicione esta verificação para ignorar a página inicial
+          if (tabs[0].url.includes("/home")) {
+            setIsLoading(false);
+            setData(null);
+            return;
+          }
+
           try {
             console.log("Fazendo requisição para obter dados do perfil...");
             setUrl(tabs[0].url);
@@ -309,13 +317,14 @@ const HomePage = () => {
             setData(profileData);
           } catch (error) {
             console.error("Error fetching profile data:", error);
+            setData(null);
           } finally {
             setIsLoading(false);
           }
         }
       });
     }
-  }, [showLoginPage,showQuestionnaire]);
+  }, [showLoginPage, showQuestionnaire]);
 
   useEffect(() => {
     chrome.storage.local.get("avatarUrl", (result) => {
@@ -417,46 +426,58 @@ const HomePage = () => {
               )
           )}
 
-        {isAuthenticated ? (
-          hasVoted ? (
-            <VotingContainer>
-              <TextContainer>
-                You have already voted for this profile.
-              </TextContainer>
-            </VotingContainer>
-          ) : !showQuestionnaire ? (
-            <VotingContainer>
-              <TextContainer>Is this profile AI?</TextContainer>
-              <ButtonContainer>
-                <Button $vote="Yes" onClick={() => handleVote("Yes")}>
-                  Yes
-                </Button>
-                <Button $vote="No" onClick={() => handleVote("No")}>
-                  No
-                </Button>
-              </ButtonContainer>
-            </VotingContainer>
-          ) : vote === "Yes" ? (
-            <QuestionnaireYes onSubmit={handleSubmitReason} />
-          ) : (
-            <QuestionnaireNo onSubmit={handleSubmitReason} />
-          )
-        ) : (
-          <div style={{ textAlign: 'center', margin: '24px 0' }}>
-            <LoginButton onClick={() => handleLoginClick(false)}>
-              Login to Continue
-            </LoginButton>
-          </div>
-        )}
+          {isAuthenticated ? (
+              url && !url.includes("/home") ? (
+                  // Lógica para páginas de perfil
+                  <>
+                    {/* Componentes de perfil existentes */}
+                    {hasVoted ? (
+                        <VotingContainer>
+                          <TextContainer>
+                            You have already voted for this profile.
+                          </TextContainer>
+                        </VotingContainer>
+                    ) : !showQuestionnaire ? (
+                        <VotingContainer>
+                          <TextContainer>Is this profile AI?</TextContainer>
+                          <ButtonContainer>
+                            <Button $vote="Yes" onClick={() => handleVote("Yes")}>
+                              Yes
+                            </Button>
+                            <Button $vote="No" onClick={() => handleVote("No")}>
+                              No
+                            </Button>
+                          </ButtonContainer>
+                        </VotingContainer>
+                    ) : vote === "Yes" ? (
+                        <QuestionnaireYes onSubmit={handleSubmitReason} />
+                    ) : (
+                        <QuestionnaireNo onSubmit={handleSubmitReason} />
+                    )}
 
-          {/* Add user status display and logout button if authenticated */}
-          {isAuthenticated && (
-              <UserStatusContainer>
-                <UserStatus>✓ You are currently logged in</UserStatus>
-                <LogoutButton onClick={handleLogout}>
-                  Logout
-                </LogoutButton>
-              </UserStatusContainer>
+                    {/* Adicione o UserStatusContainer aqui para perfis */}
+                    <UserStatusContainer>
+                      <UserStatus>✓ You are currently logged in</UserStatus>
+                      <LogoutButton onClick={handleLogout}>
+                        Logout
+                      </LogoutButton>
+                    </UserStatusContainer>
+                  </>
+              ) : (
+                  // Se estiver na página home, apenas mostra o status de login
+                  <UserStatusContainer>
+                    <UserStatus>✓ You are currently logged in</UserStatus>
+                    <LogoutButton onClick={handleLogout}>
+                      Logout
+                    </LogoutButton>
+                  </UserStatusContainer>
+              )
+          ) : (
+              <div style={{ textAlign: 'center', margin: '24px 0' }}>
+                <LoginButton onClick={() => handleLoginClick(false)}>
+                  Login to Continue
+                </LoginButton>
+              </div>
           )}
         </ContentWrapper>
       </Container>
