@@ -1,0 +1,72 @@
+/* ProfileInfo.css - Enhanced layout with white container */
+
+.profile-container {
+    width: 100%;
+    max-width: 1200px; /* Aumentado de 1000px para 1200px */
+    margin: 0 auto;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 40px; /* Aumentado de 30px para 40px */
+    box-sizing: border-box;
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background-color: transparent;
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.profile-header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.profile-header h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.profile-header .subtitle {
+    color: #666;
+    font-size: 16px;
+    margin: 0;
+}
+
+.evaluations-section {
+    margin-top: 40px;
+}
+
+.evaluations-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+}

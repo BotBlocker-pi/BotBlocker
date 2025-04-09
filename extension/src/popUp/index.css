@@ -1,0 +1,17 @@
+/* Define o tamanho do popup */
+body {
+  width: 400px; /* Largura do popup */
+  height: 600px; /* Altura do popup */
+  background-color: white; /* Fundo branco */
+  font-family: Arial, sans-serif; /* Fonte padrão */
+  overflow: hidden; /* Evita barras de rolagem */
+}
+
+/* Estilo para o container principal */
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
