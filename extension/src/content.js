@@ -205,6 +205,7 @@ function collectMentions() {
 async function applyBlurToTweet(element) {
     const { settings, blackList } = await getSettingsAndBlacklist();
     const tolerance = settings.tolerance || 50; // Default value if not defined
+    const badgeConfig = settings.badge || 'empty';
 
     // Create a Set for quick lookup of blacklisted profiles
     const manuallyBlockedSet = new Set(
@@ -225,10 +226,40 @@ async function applyBlurToTweet(element) {
 
         // Check if the reposter should be blocked
         const isManuallyBlocked = manuallyBlockedSet.has(`${reposter.toLowerCase()}|x`);
-        const shouldBlockReposter = isManuallyBlocked || perfisDaAPI.some(apiProfile =>
-            apiProfile.username.toLowerCase() === reposter.toLowerCase() &&
-            apiProfile.percentage > tolerance
+        
+        // Verificar perfil na API
+        const apiProfile = perfisDaAPI.find(p =>
+            p.username.toLowerCase() === reposter.toLowerCase()
         );
+        
+        // Se o perfil tem badge "human", nunca deve ser bloqueado pela configuração de badge
+        if (apiProfile && apiProfile.badge === 'human') {
+            // Não bloquear e não borrar
+            articleContainer.style.filter = 'none';
+            removeBlockIndicatorFromTweet(articleContainer);
+            return;
+        }
+        
+        // Verificação por badge
+        let shouldBlockByBadge = false;
+        if (apiProfile) {
+            const profileBadge = apiProfile.badge || 'empty';
+            
+            
+            if (badgeConfig === 'bot' && profileBadge === 'bot') {
+                shouldBlockByBadge = true;
+            } else if (badgeConfig === 'without_verification' && profileBadge === 'empty') {
+                shouldBlockByBadge = true;
+            } else if (badgeConfig === 'bot_and_without_verification' && 
+                     (profileBadge === 'empty' || profileBadge === 'bot')) {
+                shouldBlockByBadge = true;
+            }
+        }
+        
+        // Verifica se deve bloquear por porcentagem
+        const shouldBlockByPercentage = apiProfile && apiProfile.percentage > tolerance;
+        
+        const shouldBlockReposter = isManuallyBlocked || shouldBlockByPercentage || shouldBlockByBadge;
 
         if (shouldBlockReposter) {
             // Apply blur to the entire article
@@ -237,6 +268,8 @@ async function applyBlurToTweet(element) {
             addBlockIndicatorToTweet(articleContainer);
             return; // No need to check anything else
         }
+
+
     }
 
     // Also check the original author by username
@@ -246,10 +279,39 @@ async function applyBlurToTweet(element) {
         if (username) {
             // Check if the profile should be blocked
             const isManuallyBlocked = manuallyBlockedSet.has(`${username.toLowerCase()}|x`);
-            const shouldBlock = isManuallyBlocked || perfisDaAPI.some(apiProfile =>
-                apiProfile.username.toLowerCase() === username.toLowerCase() &&
-                apiProfile.percentage > tolerance
+            
+            // Verificar perfil na API
+            const apiProfile = perfisDaAPI.find(p =>
+                p.username.toLowerCase() === username.toLowerCase()
             );
+            
+            // Se o perfil tem badge "human", nunca deve ser bloqueado pela configuração de badge
+            if (apiProfile && apiProfile.badge === 'human') {
+                // Não bloquear e não borrar
+                articleContainer.style.filter = 'none';
+                removeBlockIndicatorFromTweet(articleContainer);
+                return;
+            }
+            
+            // Verificação por badge
+            let shouldBlockByBadge = false;
+            if (apiProfile) {
+                const profileBadge = apiProfile.badge || 'empty';
+                
+                if (badgeConfig === 'bot' && profileBadge === 'bot') {
+                    shouldBlockByBadge = true;
+                } else if (badgeConfig === 'without_verification' && profileBadge === 'empty') {
+                    shouldBlockByBadge = true;
+                } else if (badgeConfig === 'bot_and_without_verification' && 
+                         (profileBadge === 'empty' || profileBadge === 'bot')) {
+                    shouldBlockByBadge = true;
+                }
+            }
+            
+            // Verifica se deve bloquear por porcentagem
+            const shouldBlockByPercentage = apiProfile && apiProfile.percentage > tolerance;
+            
+            const shouldBlock = isManuallyBlocked || shouldBlockByPercentage || shouldBlockByBadge;
 
             if (shouldBlock) {
                 // Apply blur to the entire article
@@ -376,7 +438,8 @@ function getStorage(keys) {
 
 async function verifyAndBlockProfiles() {
     const { settings, blackList } = await getSettingsAndBlacklist();
-    const tolerance = settings.tolerance || 50; // Default value if not defined
+    const tolerance = settings.tolerance || 50;
+    const badgeConfig = settings.badge || 'empty';
 
     if (perfisDaAPI.length === 0) {
         console.log('[BotBlocker] No profiles from API to compare. Waiting for loading...');
@@ -384,23 +447,20 @@ async function verifyAndBlockProfiles() {
     }
 
     console.log('[BotBlocker] Checking profiles for blocking...');
-
-    // Log for showing comparison
     console.log('%c[LOGS SOLICITADOS] Comparison of DOM vs. API profiles:', 'background: #8E44AD; color: white; padding: 2px 5px; border-radius: 3px;');
+    console.log('Badge configuration:', badgeConfig);
 
-    // Create arrays for comparison results
     const profilesBlockedAutomatically = [];
     const profilesBlockedManually = [];
+    const profilesBlockedByBadge = [];
     const profilesNotBlocked = [];
     const profilesOnlyInDOM = [];
     const profilesOnlyInAPI = [];
 
-    // Create a Set for quick lookup of blacklisted profiles
     const manuallyBlockedSet = new Set(
         blackList.map(([username, platform]) => `${username.toLowerCase()}|${platform.toLowerCase()}`)
     );
 
-    // Check profiles found in DOM that are in the API
     collectedMentions.forEach(profileName => {
         const apiProfile = perfisDaAPI.find(p =>
             p.username.toLowerCase() === profileName.toLowerCase()
@@ -409,35 +469,79 @@ async function verifyAndBlockProfiles() {
         const isManuallyBlocked = manuallyBlockedSet.has(`${profileName.toLowerCase()}|x`);
 
         if (apiProfile) {
+            const profileBadge = apiProfile.badge || 'empty';
+
+            if (profileBadge === 'human') {
+                return; // Ignorar "human"
+            }
+
+            let shouldBlockByBadge = false;
+            if (badgeConfig === 'bot' && profileBadge === 'bot') {
+                shouldBlockByBadge = true;
+            } else if (badgeConfig === 'without_verification' && profileBadge === 'empty') {
+                shouldBlockByBadge = true;
+            } else if (badgeConfig === 'bot_and_without_verification' &&
+                (profileBadge === 'bot' || profileBadge === 'empty')) {
+                shouldBlockByBadge = true;
+            }
+
             if (isManuallyBlocked) {
                 profilesBlockedManually.push({
                     username: profileName,
-                    percentage: apiProfile.percentage
+                    percentage: apiProfile.percentage,
+                    badge: profileBadge
+                });
+            } else if (shouldBlockByBadge) {
+                profilesBlockedByBadge.push({
+                    username: profileName,
+                    percentage: apiProfile.percentage,
+                    badge: profileBadge
                 });
             } else if (apiProfile.percentage > tolerance) {
                 profilesBlockedAutomatically.push({
                     username: profileName,
-                    percentage: apiProfile.percentage
+                    percentage: apiProfile.percentage,
+                    badge: profileBadge
                 });
             } else {
                 profilesNotBlocked.push({
                     username: profileName,
-                    percentage: apiProfile.percentage
+                    percentage: apiProfile.percentage,
+                    badge: profileBadge
                 });
             }
         } else {
+            // Simula perfil com badge 'empty' e percentage 0
+            const simulatedBadge = 'empty';
+            const simulatedPercentage = 0;
+
             if (isManuallyBlocked) {
                 profilesBlockedManually.push({
                     username: profileName,
-                    percentage: null
+                    percentage: null,
+                    badge: simulatedBadge
                 });
             } else {
-                profilesOnlyInDOM.push(profileName);
+                let shouldBlockByBadge = false;
+                if (badgeConfig === 'without_verification') {
+                    shouldBlockByBadge = true;
+                } else if (badgeConfig === 'bot_and_without_verification') {
+                    shouldBlockByBadge = true;
+                }
+
+                if (shouldBlockByBadge) {
+                    profilesBlockedByBadge.push({
+                        username: profileName,
+                        percentage: simulatedPercentage,
+                        badge: simulatedBadge
+                    });
+                } else {
+                    profilesOnlyInDOM.push(profileName);
+                }
             }
         }
     });
 
-    // Find profiles that are only in the API
     perfisDaAPI.forEach(apiProfile => {
         const foundInDOM = Array.from(collectedMentions).some(
             p => p.toLowerCase() === apiProfile.username.toLowerCase()
@@ -446,48 +550,51 @@ async function verifyAndBlockProfiles() {
         if (!foundInDOM) {
             profilesOnlyInAPI.push({
                 username: apiProfile.username,
-                percentage: apiProfile.percentage
+                percentage: apiProfile.percentage,
+                badge: apiProfile.badge || 'empty'
             });
         }
     });
 
-    // Display comparison results
+    // Mostrar os resultados
     console.log('%c1. Profiles automatically blocked (percentage > tolerance):', 'color: #8E44AD; font-weight: bold;');
     profilesBlockedAutomatically.forEach(p => {
-        console.log(`%c   - @${p.username} (${p.percentage}%)`, 'color: #FF3A3A; font-weight: bold;');
+        console.log(`%c   - @${p.username} (${p.percentage}%, badge: ${p.badge})`, 'color: #FF3A3A; font-weight: bold;');
     });
 
     console.log('%c2. Profiles manually blocked:', 'color: #8E44AD; font-weight: bold;');
     profilesBlockedManually.forEach(p => {
-        console.log(`%c   - @${p.username} ${p.percentage ? `(${p.percentage}%)` : ''}`, 'color: #E74C3C; font-weight: bold;');
+        console.log(`%c   - @${p.username} ${p.percentage ? `(${p.percentage}%, badge: ${p.badge})` : ''}`, 'color: #E74C3C; font-weight: bold;');
     });
 
-    console.log('%c3. Profiles not blocked (percentage <= tolerance):', 'color: #8E44AD; font-weight: bold;');
+    console.log('%c3. Profiles blocked by badge configuration:', 'color: #8E44AD; font-weight: bold;');
+    profilesBlockedByBadge.forEach(p => {
+        console.log(`%c   - @${p.username} (${p.percentage}%, badge: ${p.badge})`, 'color: #9B59B6; font-weight: bold;');
+    });
+
+    console.log('%c4. Profiles not blocked (percentage <= tolerance, badge not blocked):', 'color: #8E44AD; font-weight: bold;');
     profilesNotBlocked.forEach(p => {
-        console.log(`%c   - @${p.username} (${p.percentage}%)`, 'color: #3498DB;');
+        console.log(`%c   - @${p.username} (${p.percentage}%, badge: ${p.badge})`, 'color: #3498DB;');
     });
 
-    console.log('%c4. Profiles only in DOM (Not in API):', 'color: #8E44AD; font-weight: bold;');
+    console.log('%c5. Profiles only in DOM (Not in API):', 'color: #8E44AD; font-weight: bold;');
     profilesOnlyInDOM.forEach(p => {
         console.log(`%c   - @${p}`, 'color: #27AE60;');
     });
 
-    console.log('%c5. Profiles only in API (Not in current DOM):', 'color: #8E44AD; font-weight: bold;');
+    console.log('%c6. Profiles only in API (Not in current DOM):', 'color: #8E44AD; font-weight: bold;');
     profilesOnlyInAPI.forEach(p => {
         const style = p.percentage > tolerance ? 'color: #E67E22;' : 'color: #7F8C8D;';
-        console.log(`%c   - @${p.username} (${p.percentage}%)`, style);
+        console.log(`%c   - @${p.username} (${p.percentage}%, badge: ${p.badge})`, style);
     });
 
-    // Para cada perfil coletado no feed, verificar se está na lista da API
+    // Parte final: aplicar o bloqueio
     collectedMentions.forEach(profileName => {
-        // Check if already in the blocked list to avoid repetition
-        if (perfisBlockeados.has(profileName)) {
-            return;
-        }
+        if (perfisBlockeados.has(profileName)) return;
 
-        const isBlacklisted = blackList.some(([blacklistedUsername, platform]) => {
-            return blacklistedUsername.toLowerCase() === profileName.toLowerCase() && platform === 'twitter';
-        });
+        const isBlacklisted = blackList.some(([user, platform]) =>
+            user.toLowerCase() === profileName.toLowerCase() && platform === 'twitter'
+        );
         if (isBlacklisted) {
             console.log(`[BotBlocker] Perfil ${profileName} está na blacklist. A bloquear...`);
             blockProfile(profileName);
@@ -495,10 +602,7 @@ async function verifyAndBlockProfiles() {
             return;
         }
 
-        // Check if manually blocked
         const isManuallyBlocked = manuallyBlockedSet.has(`${profileName.toLowerCase()}|x`);
-
-        // If manually blocked, apply blocking
         if (isManuallyBlocked) {
             console.log(`[BotBlocker] Profile ${profileName} is manually blocked. Blocking...`);
             blockProfile(profileName);
@@ -506,18 +610,38 @@ async function verifyAndBlockProfiles() {
             return;
         }
 
-        // Check if automatically blocked by percentage threshold
-        const apiProfile = perfisDaAPI.find(p =>
+        const foundProfile = perfisDaAPI.find(p =>
             p.username.toLowerCase() === profileName.toLowerCase()
         );
+        const apiProfile = foundProfile || { username: profileName, badge: 'empty', percentage: 0 };
 
-        if (apiProfile && apiProfile.percentage > tolerance) {
+        if (apiProfile.badge === 'human') return;
+
+        let shouldBlockByBadge = false;
+        if (badgeConfig === 'bot' && apiProfile.badge === 'bot') {
+            shouldBlockByBadge = true;
+        } else if (badgeConfig === 'without_verification' && apiProfile.badge === 'empty') {
+            shouldBlockByBadge = true;
+        } else if (badgeConfig === 'bot_and_without_verification' &&
+            (apiProfile.badge === 'bot' || apiProfile.badge === 'empty')) {
+            shouldBlockByBadge = true;
+        }
+
+        if (shouldBlockByBadge) {
+            console.log(`[BotBlocker] Profile ${profileName} has badge '${apiProfile.badge}' which matches blocking config '${badgeConfig}'. Blocking...`);
+            blockProfile(profileName);
+            perfisBlockeados.add(profileName);
+            return;
+        }
+
+        if (apiProfile.percentage > tolerance) {
             console.log(`[BotBlocker] Profile ${profileName} found in API with percentage ${apiProfile.percentage}%. Automatically blocking...`);
             blockProfile(profileName);
             perfisBlockeados.add(profileName);
         }
     });
 }
+
 
 const mentionsObserver = new MutationObserver((mutationsList) => {
     collectMentions();
@@ -530,10 +654,15 @@ let originalFetch = null;
 function blockProfile(profileName) {
     // Verificar se estamos visualizando este perfil
     const currentProfile = window.location.pathname.split("/")[1];
+    
     if (currentProfile === profileName) {
+        // Estamos na página do perfil - bloquear completamente
         removeArticles(profileName);
         blockInfiniteLoading(profileName);
         addBlockedIndicator(profileName);
+    } else {
+        // Estamos no feed - apenas aplicar blur aos tweets deste usuário
+        applyBlurToAllTweetsFromUser(profileName);
     }
 }
 
@@ -870,6 +999,7 @@ function addBlockedIndicator(profileName) {
 async function checkProfileAndProcessBlocking() {
     const { settings, blackList } = await getSettingsAndBlacklist();
     const tolerance = settings.tolerance || 50; // Valor padrão de 50 se não estiver definido
+    const badgeConfig = settings.badge || 'empty'; // Configuração de badge
     const currentProfile = window.location.pathname.split("/")[1];
 
     // Verificar se o perfil atual está na lista de perfis para bloquear
@@ -878,12 +1008,35 @@ async function checkProfileAndProcessBlocking() {
         const isManuallyBlocked = blackList.some(([username, platform]) =>
             username.toLowerCase() === currentProfile.toLowerCase() && platform.toLowerCase() === 'x'
         );
+        
+        // Verificação por badge
+        let shouldBlockByBadge = false;
+        if (perfilAPI) {
+            const profileBadge = perfilAPI.badge || 'empty';
+            
+            if (badgeConfig === 'bot' && profileBadge === 'bot') {
+                shouldBlockByBadge = true;
+            } else if (badgeConfig === 'without_verification' && profileBadge === 'empty') {
+                shouldBlockByBadge = true;
+            } else if (badgeConfig === 'bot_and_without_verification' && 
+                     (profileBadge === 'empty' || profileBadge === 'bot')) {
+                shouldBlockByBadge = true;
+            }
+        }
 
-        if ((perfilAPI && perfilAPI.percentage > tolerance) || isManuallyBlocked) {
+        // se o currentProfile for o homepage, não aplicar bloqueio
+        if (currentProfile === 'home') {
+            console.log(`[BotBlocker] Current profile is home. Not applying block...`);
+            return;
+        }
+
+        if ((perfilAPI && perfilAPI.percentage > tolerance) || isManuallyBlocked || shouldBlockByBadge) {
             // Log diferente dependendo do tipo de bloqueio
             if (isManuallyBlocked) {
                 console.log(`[BotBlocker] Perfil atual ${currentProfile} está manualmente bloqueado. Bloqueando...`);
-            } else {
+            } else if (shouldBlockByBadge && perfilAPI) {
+                console.log(`[BotBlocker] Perfil atual ${currentProfile} com badge '${perfilAPI.badge || 'empty'}' corresponde à configuração de bloqueio '${badgeConfig}'. Bloqueando...`);
+            } else if (perfilAPI) {
                 console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
             }
 

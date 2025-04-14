@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:extension": "webpack --config webpack.extension.config.js",
+    "watch:extension": "webpack --config webpack.extension.config.js --watch",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -33,7 +35,12 @@
     "globals": "^15.15.0",
     "vite": "^6.2.0",
     "vite-plugin-copy": "^0.1.6",
-    "webpack": "^5.98.0",
+    "webpack": "^5.99.5",
     "webpack-cli": "^6.0.1"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "eslint.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
