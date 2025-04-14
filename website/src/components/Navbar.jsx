@@ -89,6 +89,15 @@ const Navbar = () => {
                         </Link>
                     )}
 
+                    {userRole === 'admin' && (
+                        <Link
+                            to="/admin-dashboard"
+                            className={`nav-link ${window.location.pathname === '/admin-dashboard' ? 'active' : ''}`}
+                        >
+                            ADMIN DASHBOARD
+                        </Link>
+                    )}
+
                     {isAuthenticated ? (
                         <button onClick={handleLogout} className="logout-button">Logout</button>
                     ) : (
