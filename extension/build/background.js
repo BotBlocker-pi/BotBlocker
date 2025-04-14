@@ -14,7 +14,7 @@ function injectContentScript() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
         if (activeTab &&
-            (activeTab.url.includes("twitter.com") || activeTab.url.includes("x.com"))) {
+            (activeTab.url.includes("twitter.com") || activeTab.url.includes("x.com") || activeTab.url.includes("instagram.com"))) {
             console.log("[BotBlocker Background] Injecting content script into active tab:", activeTab.url);
             chrome.scripting.executeScript({
                 target: { tabId: activeTab.id },
@@ -33,7 +33,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === "complete") {
         if (tab.url &&
-            (tab.url.includes("twitter.com") || tab.url.includes("x.com"))) {
+            (tab.url.includes("twitter.com") || tab.url.includes("x.com") || tab.url.includes("instagram.com"))) {
             chrome.scripting.executeScript({
                 target: { tabId: tabId },
                 files: ["content.js"],
