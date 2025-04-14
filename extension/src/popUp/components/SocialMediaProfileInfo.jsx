@@ -74,6 +74,10 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) =
     const [isProcessing, setIsProcessing] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
+    useEffect(() => {
+        console.log("[BotBlocker] imageUrl recebido:", imageUrl);
+      }, [imageUrl]);
+
     // Verificar se o perfil já está bloqueado sempre que o componente for renderizado
     // E também sempre que o estado isBlocked mudar
     useEffect(() => {
