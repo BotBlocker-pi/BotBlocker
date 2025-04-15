@@ -70,9 +70,10 @@ const ButtonLabel = styled.div`
 import { getSettingsAndBlacklist } from '../../utils/cacheLogic';
 import { sendUpdatedSettings } from '../../api/data';
 
-const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) => {
+const SocialMediaProfileInfo = ({ imageUrl, accountType, username }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
+    const platform=accountType;
 
     useEffect(() => {
         console.log("[BotBlocker] imageUrl recebido:", imageUrl);
@@ -87,7 +88,7 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username, platform }) =
                 // Verificar se existe na blacklist
                 const blocked = blackList.some(([u, p]) =>
                     u.toLowerCase() === username.toLowerCase() &&
-                    (p === platform || p === 'x' || p === 'twitter')
+                    (p === platform || p === 'x' || p === 'twitter' || p === 'instagram')
                 );
 
                 // Só atualizar o estado se for diferente do atual

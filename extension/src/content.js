@@ -255,19 +255,24 @@ function collectMentions() {
       }
     });
   } else if (platform === 'instagram') {
-    // Implementação Instagram (exemplo)
-    // Adaptar para os seletores específicos do Instagram
-    const usernameElements = document.querySelectorAll('a[href^="/"]._aacl');
+    // Implementação mais robusta para Instagram
+    const usernameElements = document.querySelectorAll('a[href^="/"]:not([href="/"])');
     
     usernameElements.forEach(element => {
-      // Extrair o nome de usuário da href
       const href = element.getAttribute('href');
       const match = href.match(/^\/([^\/]+)/);
+      
       if (match && match[1]) {
         const mention = match[1];
+        
+        // Ignorar links que claramente não são perfis
+        if (mention.startsWith('#') || mention === 'explore' || mention === 'reels') return;
+        
         if (!collectedMentions.has(mention)) {
+          console.log(`[BotBlocker] Novo perfil encontrado no Instagram: @${mention}`);
           newProfilesFound.push(mention);
         }
+        
         collectedMentions.add(mention);
       }
     });
@@ -660,6 +665,8 @@ async function verifyAndBlockProfiles() {
   const tolerance = settings.tolerance || 50;
   const badgeConfig = settings.badge || 'empty';
 
+  console.log('[BotBlocker] Blacklist completa:', blackList);
+
   if (perfisDaAPI.length === 0) {
     console.log('[BotBlocker] No profiles from API to compare. Waiting for loading...');
     return;
@@ -807,6 +814,10 @@ async function verifyAndBlockProfiles() {
   profilesOnlyInAPI.forEach(p => {
     const style = p.percentage > tolerance ? 'color: #E67E22;' : 'color: #7F8C8D;';
     console.log(`%c   - @${p.username} (${p.percentage}%, badge: ${p.badge})`, style);
+  });
+
+  profilesBlockedManually.forEach(profile => {
+    console.log(`%c[BotBlocker] Manually blocked profile for ${platform}: @${profile.username}`, 'color: red;');
   });
 
   // Parte final: aplicar o bloqueio
@@ -969,23 +980,43 @@ function blockProfile(profileName, platform) {
     }
   }
   
-  // Esqueleto para remover posts do Instagram
   function removePostsInstagram(profileName) {
-    // Verificar se estamos no perfil alvo
-    const currentProfile = getCurrentProfile().profile;
-    if (currentProfile !== profileName) {
-      return;
+    console.log(`[BotBlocker] Removendo conteúdo para ${profileName} no Instagram`);
+    
+    // Remover posts no formato de grid
+    function removeGridPosts() {
+        const gridPosts = document.querySelectorAll('div[role="presentation"] img');
+        gridPosts.forEach(post => {
+            const postContainer = post.closest('div[role="presentation"]');
+            if (postContainer) {
+                postContainer.remove();
+            }
+        });
     }
     
-    // No Instagram, os posts são artigos
-    const posts = document.querySelectorAll('article');
-    if (posts.length > 0) {
-      console.log(`[BotBlocker] Found ${posts.length} posts to remove for ${profileName} on Instagram`);
-      posts.forEach(post => {
-        post.remove();
-      });
+    // Remover destaques (se tiver outro formato específico)
+    function removeHighlights() {
+        const highlights = document.querySelectorAll('div[class*="highlight"]');
+        highlights.forEach(highlight => {
+            highlight.remove();
+        });
     }
-  }
+    
+    // Remover outros tipos de posts
+    function removeOtherPosts() {
+        const otherPosts = document.querySelectorAll('article');
+        otherPosts.forEach(post => {
+            post.remove();
+        });
+    }
+    
+    // Executar todas as remoções
+    removeGridPosts();
+    removeHighlights();
+    removeOtherPosts();
+    
+    console.log(`[BotBlocker] Remoção de conteúdo concluída para ${profileName}`);
+}
   
   // Bloquear carregamento infinito no Twitter
   function blockInfiniteLoading(profileName) {
@@ -1091,20 +1122,118 @@ function blockProfile(profileName, platform) {
     // Verificar se estamos no perfil alvo
     const currentProfile = getCurrentProfile().profile;
     if (currentProfile !== profileName) {
-      return;
+        return;
     }
     
-    console.log(`[BotBlocker] Starting to block scroll loading for ${profileName} on Instagram`);
+    console.log(`[BotBlocker] Blocking all posts for ${profileName} on Instagram`);
     
-    // Adicionar estilos que bloqueiam o conteúdo
+    // Salvar a função fetch original se ainda não foi salva
+    if (!window.originalFetch) {
+        window.originalFetch = window.fetch;
+    }
+    
+    // Interceptar fetch para bloquear completamente o carregamento de posts
+    window.fetch = async function(...args) {
+        const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+        
+        // Bloquear requisições relacionadas a posts
+        if (url && (
+            url.includes('/graphql/query') || 
+            url.includes('__a=1') || 
+            url.includes('posts') || 
+            url.includes('media')
+        )) {
+            console.log(`[BotBlocker] Blocked data fetch for ${profileName}`);
+            
+            // Retornar resposta vazia
+            return new Response(JSON.stringify({
+                data: null,
+                status: 'blocked'
+            }), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+        
+        // Usar fetch original para outras requisições
+        return window.originalFetch.apply(this, args);
+    };
+    
+    // Adicionar estilos para bloquear completamente o conteúdo
     const style = document.createElement('style');
     style.id = 'botblocker-instagram-style';
     style.textContent = `
-      article { display: none !important; }
-      ._aak3, ._aabd { overflow: hidden !important; height: 200px !important; }
+        /* Bloquear todos os elementos potenciais de post */
+        article, 
+        div[role="presentation"], 
+        div[class*="x1yztbdb"], 
+        div[class*="x1n2onr6"],
+        img[class*="x1lliihq"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            max-height: 0 !important;
+            overflow: hidden !important;
+            pointer-events: none !important;
+        }
+        
+        /* Desabilitar rolagem */
+        body, html {
+            overflow: hidden !important;
+            max-height: 100vh !important;
+        }
     `;
     document.head.appendChild(style);
-  }
+    
+    // Observador para remover continuamente qualquer conteúdo
+    const observer = new MutationObserver(() => {
+        const elementsToRemove = document.querySelectorAll(`
+            article, 
+            div[role="presentation"], 
+            div[class*="x1yztbdb"], 
+            div[class*="x1n2onr6"],
+            img[class*="x1lliihq"]
+        `);
+        
+        elementsToRemove.forEach(el => {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.height = '0';
+            el.style.opacity = '0';
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true
+    });
+    
+    // Armazenar referência do observer para possível desconexão posterior
+    window.instagramBlockObserver = observer;
+}
+
+// Função para desbloquear
+function unblockScrollInstagram() {
+    // Restaurar fetch original
+    if (window.originalFetch) {
+        window.fetch = window.originalFetch;
+    }
+    
+    // Remover estilo de bloqueio
+    const blockStyle = document.getElementById('botblocker-instagram-style');
+    if (blockStyle) {
+        blockStyle.remove();
+    }
+    
+    // Desconectar observer
+    if (window.instagramBlockObserver) {
+        window.instagramBlockObserver.disconnect();
+    }
+}
   
   // Desbloquear carregamento
   function unblockLoading() {
@@ -1322,59 +1451,81 @@ function blockProfile(profileName, platform) {
     // Verificar se estamos no perfil alvo
     const currentProfile = getCurrentProfile().profile;
     if (currentProfile !== profileName) {
-      return false;
+        return false;
     }
     
     // Verificar se o indicador já existe
     if (document.getElementById('botblocker-indicator-instagram')) {
-      return true;
+        return true;
     }
     
     console.log(`[BotBlocker] Attempting to add blocked indicator for ${profileName} on Instagram`);
     
-    // No Instagram, o cabeçalho do perfil tem outra estrutura
-    const profileHeader = document.querySelector('header');
-    if (!profileHeader) return false;
-    
-    // Criar o card indicador
+    // Criar o container principal centralizado
     const blockedIndicator = document.createElement('div');
     blockedIndicator.id = 'botblocker-indicator-instagram';
-    blockedIndicator.style.backgroundColor = '#FF3A3A';
-    blockedIndicator.style.color = 'white';
-    blockedIndicator.style.padding = '4px 10px';
-    blockedIndicator.style.borderRadius = '4px';
-    blockedIndicator.style.display = 'flex';
-    blockedIndicator.style.flexDirection = 'column';
-    blockedIndicator.style.alignItems = 'center';
-    blockedIndicator.style.justifyContent = 'center';
-    blockedIndicator.style.position = 'absolute';
-    blockedIndicator.style.top = '20px';
-    blockedIndicator.style.right = '20px';
-    blockedIndicator.style.zIndex = '9999';
-  
+    
+    // Estilos para centralização
+    Object.assign(blockedIndicator.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: '#FF3A3A',
+        color: 'white',
+        padding: '20px 30px',
+        borderRadius: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        zIndex: '9999',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        maxWidth: '90%',
+        width: '400px'
+    });
+    
     // Texto "BLOCKED"
     const blockedText = document.createElement('span');
     blockedText.textContent = 'BLOCKED';
     blockedText.style.fontWeight = 'bold';
-    blockedText.style.fontSize = '14px';
-    blockedText.style.lineHeight = '1.2';
-  
+    blockedText.style.fontSize = '24px';
+    blockedText.style.marginBottom = '10px';
+    
+    // Referência ao perfil bloqueado
+    const profileText = document.createElement('span');
+    profileText.textContent = `Perfil: @${profileName}`;
+    profileText.style.fontSize = '16px';
+    profileText.style.opacity = '0.8';
+    profileText.style.marginBottom = '15px';
+    
     // Tag "BotBlocker"
     const botBlockerTag = document.createElement('span');
     botBlockerTag.textContent = 'BotBlocker';
-    botBlockerTag.style.fontSize = '11px';
-    botBlockerTag.style.opacity = '0.9';
-    botBlockerTag.style.marginTop = '2px';
-  
+    botBlockerTag.style.fontSize = '14px';
+    botBlockerTag.style.opacity = '0.7';
+    
     // Adicionar elementos ao indicador
     blockedIndicator.appendChild(blockedText);
+    blockedIndicator.appendChild(profileText);
     blockedIndicator.appendChild(botBlockerTag);
     
     // Adicionar ao DOM
     document.body.appendChild(blockedIndicator);
     
+    // Adicionar animação de fade in
+    blockedIndicator.style.opacity = '0';
+    blockedIndicator.style.transition = 'opacity 0.3s ease';
+    
+    // Trigger reflow para garantir a animação
+    blockedIndicator.offsetHeight;
+    
+    // Fade in
+    blockedIndicator.style.opacity = '1';
+    
     return true;
-  }
+}
   
   // Aplicar blur a todos os tweets de um usuário
   function applyBlurToAllTweetsFromUser(username) {
@@ -1663,6 +1814,30 @@ function blockProfile(profileName, platform) {
           }
         }
       }
+
+      if (detectCurrentPlatform() === 'instagram') {
+        const currentProfile = getCurrentProfile().profile;
+
+        const previousPage = previousUrl.split("/")[1];
+        
+        // Se não estiver mais no perfil bloqueado, desbloquear
+        // tem um problema de estar sempre a dar load quando se volta para a homepage
+        if (currentProfile === 'home' || currentProfile === '') {
+          console.log("[BotBlocker] Detected navigation away from blocked Instagram profile");
+          
+          // Desbloquear scroll
+          unblockScrollInstagram();
+          
+          // Remover o indicador
+          const indicator = document.getElementById('botblocker-indicator-instagram');
+          if (indicator) {
+            indicator.remove();
+          }
+
+          history.go(0);
+
+      }
+    }
   
       // Atualizar a URL atual
       previousUrl = window.location.href;

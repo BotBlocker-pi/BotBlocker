@@ -275,9 +275,9 @@ function removeFromBlacklist(username, platform = 'x') {
 // Função para enviar mensagem para tabs com segurança
 function sendMessageToTabs(message) {
     return new Promise((resolve) => {
-        chrome.tabs.query({url: ["*://*.twitter.com/*", "*://*.x.com/*"]}, function(tabs) {
+        chrome.tabs.query({url: ["*://*.twitter.com/*", "*://*.x.com/*", "*://*.instagram.com/*"]}, function(tabs) {
             if (!tabs || tabs.length === 0) {
-                console.log("[BotBlocker] No Twitter/X tabs found to notify");
+                console.log("[BotBlocker] No tabs found to notify");
                 resolve(false);
                 return;
             }
