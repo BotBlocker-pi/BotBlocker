@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../css/AnomaliesSection.css';
 
-const AnomaliesSection = ({ setActiveSection }) => {
+const AnomaliesSection = ({ setActiveSection, externalNotifications = [] }) => {
     const [anomalies, setAnomalies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -40,6 +40,20 @@ const AnomaliesSection = ({ setActiveSection }) => {
         fetchAnomalies();
     }, []);
 
+    useEffect(() => {
+        externalNotifications.forEach((newAnomaly) => {
+          setAnomalies((prev) => {
+            const alreadyExists = prev.some(
+              (a) =>
+                a.username === newAnomaly.username &&
+                a.motive === newAnomaly.motive &&
+                a.type_account === newAnomaly.type_account
+            );
+            return alreadyExists ? prev : [...prev, newAnomaly];
+          });
+        });
+      }, [externalNotifications]);
+      
     const handleDetailsClick = (anomaly) => {
         setSelectedAnomaly(anomaly);
         setShowPopup(true);

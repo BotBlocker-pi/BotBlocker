@@ -1,5 +1,66 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Evaluation, User_BB, Profile, Social, Settings, Badge
+from django.core.cache import cache
+
+from django.utils import timezone
+from datetime import timedelta
+from django.core.cache import cache
+from .models import Evaluation
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def send_notification(data):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "admins",
+        {
+            "type": "send_notification",
+             "data": data,
+        }
+    )
+
+
+def detect_anomalies(user_bb, profile):
+    now = timezone.now()
+
+    recent_user_votes = Evaluation.objects.filter(
+        user=user_bb,
+        created_at__gte=now - timedelta(minutes=1)
+    ).count()
+
+    if recent_user_votes > 30:
+        cache_key_user = f"spam_alert_user_{user_bb.id}"
+        if not cache.get(cache_key_user):
+            msg=f"[SPAM DETECTED] User '{user_bb.user.username}' submitted {recent_user_votes} votes within 1 minute."
+            print(msg)
+            send_notification({
+                "username": user_bb.user.username,
+                "type_account": "User",
+                "reason": f"{recent_user_votes} votes in 1 minute"
+            })
+            cache.set(cache_key_user, True, timeout=600)
+
+    recent_profile_votes = Evaluation.objects.filter(
+        profile=profile,
+        created_at__gte=now - timedelta(minutes=5)
+    ).count()
+
+    if recent_profile_votes > 50:
+        cache_key_profile = f"spam_alert_profile_{profile.id}"
+        if not cache.get(cache_key_profile):
+            msg=f"[SPAM TARGET] Profile '{profile.username}' received {recent_profile_votes} votes within 5 minutes."
+            print(msg)
+            send_notification({
+                "username": profile.username,
+                "type_account": profile.social.social,
+                "reason": f"{recent_profile_votes} votes in 5 minutes"
+            })
+            cache.set(cache_key_profile, True, timeout=600)
+
+
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField()  
@@ -41,6 +102,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
         profile.percentage = probability
 
         profile.save()
+
+        detect_anomalies(user,profile)
 
         return evaluation
     
