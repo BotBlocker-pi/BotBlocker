@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../css/AnomaliesSection.css';
+import { getSuspiciousActivities, markActivityResolved } from '../api/data';
 
 const AnomaliesSection = ({ setActiveSection, externalNotifications = [] }) => {
     const [anomalies, setAnomalies] = useState([]);
@@ -15,21 +16,16 @@ const AnomaliesSection = ({ setActiveSection, externalNotifications = [] }) => {
             try {
                 setLoading(true);
                 // Mock data for development
-                const mockData = [
-                    { id: 1, username: '@JonSnow', type_account: 'Basic', motive: 'Inconsistent Voting Patterns' },
-                    { id: 2, username: '@AryaStark', type_account: 'Premium', motive: 'Multiple Account Detection' },
-                    { id: 3, username: '@TyrionLannister', type_account: 'Basic', motive: 'Suspicious Login Activity' },
-                    { id: 4, username: '@DaenerysTargaryen', type_account: 'Pro', motive: 'Unusual Transaction Patterns' }
-                ];
+                const data = await getSuspiciousActivities();
 
-                // Initialize all anomalies with "To Solve" status
-                const initialStatuses = {};
-                mockData.forEach(anomaly => {
-                    initialStatuses[anomaly.id] = 'To Solve';
+                const savedStatuses = JSON.parse(localStorage.getItem("anomalyStatuses") || "{}");
+                const statuses = {};
+                data.forEach(anomaly => {
+                    statuses[anomaly.id] = savedStatuses[anomaly.id] || anomaly.status; // ou , se quiseres manter o real
                 });
 
-                setAnomalies(mockData);
-                setAnomalyStatuses(initialStatuses);
+                setAnomalies(data);
+                setAnomalyStatuses(statuses);
                 setLoading(false);
             } catch (err) {
                 setError(err.message);
@@ -64,16 +60,30 @@ const AnomaliesSection = ({ setActiveSection, externalNotifications = [] }) => {
     };
 
     const handleStatusChange = (id, status) => {
-        setAnomalyStatuses(prev => ({
-            ...prev,
+        const updatedStatuses = {
+            ...anomalyStatuses,
             [id]: status
-        }));
+        };
+    
+        setAnomalyStatuses(updatedStatuses);
+        localStorage.setItem("anomalyStatuses", JSON.stringify(updatedStatuses));
     };
 
-    const handleDeleteAnomaly = (id) => {
-        setAnomalies(anomalies.filter(anomaly => anomaly.id !== id));
-        setShowPopup(false);
+    const handleDeleteAnomaly = async (id) => {
+        const response = await markActivityResolved(id);
+        if (response) {
+            const updatedStatuses = { ...anomalyStatuses };
+            delete updatedStatuses[id];
+            setAnomalyStatuses(updatedStatuses);
+            localStorage.setItem("anomalyStatuses", JSON.stringify(updatedStatuses));
+    
+            setAnomalies(anomalies.filter(anomaly => anomaly.id !== id));
+            setShowPopup(false);
+        } else {
+            alert("Failed to mark anomaly as resolved.");
+        }
     };
+    
 
     return (
         <div className="admin-anomalies-section">

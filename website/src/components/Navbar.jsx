@@ -4,13 +4,16 @@ import botBlockerLogo from '../assets/logo.png';
 import '../css/Navbar.css';
 import { checkAuth, logoutUser } from '../api/loginApi';
 import LoginForm from "./LoginForm.jsx";
+import {useNotifications} from '../api/NotificationContext.jsx';
 
 const Navbar = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [initialLoginMode, setInitialLoginMode] = useState(false);
-    const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
-
+    const notifications = useNotifications();
+    const userRole = localStorage.getItem('role') || 'user';
+    const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(notifications?notifications.length:0);
     // Check authentication status on component mount
     useEffect(() => {
         const checkAuthStatus = async () => {
@@ -89,14 +92,54 @@ const Navbar = () => {
                         </Link>
                     )}
 
-                    {userRole === 'admin' && (
-                        <Link
-                            to="/admin-dashboard"
-                            className={`nav-link ${window.location.pathname === '/admin-dashboard' ? 'active' : ''}`}
-                        >
-                            ADMIN DASHBOARD
-                        </Link>
+            {userRole === 'admin' && (
+            <>
+                <Link
+                to="/admin-dashboard"
+                className={`nav-link ${window.location.pathname === '/admin-dashboard' ? 'active' : ''}`}
+                >
+                ADMIN DASHBOARD
+                </Link>
+
+                <div className="notification-wrapper">
+                <button
+                    className="notification-button"
+                    onClick={() => {
+                    setShowNotificationDropdown(!showNotificationDropdown);
+                    setUnreadCount(notifications.length);
+                    }}
+                >
+                    🔔
+                    {notifications.length - unreadCount > 0 && (
+                    <span className="notification-count">
+                        {notifications.length - unreadCount}
+                    </span>
                     )}
+                </button>
+
+                {showNotificationDropdown && (
+                    <div className="notification-dropdown">
+                    <strong>Notifications</strong>
+                    <ul className="notification-list">
+                        {notifications.length === 0 ? (
+                        <li className="notification-empty">No new notifications.</li>
+                        ) : (
+                        notifications.slice().reverse().map((n, i) => (
+                            <li key={i} className="notification-item">
+                            <div className="notification-user">
+                                <strong>{n.username}</strong> ({n.type_account})
+                            </div>
+                            <div className="notification-motive">{n.motive}</div>
+                            </li>
+                        ))
+                        )}
+                    </ul>
+                    </div>
+                )}
+                </div>
+            </>
+            )}
+
 
                     {isAuthenticated ? (
                         <button onClick={handleLogout} className="logout-button">Logout</button>

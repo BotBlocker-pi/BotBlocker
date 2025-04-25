@@ -5,62 +5,18 @@ import Navbar from '../components/Navbar';
 import AdminSideBar from "../components/AdminSideBar.jsx";
 import AnomaliesSection from "../components/AnomaliesSection.jsx";
 import VerificationSection from '../components/VerificationSection';
+import { useNotifications } from '../api/NotificationContext.jsx'; 
 
 const AdminDashboard = () => {
     const [activeSection, setActiveSection] = useState('anomalies');
-    const [notifications, setNotifications] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const notifications = useNotifications();
 
     // If not an admin, redirect to home page
     const userRole = localStorage.getItem('role') || 'user'; // Default to 'user' if not set
     if (userRole !== 'admin') {
         return <Navigate to="/" />;
     }
-
-    useEffect(() => {
-        setIsLoaded(true);
-        const socket = new WebSocket(
-          "ws://" + window.location.host + "/ws/notificacoes/admins/"
-        );
-    
-        socket.onopen = () => {
-          console.log("[WS] Connected to admin notifications channel.");
-        };
-    
-        socket.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log("[WS] New notification received:", data);
-            alert(data.type_account+" "+data.username+" "+data.reason)
-            const newAnomaly = {
-                id: Date.now(),
-                username: `@${data.username || "Unknown"}`,
-                type_account: data.type_account || "Unknown",
-                motive: data.reason || "No reason provided",
-              };
-    
-            setNotifications((prev) => {
-                const alreadyExists = prev.some(
-                  (a) =>
-                    a.username === newAnomaly.username &&
-                    a.motive === newAnomaly.motive &&
-                    a.type_account === newAnomaly.type_account
-                );
-        
-                return alreadyExists ? prev : [...prev, newAnomaly];
-              });
-          } catch (err) {
-            console.error("[WS] Error processing message:", err);
-          }
-        };
-    
-        socket.onclose = () => {
-          console.warn("[WS] WebSocket connection closed.");
-        };
-        return () => {
-          socket.close();
-        };
-      }, []);
 
     return (
         <div className="admin-dashboard-container">
