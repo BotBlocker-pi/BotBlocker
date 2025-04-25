@@ -36,6 +36,10 @@ let perfisDaAPI = [];
 let perfisBlockeados = new Set();
 let currentPlatform = detectCurrentPlatform();
 
+let profilesBlockedAutomatically = [];
+let profilesBlockedManually = [];
+let profilesBlockedByBadge = [];
+
 // Armazenar a função fetch original
 let originalFetch = null;
 // Observador para loading
@@ -249,6 +253,46 @@ function collectMentions() {
           newProfilesFound.push(mention);
         }
         collectedMentions.add(mention);
+
+        // Coletar a foto de perfil
+        const profileImage = element.closest('[role="article"]')?.querySelector(`[data-testid="UserAvatar-Container-${mention}"] img`);
+        if (profileImage) {
+            const profileImageUrl = profileImage.getAttribute("src");
+            if (profileImageUrl) {
+                // Atualizar o storage com a foto do perfil
+                chrome.storage.local.get(['blockedAccounts', 'profileImages'], (result) => {
+                    const blockedAccounts = result.blockedAccounts || {
+                        profilesBlockedAutomatically: [],
+                        profilesBlockedManually: [],
+                        profilesBlockedByBadge: []
+                    };
+                    
+                    // Criar ou atualizar o objeto de imagens de perfil
+                    const profileImages = result.profileImages || {};
+                    profileImages[mention] = profileImageUrl;
+
+                    // Atualizar a foto em todos os arrays de perfis bloqueados
+                    const updateProfileImage = (profiles) => {
+                        return profiles.map(p => {
+                            if (p.username === mention) {
+                                return { ...p, profileImage: profileImageUrl };
+                            }
+                            return p;
+                        });
+                    };
+
+                    blockedAccounts.profilesBlockedAutomatically = updateProfileImage(blockedAccounts.profilesBlockedAutomatically);
+                    blockedAccounts.profilesBlockedManually = updateProfileImage(blockedAccounts.profilesBlockedManually);
+                    blockedAccounts.profilesBlockedByBadge = updateProfileImage(blockedAccounts.profilesBlockedByBadge);
+
+                    // Salvar tanto os perfis bloqueados quanto as imagens de perfil
+                    chrome.storage.local.set({ 
+                        blockedAccounts,
+                        profileImages 
+                    });
+                });
+            }
+        }
         
         // Verificar se deve aplicar blur ao tweet
         applyBlurToTweet(element, mention);
@@ -676,9 +720,9 @@ async function verifyAndBlockProfiles() {
   console.log('%c[BotBlocker] Comparison of DOM vs. API profiles:', 'background: #8E44AD; color: white; padding: 2px 5px; border-radius: 3px;');
   console.log('Badge configuration:', badgeConfig);
 
-  const profilesBlockedAutomatically = [];
-  const profilesBlockedManually = [];
-  const profilesBlockedByBadge = [];
+  profilesBlockedAutomatically = [];
+  profilesBlockedManually = [];
+  profilesBlockedByBadge = [];
   const profilesNotBlocked = [];
   const profilesOnlyInDOM = [];
   const profilesOnlyInAPI = [];
@@ -873,6 +917,7 @@ async function verifyAndBlockProfiles() {
       perfisBlockeados.add(profileName);
     }
   });
+  updateBlockedAccountsStorage();
 }
 
 // Função principal para bloquear um perfil em qualquer plataforma
@@ -907,6 +952,7 @@ function blockProfile(profileName, platform) {
         applyBlurToAllPostsFromUserInstagram(profileName);
       }
     }
+    updateBlockedAccountsStorage();
   }
   
   // Função para desbloquear um perfil
@@ -1550,6 +1596,59 @@ function unblockScrollInstagram() {
       }
     });
   }
+
+  async function updateBlockedAccountsStorage() {
+    // Get current blocked accounts from storage
+    chrome.storage.local.get(['blockedAccounts', 'profileImages'], (result) => {
+        const blockedAccounts = {
+            profilesBlockedAutomatically: profilesBlockedAutomatically.map(p => {
+                // Tentar encontrar a foto de perfil no DOM primeiro
+                const profileImage = document.querySelector(`[data-testid="UserAvatar-Container-${p.username}"] img`);
+                const profileImageUrl = profileImage?.getAttribute("src");
+                
+                // Se não encontrar no DOM, usar a imagem armazenada
+                const storedImage = result.profileImages?.[p.username];
+                
+                return {
+                    username: p.username,
+                    percentage: p.percentage,
+                    badge: p.badge || 'unknown',
+                    name: p.name || p.username,
+                    profileImage: profileImageUrl || storedImage || p.profileImage
+                };
+            }),
+            profilesBlockedManually: profilesBlockedManually.map(p => {
+                const profileImage = document.querySelector(`[data-testid="UserAvatar-Container-${p.username}"] img`);
+                const profileImageUrl = profileImage?.getAttribute("src");
+                const storedImage = result.profileImages?.[p.username];
+                
+                return {
+                    username: p.username,
+                    percentage: p.percentage,
+                    badge: p.badge || 'unknown',
+                    name: p.name || p.username,
+                    profileImage: profileImageUrl || storedImage || p.profileImage
+                };
+            }),
+            profilesBlockedByBadge: profilesBlockedByBadge.map(p => {
+                const profileImage = document.querySelector(`[data-testid="UserAvatar-Container-${p.username}"] img`);
+                const profileImageUrl = profileImage?.getAttribute("src");
+                const storedImage = result.profileImages?.[p.username];
+                
+                return {
+                    username: p.username,
+                    percentage: p.percentage,
+                    badge: p.badge || 'unknown',
+                    name: p.name || p.username,
+                    profileImage: profileImageUrl || storedImage || p.profileImage
+                };
+            })
+        };
+
+        // Save updated list
+        chrome.storage.local.set({ blockedAccounts });
+    });
+}
   
   // Função para aplicar blur a posts do Instagram
   function applyBlurToAllPostsFromUserInstagram(username) {
