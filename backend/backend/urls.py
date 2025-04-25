@@ -35,6 +35,8 @@ urlpatterns = [
     path("token/", CustomTokenObtainView.as_view(), name="token_obtain"),
     path('protected/',ProtectedView.as_view(),name="ProtectedView"),
     path('post_img/', post_img, name='post_img'),
+    path('suspicious-activities/', get_suspicious_activities, name='get_suspicious_activities'),
+    path('suspicious-activities/<uuid:activity_id>/resolve/', mark_suspicious_activity_resolved),
 
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),

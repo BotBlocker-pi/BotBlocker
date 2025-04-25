@@ -1,0 +1,90 @@
+/* AdminSideBar.css */
+
+.sidebar {
+    width: 180px;
+    background-color: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+    margin: 0;
+    padding: 0;
+    border-right: 1px solid #e0e0e0;
+    position: fixed;
+    top: 80px; /* Make sure this matches your navbar height exactly */
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    height: calc(100vh - 80px); /* This should be exact */
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    padding-top: 15px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    color: #2c3e50;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.menu-item:hover {
+    background-color: rgba(83, 116, 160, 0.08);
+    color: #5374a0;
+}
+
+.menu-item.active {
+    background-color: rgba(83, 116, 160, 0.12);
+    border-left-color: #5374a0;
+    color: #5374a0;
+}
+
+.menu-icon {
+    margin-right: 12px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-text {
+    font-size: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        top: auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-menu {
+        flex-direction: row;
+        justify-content: center;
+        padding-top: 0;
+    }
+
+    .menu-item {
+        padding: 12px 15px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        margin-bottom: 0;
+    }
+
+    .menu-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #5374a0;
+    }
+}

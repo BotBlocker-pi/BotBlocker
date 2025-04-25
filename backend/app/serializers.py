@@ -1,5 +1,79 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework import serializers
-from .models import Evaluation, User_BB, Profile, Social, Settings, Badge
+from .models import Evaluation, SuspiciousActivity, User_BB, Profile, Social, Settings, Badge
+from django.core.cache import cache
+from django.contrib.contenttypes.models import ContentType
+
+from django.utils import timezone
+from datetime import timedelta
+from django.core.cache import cache
+from .models import Evaluation
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def send_notification(data):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "admins",
+        {
+            "type": "send_notification",
+             "data": data,
+        }
+    )
+
+
+def detect_anomalies(user_bb, profile):
+    now = timezone.now()
+
+    recent_user_votes = Evaluation.objects.filter(
+        user=user_bb,
+        created_at__gte=now - timedelta(minutes=1)
+    ).count()
+
+    if recent_user_votes > 30:
+        cache_key_user = f"spam_alert_user_{user_bb.id}"
+        if not cache.get(cache_key_user):
+            msg=f"[SPAM DETECTED] User '{user_bb.user.username}' submitted {recent_user_votes} votes within 1 minute."
+            print(msg)
+            SA=SuspiciousActivity.objects.create(
+                content_type=ContentType.objects.get_for_model(user_bb),
+                object_id=user_bb.id,
+                motive=f"{recent_user_votes} votes in 1 minute"
+            )
+            send_notification({
+                "id":str(SA.id),
+                "username": user_bb.user.username,
+                "type_account": "User",
+                "reason": f"{recent_user_votes} votes in 1 minute"
+            })
+            cache.set(cache_key_user, True, timeout=600)
+
+    recent_profile_votes = Evaluation.objects.filter(
+        profile=profile,
+        created_at__gte=now - timedelta(minutes=5)
+    ).count()
+
+    if recent_profile_votes > 50:
+        cache_key_profile = f"spam_alert_profile_{profile.id}"
+        if not cache.get(cache_key_profile):
+            msg=f"[SPAM TARGET] Profile '{profile.username}' received {recent_profile_votes} votes within 5 minutes."
+            print(msg)
+            SA=SuspiciousActivity.objects.create(
+                content_type=ContentType.objects.get_for_model(profile),
+                object_id=profile.id,
+                motive=f"{recent_profile_votes} votes in 5 minutes"
+            )
+            send_notification({
+                "id":str(SA.id),
+                "username": profile.username,
+                "type_account": profile.social.social,
+                "reason": f"{recent_profile_votes} votes in 5 minutes"
+            })
+            cache.set(cache_key_profile, True, timeout=600)
+
+
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField()  
@@ -41,6 +115,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
         profile.percentage = probability
 
         profile.save()
+
+        detect_anomalies(user,profile)
 
         return evaluation
     
@@ -107,3 +183,34 @@ class UserBBSerializer(serializers.ModelSerializer):
         instance.settings.delete()
         instance.delete()
         return instance
+    
+
+from rest_framework import serializers
+from .models import SuspiciousActivity, Profile, User_BB
+
+class SuspiciousActivitySerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+    type_account = serializers.SerializerMethodField()
+    motive = serializers.CharField()
+    status = serializers.CharField()
+
+    class Meta:
+        model = SuspiciousActivity
+        fields = ['id', 'username', 'type_account', 'motive', 'status', 'created_at']
+
+    def get_username(self, obj):
+        target = obj.target
+        if isinstance(target, Profile):
+            return target.username
+        elif isinstance(target, User_BB) and target.user:
+            return target.user.username
+        return "Unknown"
+
+    def get_type_account(self, obj):
+        target = obj.target
+        if isinstance(target, Profile):
+            return target.social.social
+        elif isinstance(target, User_BB):
+            return "User"
+        return "Unknown"
+

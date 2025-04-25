@@ -499,6 +499,8 @@ async function verifyAndBlockProfiles() {
     profilesBlockedAutomatically = [];
     profilesBlockedManually = [];
     profilesBlockedByBadge = [];
+
+  
     const profilesNotBlocked = [];
     const profilesOnlyInDOM = [];
     const profilesOnlyInAPI = [];

@@ -53,4 +53,5 @@ EXPOSE 8000
 CMD ["sh", "-c", "python manage.py makemigrations app --noinput && \
                   python manage.py migrate --noinput && \
                   python manage.py collectstatic --noinput && \
-                  gunicorn --bind 0.0.0.0:8000 --workers 3 --reload backend.wsgi:application"]
+                  daphne -b 0.0.0.0 -p 8000 backend.asgi:application"]
+                #   gunicorn --bind 0.0.0.0:8000 --workers 3 --reload backend.wsgi:application"]
