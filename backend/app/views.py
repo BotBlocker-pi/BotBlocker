@@ -395,6 +395,7 @@ def give_badge(request):
     except Exception as e:
         print(f"Error in give_badge: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 @api_view(['POST'])
 def post_img(request):
     url = request.data.get('url')
@@ -444,3 +445,38 @@ def userWasVote(request):
         return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({'was_vote': was_vote}, status=status.HTTP_200_OK)
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_suspicious_activities(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized to view suspicious activities."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    activities = SuspiciousActivity.objects.exclude(status="resolved").order_by('-created_at')
+    serializer = SuspiciousActivitySerializer(activities, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def mark_suspicious_activity_resolved(request, activity_id):
+    try:
+        activity = SuspiciousActivity.objects.get(id=activity_id)
+    except SuspiciousActivity.DoesNotExist:
+        return Response({"error": "Activity not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    activity.status = "resolved"
+    activity.save()
+
+    return Response({"message": "Activity marked as resolved"}, status=status.HTTP_200_OK)
+
+
+
+
+# if not User.objects.filter(username="admin").exists():
+#     User.objects.create_superuser("admin", "admin@example.com", "12345")
