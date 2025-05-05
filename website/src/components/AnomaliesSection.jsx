@@ -9,45 +9,47 @@ const AnomaliesSection = ({ setActiveSection, externalNotifications = [] }) => {
     const [showPopup, setShowPopup] = useState(false);
     const [selectedAnomaly, setSelectedAnomaly] = useState(null);
     const [anomalyStatuses, setAnomalyStatuses] = useState({});
+    const fetchAnomalies = async () => {
+        try {
+            setLoading(true);
+            // Mock data for development
+            const data = await getSuspiciousActivities();
 
+            const savedStatuses = JSON.parse(localStorage.getItem("anomalyStatuses") || "{}");
+            const statuses = {};
+            data.forEach(anomaly => {
+                statuses[anomaly.id] = savedStatuses[anomaly.id] || anomaly.status; // ou , se quiseres manter o real
+            });
+
+            setAnomalies(data);
+            setAnomalyStatuses(statuses);
+            setLoading(false);
+        } catch (err) {
+            setError(err.message);
+            setLoading(false);
+        }
+    };
+
+    
     useEffect(() => {
         // Fetch anomalies data or use mock data
-        const fetchAnomalies = async () => {
-            try {
-                setLoading(true);
-                // Mock data for development
-                const data = await getSuspiciousActivities();
-
-                const savedStatuses = JSON.parse(localStorage.getItem("anomalyStatuses") || "{}");
-                const statuses = {};
-                data.forEach(anomaly => {
-                    statuses[anomaly.id] = savedStatuses[anomaly.id] || anomaly.status; // ou , se quiseres manter o real
-                });
-
-                setAnomalies(data);
-                setAnomalyStatuses(statuses);
-                setLoading(false);
-            } catch (err) {
-                setError(err.message);
-                setLoading(false);
-            }
-        };
 
         fetchAnomalies();
     }, []);
 
     useEffect(() => {
-        externalNotifications.forEach((newAnomaly) => {
-          setAnomalies((prev) => {
-            const alreadyExists = prev.some(
-              (a) =>
-                a.username === newAnomaly.username &&
-                a.motive === newAnomaly.motive &&
-                a.type_account === newAnomaly.type_account
-            );
-            return alreadyExists ? prev : [...prev, newAnomaly];
-          });
-        });
+        // externalNotifications.forEach((newAnomaly) => {
+        //   setAnomalies((prev) => {
+        //     const alreadyExists = prev.some(
+        //       (a) =>
+        //         a.username === newAnomaly.username &&
+        //         a.motive === newAnomaly.motive &&
+        //         a.type_account === newAnomaly.type_account
+        //     );
+        //     return alreadyExists ? prev : [...prev, newAnomaly];
+        //   });
+        // });
+        fetchAnomalies();
       }, [externalNotifications]);
       
     const handleDetailsClick = (anomaly) => {

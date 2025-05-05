@@ -20,6 +20,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 def create_profile(username, platform, image=None):
 
@@ -472,6 +474,15 @@ def mark_suspicious_activity_resolved(request, activity_id):
 
     activity.status = "resolved"
     activity.save()
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "admins",
+        {
+            "type": "activity_resolved",
+            "activity_id": str(activity_id),
+        }
+    )
 
     return Response({"message": "Activity marked as resolved"}, status=status.HTTP_200_OK)
 

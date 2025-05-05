@@ -8,7 +8,7 @@ import QuestionnaireYes from "../components/voting/QuestionnaireYes.jsx";
 import QuestionnaireNo from "../components/voting/QuestionnaireNo.jsx";
 import Login from "./Login.jsx";
 import { checkAuth, logoutUser } from "../../api/loginApi.jsx";
-
+import { extractPerfilNameAndPlatformOfURL } from "../../utils/utils.jsx";
 // Enhanced colors and theme
 const theme = {
   primary: "#4361ee",
@@ -315,9 +315,11 @@ const HomePage = () => {
             const profileData = await getProfileData(tabs[0].url);
             console.log("Data received from API:", profileData);
             setData(profileData);
+            if (profileData == null) {
+              setData(extractPerfilNameAndPlatformOfURL(tabs[0].url));
+            }
           } catch (error) {
             console.error("Error fetching profile data:", error);
-            setData(null);
           } finally {
             setIsLoading(false);
           }
