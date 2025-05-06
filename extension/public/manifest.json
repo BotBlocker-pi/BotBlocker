@@ -6,11 +6,11 @@
   "action": {
     "default_popup": "index.html"
   },
-  "permissions": ["tabs", "scripting", "storage"],
+  "permissions": ["tabs", "scripting", "storage", "webNavigation"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
-    "https://instagram.com/*"
+    "https://*.instagram.com/*"
   ],
   "background": {
     "service_worker": "background.js"

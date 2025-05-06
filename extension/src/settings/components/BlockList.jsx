@@ -64,6 +64,7 @@ const BlockList = () => {
 
                 // Converter o formato do blackList para o formato utilizado pelo componente
                 const formattedAccounts = blackList.map(([username, platform], index) => {
+                    console.log('Username:', username, 'Platform:', platform); // Log para depuração
                     let accountType = 'X account';
 
                     // Determinar o tipo com base na plataforma

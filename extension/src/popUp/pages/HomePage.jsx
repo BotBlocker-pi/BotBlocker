@@ -302,12 +302,20 @@ const HomePage = () => {
         if (tabs.length > 0) {
           console.log("Current URL:", tabs[0].url);
 
-          // Adicione esta verificação para ignorar a página inicial
+          // twiiter home page
           if (tabs[0].url.includes("/home")) {
             setIsLoading(false);
             setData(null);
             return;
           }
+
+          // Instagram homepage 
+          if (tabs[0].url === "https://www.instagram.com/" || tabs[0].url === "https://instagram.com/") {
+            setIsLoading(false);
+            setData(null);
+            return;
+          }
+          
 
           try {
             console.log("Fazendo requisição para obter dados do perfil...");
@@ -425,9 +433,9 @@ const HomePage = () => {
                   </>
               )
           )}
-
+        
           {isAuthenticated ? (
-              url && !url.includes("/home") ? (
+              url && !url.includes("/home")  ? (
                   // Lógica para páginas de perfil
                   <>
                     {/* Componentes de perfil existentes */}
