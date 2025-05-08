@@ -40,6 +40,11 @@ let profilesBlockedAutomatically = [];
 let profilesBlockedManually = [];
 let profilesBlockedByBadge = [];
 
+let instagramProfileBlocked = false;
+let lastBlockedInstagramProfile = null;  // Guarda nome do perfil bloqueado
+
+
+
 // Armazenar a função fetch original
 let originalFetch = null;
 // Observador para loading
@@ -944,12 +949,16 @@ function blockProfile(profileName, platform) {
       // Implementação para Instagram
       if (currentProfileInfo.profile === profileName) {
         // Estamos na página do perfil - implementar bloqueio para Instagram
+        lastBlockedInstagramProfile = profileName; // nome do perfil bloqueado
         removePostsInstagram(profileName);
         blockScrollInstagram(profileName);
         addBlockedIndicatorInstagram(profileName);
       } else {
         // Estamos no feed - aplicar blur aos posts
+        instagramProfileBlocked = profileName; // nome do perfil bloqueado
+        lastBlockedInstagramProfile = profileName; // nome do perfil bloqueado
         applyBlurToAllPostsFromUserInstagram(profileName);
+        blockStoryPreviewInFeed(profileName);
       }
     }
     updateBlockedAccountsStorage();
@@ -1652,28 +1661,28 @@ function unblockScrollInstagram() {
   
   // Função para aplicar blur a posts do Instagram
   function applyBlurToAllPostsFromUserInstagram(username) {
-    console.log(`[BotBlocker] Applying blur to all posts from ${username} on Instagram`);
-    
-    // Encontrar todos os posts na timeline do Instagram
+    console.log(`[BotBlocker] Applying blur to all feed posts from ${username} on Instagram`);
+  
     const posts = document.querySelectorAll('article');
-    
+    console.log(`[BotBlocker] Found ${posts.length} posts to check for ${username}`);
+  
     posts.forEach(post => {
-      const usernameElements = post.querySelectorAll('a[href^="/"]._aacl');
-      
-      for (const element of usernameElements) {
-        const href = element.getAttribute('href');
-        const match = href.match(/^\/([^\/]+)/);
-        
-        if (match && match[1] && match[1].toLowerCase() === username.toLowerCase()) {
-          // Apply blur to this post
-          post.style.filter = 'blur(5px)';
-          post.style.transition = 'filter 0.3s ease';
-          
-          // Adicionar indicador de bloqueio
+      // Procura qualquer link que aponte para o perfil do username dentro do post
+      const usernameElement = post.querySelector(`a[href^="/${username}"]`);
+  
+      if (usernameElement) {
+        console.log(`[BotBlocker] Found feed post from ${username} to apply blur`);
+  
+        // Aplica blur no post inteiro
+        post.style.filter = 'blur(5px)';
+        post.style.transition = 'filter 0.3s ease';
+  
+        // Verifica se o indicador já existe
+        if (!post.querySelector('.bot-blocker-instagram-indicator')) {
           const indicatorDiv = document.createElement('div');
           indicatorDiv.className = 'bot-blocker-instagram-indicator';
           indicatorDiv.textContent = 'BLOCKED';
-          
+  
           Object.assign(indicatorDiv.style, {
             position: 'absolute',
             top: '50%',
@@ -1688,18 +1697,49 @@ function unblockScrollInstagram() {
             fontWeight: 'bold',
             pointerEvents: 'none'
           });
-          
-          // Adicionar estilo ao container
-          Object.assign(post.style, {
-            position: 'relative'
-          });
-          
+  
+          // Garante position relative
+          const computedStyle = window.getComputedStyle(post);
+          if (computedStyle.position === 'static') {
+            post.style.position = 'relative';
+          }
+  
           post.appendChild(indicatorDiv);
-          break;
         }
       }
     });
   }
+
+  function blockStoryPreviewInFeed(username) {
+    console.log(`[BotBlocker] Checking story previews in feed for ${username}`);
+  
+    const storyButtons = Array.from(document.querySelectorAll('div[role="button"], button[role="button"]'));
+  
+    storyButtons.forEach(button => {
+      const ariaLabel = button.getAttribute('aria-label') || '';
+  
+      if (ariaLabel.toLowerCase().includes(username.toLowerCase())) {
+        console.log(`[BotBlocker] Found story preview for @${username}`);
+  
+        // ✅ Aplica apenas o blur no elemento
+        button.style.filter = 'blur(5px)';
+        button.style.pointerEvents = 'none';
+        button.style.transition = 'filter 0.3s ease';
+  
+        /*
+        // ✅ Alternativa: remover completamente o story do feed
+        // button.style.display = 'none';
+        */
+      }
+    });
+  }
+  
+  
+  
+  
+  
+  
+  
   
   // Remover blur dos tweets de um usuário
   function removeBlurFromUserTweets(username) {
@@ -1924,8 +1964,6 @@ function unblockScrollInstagram() {
         if (currentProfile === 'home' || currentProfile === '') {
           console.log("[BotBlocker] Detected navigation away from blocked Instagram profile");
           
-          // Desbloquear scroll
-          unblockScrollInstagram();
           
           // Remover o indicador
           const indicator = document.getElementById('botblocker-indicator-instagram');
