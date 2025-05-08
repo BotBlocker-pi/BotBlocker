@@ -10,3 +10,6 @@ sqlparse==0.5.3
 tzdata==2025.1
 djangorestframework-simplejwt
 psycopg[binary]
+channels==4.2
+channels-redis==4.2.1
+daphne==4.0.0

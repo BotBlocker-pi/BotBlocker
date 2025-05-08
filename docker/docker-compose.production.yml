@@ -65,6 +65,13 @@ services:
     networks:
       - botblocker_network
 
+  redis:
+    image: redis:7
+    container_name: botblocker_redis
+    networks:
+      - botblocker_network
+      
+
 volumes:
   postgres_data:
   static_volume:

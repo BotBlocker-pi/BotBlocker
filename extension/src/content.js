@@ -725,6 +725,9 @@ async function verifyAndBlockProfiles() {
   console.log('%c[BotBlocker] Comparison of DOM vs. API profiles:', 'background: #8E44AD; color: white; padding: 2px 5px; border-radius: 3px;');
   console.log('Badge configuration:', badgeConfig);
 
+    // Reset arrays
+
+
   profilesBlockedAutomatically = [];
   profilesBlockedManually = [];
   profilesBlockedByBadge = [];

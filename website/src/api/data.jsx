@@ -83,8 +83,59 @@ export const assignBadgeToProfile = async (userId, badge) => {
     }
 };
 
+export const getSuspiciousActivities = async () => {
+    try {
+        const apiUrl = `${API_BASE_URL}/suspicious-activities/`;
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to fetch suspicious activities: ${response.statusText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        console.log("Suspicious Activities:", data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching suspicious activities:", error);
+        return null;
+    }
+};
+
+export const markActivityResolved = async (activityId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/suspicious-activities/${activityId}/resolve/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to mark activity as resolved: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Resolved:", data);
+        return data;
+    } catch (err) {
+        console.error("Error resolving activity:", err);
+        return null;
+    }
+};
+
+
 export default {
     getEvaluationHistory,
     getProfileData,
-    assignBadgeToProfile
+    assignBadgeToProfile,
+    getSuspiciousActivities,
+    markActivityResolved
 };

@@ -1,6 +1,8 @@
 from django.db import models
 from django.db import utils
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 import uuid
 
 class Role(models.TextChoices):
@@ -77,3 +79,24 @@ class Settings(models.Model):
     blocklist = models.ManyToManyField(Profile, related_name='blocked_by')
 
 
+class SuspiciousStatus(models.TextChoices):
+    TO_SOLVE = 'to_solve', 'To Solve'
+    IN_PROGRESS = 'in_progress', 'In Progress'
+    RESOLVED = 'resolved', 'Resolved'
+
+class SuspiciousActivity(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.UUIDField()
+    target = GenericForeignKey('content_type', 'object_id')
+
+    motive = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20,
+        choices=SuspiciousStatus.choices,
+        default=SuspiciousStatus.TO_SOLVE
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.target} - {self.motive} [{self.status}]"
