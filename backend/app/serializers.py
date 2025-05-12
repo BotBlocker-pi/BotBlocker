@@ -24,6 +24,23 @@ def send_notification(data):
     )
 
 
+
+def create_suspicious_activity_if_needed(target, motive, cache_key, type_account, username):
+    if not cache.get(cache_key):
+        print(f"[SPAM ALERT] {motive}")
+        sa = SuspiciousActivity.objects.create(
+            content_type=ContentType.objects.get_for_model(target),
+            object_id=target.id,
+            motive=motive
+        )
+        send_notification({
+            "id": str(sa.id),
+            "username": username,
+            "type_account": type_account,
+            "reason": motive
+        })
+        cache.set(cache_key, True, timeout=600)
+
 def detect_anomalies(user_bb, profile):
     now = timezone.now()
 
@@ -33,22 +50,13 @@ def detect_anomalies(user_bb, profile):
     ).count()
 
     if recent_user_votes > 30:
-        cache_key_user = f"spam_alert_user_{user_bb.id}"
-        if not cache.get(cache_key_user):
-            msg=f"[SPAM DETECTED] User '{user_bb.user.username}' submitted {recent_user_votes} votes within 1 minute."
-            print(msg)
-            SA=SuspiciousActivity.objects.create(
-                content_type=ContentType.objects.get_for_model(user_bb),
-                object_id=user_bb.id,
-                motive=f"{recent_user_votes} votes in 1 minute"
-            )
-            send_notification({
-                "id":str(SA.id),
-                "username": user_bb.user.username,
-                "type_account": "User",
-                "reason": f"{recent_user_votes} votes in 1 minute"
-            })
-            cache.set(cache_key_user, True, timeout=600)
+        create_suspicious_activity_if_needed(
+            target=user_bb,
+            motive=f"{recent_user_votes} votes in 1 minute",
+            cache_key=f"spam_alert_user_{user_bb.id}",
+            type_account="User",
+            username=user_bb.user.username
+        )
 
     recent_profile_votes = Evaluation.objects.filter(
         profile=profile,
@@ -56,24 +64,13 @@ def detect_anomalies(user_bb, profile):
     ).count()
 
     if recent_profile_votes > 50:
-        cache_key_profile = f"spam_alert_profile_{profile.id}"
-        if not cache.get(cache_key_profile):
-            msg=f"[SPAM TARGET] Profile '{profile.username}' received {recent_profile_votes} votes within 5 minutes."
-            print(msg)
-            SA=SuspiciousActivity.objects.create(
-                content_type=ContentType.objects.get_for_model(profile),
-                object_id=profile.id,
-                motive=f"{recent_profile_votes} votes in 5 minutes"
-            )
-            send_notification({
-                "id":str(SA.id),
-                "username": profile.username,
-                "type_account": profile.social.social,
-                "reason": f"{recent_profile_votes} votes in 5 minutes"
-            })
-            cache.set(cache_key_profile, True, timeout=600)
-
-
+        create_suspicious_activity_if_needed(
+            target=profile,
+            motive=f"{recent_profile_votes} votes in 5 minutes",
+            cache_key=f"spam_alert_profile_{profile.id}",
+            type_account=profile.social.social,
+            username=profile.username
+        )
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField()  

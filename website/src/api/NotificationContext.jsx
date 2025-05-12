@@ -45,6 +45,13 @@ export const NotificationProvider = ({ children }) => {
         socket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log(data);
+                
+                if (data.event === "resolved") {
+                    setNotifications(prev => prev.filter(a => a.id !== data.activity_id));
+                    return;
+                }
+
                 const newAnomaly = {
                     id: data.id,
                     username: `@${data.username || "Unknown"}`,
