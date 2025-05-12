@@ -38,6 +38,7 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_PORT: ${DATABASE_PORT}
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media

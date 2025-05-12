@@ -13,3 +13,5 @@ psycopg[binary]
 channels==4.2
 channels-redis==4.2.1
 daphne==4.0.0
+influxdb3-python
+pandas
