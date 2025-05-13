@@ -38,7 +38,7 @@ const AdminDashboard = () => {
                             setActiveSection={setActiveSection}
                             externalNotifications={notifications}
                         />
-                    ) : activeSection === 'verify' ? (
+                    ) : activeSection === 'verify' || activeSection === 'profile-details' ? (
                         <VerificationSection setActiveSection={setActiveSection} />
                     ) : (
                         <div className="admin-no-section">
