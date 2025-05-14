@@ -38,12 +38,14 @@ urlpatterns = [
     path('suspicious-activities/', get_suspicious_activities, name='get_suspicious_activities'),
     path('suspicious-activities/<uuid:activity_id>/resolve/', mark_suspicious_activity_resolved),
 
+
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),
     path('give_badge/', give_badge, name='change_badge'),
 
 
     path('get_users/', get_users, name='get_users'),                       # GET - Listar todos usuários
+    path('get_users_detailed/', get_users_detailed, name='get_users_detailed'),
     path('get_user/<uuid:id>/', get_user, name='get_user_by_id'),     # GET - Obter usuário específico
     path('update_user/<uuid:id>/', update_user, name='update_user'),        # PUT - Atualizar usuário
     path('delete_user/<uuid:id>/', delete_user, name='delete_user'),        # DELETE - Remover usuário
