@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { getEvaluationHistory, getProfileData, assignBadgeToProfile } from '../api/data.jsx';
+import EvaluationChart from '../components/EvaluationChart';
+import ApexBubbleChart from '../components/ApexBubbleChart';
 import '../css/VerificationSection.css';
 // Import placeholder badge images - replace with your actual paths
 import BotBadge from '../assets/badges/botBadge.png';
@@ -378,6 +380,8 @@ const VerificationSection = ({ setActiveSection }) => {
                         </button>
                     </div>
                 </div>
+                <EvaluationChart evaluations={evaluations} />
+                <ApexBubbleChart evaluations={evaluations} />
 
                 {formattedEvaluations && formattedEvaluations.length > 0 && (
                     <div className="evaluations-section">
