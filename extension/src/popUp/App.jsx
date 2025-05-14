@@ -15,11 +15,13 @@ const App = () => {
     }, []);
 
     // Check if we're on Twitter's home page
-    const isTwitterHome = currentUrl && currentUrl.includes('/home');
+    const instagramHomeUrls = ["/?variant=home", "/?variant=following", "/explore", "/reels"];
+
+    const isSocialHome = currentUrl && currentUrl.includes('/home') || currentUrl && currentUrl.includes(instagramHomeUrls) || currentUrl === "https://www.instagram.com/";
 
     return (
         <div style={{ width: '100%', height: '100%' }}>
-            {isTwitterHome ? <BlockedAccounts /> : <HomePage />}
+            {isSocialHome ? <BlockedAccounts /> : <HomePage />}
         </div>
     );
 };
