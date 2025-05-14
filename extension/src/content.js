@@ -1911,6 +1911,21 @@ function unblockScrollInstagram() {
       collectMentions();
     }
   });
+
+    // Monitorar novos posts no Instagram feed e aplicar blur dinamicamente
+if (detectCurrentPlatform() === 'instagram') {
+  const feedObserver = new MutationObserver(() => {
+    perfisBlockeados.forEach(username => {
+      applyBlurToAllPostsFromUserInstagram(username);
+      blockStoryPreviewInFeed(username); // Garante que os stories também fiquem bloqueados
+    });
+  });
+
+  feedObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
   
   // Inicialização dos scripts
   function initializeScripts() {
@@ -1989,6 +2004,10 @@ function unblockScrollInstagram() {
       initializeScripts();
     }
   }, 1000);
+
+
+
+
   
   // Inicialização
   addStyles();
