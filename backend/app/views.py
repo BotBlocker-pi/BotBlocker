@@ -313,6 +313,16 @@ def get_users(request):
     except Exception as e:
         print(f"Error in get_users: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_users_detailed(request):
+    try:
+        users = User_BB.objects.all().order_by('-created_at')
+        serializer = UserBBDisplaySerializer(users, many=True)
+        return Response({'users': serializer.data})
+    except Exception as e:
+        print(f"Error in get_users_detailed: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 @api_view(['GET'])
 def get_user(request, id):

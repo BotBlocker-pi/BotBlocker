@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import Evaluation, SuspiciousActivity, User_BB, Profile, Social, Settings, Badge
 from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import User
 
 from django.utils import timezone
 from datetime import timedelta
@@ -210,4 +211,22 @@ class SuspiciousActivitySerializer(serializers.ModelSerializer):
         elif isinstance(target, User_BB):
             return "User"
         return "Unknown"
+
+class UserBBDisplaySerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    settings = SettingsSerializer()
+
+    class Meta:
+        model = User_BB
+        fields = ['id', 'user', 'role', 'email', 'settings']
+
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "username": obj.user.username,
+                "first_name": obj.user.first_name,
+                "last_name": obj.user.last_name
+            }
+        return None
 

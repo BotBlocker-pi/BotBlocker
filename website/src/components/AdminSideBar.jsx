@@ -20,6 +20,14 @@ const AdminSideBar = ({ activeSection, setActiveSection }) => {
                     <span className="menu-icon">⚙️</span>
                     <span className="menu-text">Verify</span>
                 </div>
+
+                <div
+                    className={`menu-item ${activeSection === 'accounts' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('accounts')}
+                >
+                    <span className="menu-icon">👤</span>
+                    <span className="menu-text">Accounts</span>
+                </div>
             </div>
         </div>
     );
