@@ -31,6 +31,7 @@ function detectCurrentPlatform() {
   return 'unknown';
 }
 
+
 // Variáveis globais
 let perfisDaAPI = [];
 let perfisBlockeados = new Set();
@@ -480,13 +481,19 @@ async function applyBlurToTweet(element, mention) {
       const shouldBlockByPercentage = apiProfile && apiProfile.percentage > tolerance;
       
       const shouldBlockReposter = isManuallyBlocked || shouldBlockByPercentage || shouldBlockByBadge;
-
+      
       if (shouldBlockReposter) {
-        // Apply blur to the entire article
-        articleContainer.style.filter = 'blur(5px)';
-        articleContainer.style.transition = 'filter 0.3s ease';
-        addBlockIndicatorToTweet(articleContainer);
-        return; // No need to check anything else
+        chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+          const shouldRemove = result.remove_instead_of_blur === true;
+        
+          if (shouldRemove) {
+            articleContainer.remove();
+          } else {
+            articleContainer.style.filter = 'blur(5px)';
+            articleContainer.style.transition = 'filter 0.3s ease';
+            addBlockIndicatorToTweet(articleContainer);
+          }
+        });
       }
     }
 
@@ -533,9 +540,17 @@ async function applyBlurToTweet(element, mention) {
 
         if (shouldBlock) {
           // Apply blur to the entire article
-          articleContainer.style.filter = 'blur(5px)';
-          articleContainer.style.transition = 'filter 0.3s ease';
-          addBlockIndicatorToTweet(articleContainer);
+          chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+            const shouldRemove = result.remove_instead_of_blur === true;
+          
+            if (shouldRemove) {
+              articleContainer.remove();
+            } else {
+              articleContainer.style.filter = 'blur(5px)';
+              articleContainer.style.transition = 'filter 0.3s ease';
+              addBlockIndicatorToTweet(articleContainer);
+            }
+          });
           return; // We found it, no need to continue
         }
       }
@@ -572,10 +587,19 @@ async function applyBlurToTweet(element, mention) {
     
     if (isManuallyBlocked || shouldBlockByBadge || shouldBlockByPercentage) {
       // Apply blur to this post
-      postContainer.style.filter = 'blur(5px)';
-      postContainer.style.transition = 'filter 0.3s ease';
-      addBlockIndicatorToTweet(postContainer);
-      return;
+      chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+        const shouldRemove = result.remove_instead_of_blur === true;
+
+
+        if (shouldRemove) {
+          postContainer.remove();
+        } else {
+        postContainer.style.filter = 'blur(5px)';
+        postContainer.style.transition = 'filter 0.3s ease';
+        addBlockIndicatorToTweet(postContainer);
+        }
+        return;
+      })
     }
     
     // If we don't need to block
@@ -1600,10 +1624,18 @@ function unblockScrollInstagram() {
   
         if (linkUsername.toLowerCase() === username.toLowerCase()) {
           // Apply blur to this tweet
-          article.style.filter = 'blur(5px)';
-          article.style.transition = 'filter 0.3s ease';
-          addBlockIndicatorToTweet(article);
-          break;
+          chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+            const shouldRemove = result.remove_instead_of_blur === true;
+          
+            if (shouldRemove) {
+              article.remove();
+            } else {
+            article.style.filter = 'blur(5px)';
+            article.style.transition = 'filter 0.3s ease';
+            addBlockIndicatorToTweet(article);
+            }
+          })
+          break; // Stop checking other links in this article
         }
       }
     });
@@ -1664,78 +1696,89 @@ function unblockScrollInstagram() {
   
   // Função para aplicar blur a posts do Instagram
   function applyBlurToAllPostsFromUserInstagram(username) {
-    console.log(`[BotBlocker] Applying blur to all feed posts from ${username} on Instagram`);
+    console.log(`[BotBlocker] Checking for Instagram posts from ${username}`);
   
     const posts = document.querySelectorAll('article');
-    console.log(`[BotBlocker] Found ${posts.length} posts to check for ${username}`);
   
     posts.forEach(post => {
-      // Procura qualquer link que aponte para o perfil do username dentro do post
-      const usernameElement = post.querySelector(`a[href^="/${username}"]`);
+      const profileLinks = post.querySelectorAll(`a[href^="/${username}"]`);
+      
+      if (!profileLinks.length) return;
   
-      if (usernameElement) {
-        console.log(`[BotBlocker] Found feed post from ${username} to apply blur`);
+      chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+        const shouldRemove = result.remove_instead_of_blur === true;
   
-        // Aplica blur no post inteiro
-        post.style.filter = 'blur(5px)';
-        post.style.transition = 'filter 0.3s ease';
+        if (shouldRemove) {
+          post.style.display = 'none';
+          post.style.visibility = 'hidden';
+          post.style.height = '0';
+          post.style.overflow = 'hidden';
+
+        } else {
+          post.style.filter = 'blur(5px)';
+          post.style.transition = 'filter 0.3s ease';
   
-        // Verifica se o indicador já existe
-        if (!post.querySelector('.bot-blocker-instagram-indicator')) {
-          const indicatorDiv = document.createElement('div');
-          indicatorDiv.className = 'bot-blocker-instagram-indicator';
-          indicatorDiv.textContent = 'BLOCKED';
+          if (!post.querySelector('.bot-blocker-instagram-indicator')) {
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'bot-blocker-instagram-indicator';
+            indicatorDiv.textContent = 'BLOCKED';
   
-          Object.assign(indicatorDiv.style, {
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: '#FF3A3A',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            zIndex: '999',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            pointerEvents: 'none'
-          });
+            Object.assign(indicatorDiv.style, {
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: '#FF3A3A',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              zIndex: '999',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              pointerEvents: 'none'
+            });
   
-          // Garante position relative
-          const computedStyle = window.getComputedStyle(post);
-          if (computedStyle.position === 'static') {
-            post.style.position = 'relative';
+            const computedStyle = window.getComputedStyle(post);
+            if (computedStyle.position === 'static') {
+              post.style.position = 'relative';
+            }
+  
+            post.appendChild(indicatorDiv);
           }
-  
-          post.appendChild(indicatorDiv);
         }
-      }
+      });
     });
   }
+  
 
   function blockStoryPreviewInFeed(username) {
     console.log(`[BotBlocker] Checking story previews in feed for ${username}`);
   
     const storyButtons = Array.from(document.querySelectorAll('div[role="button"], button[role="button"]'));
+    const cleanUsername = username.toLowerCase().replace(/^@/, '');
   
     storyButtons.forEach(button => {
-      const ariaLabel = button.getAttribute('aria-label') || '';
+      const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
   
-      if (ariaLabel.toLowerCase().includes(username.toLowerCase())) {
-        console.log(`[BotBlocker] Found story preview for @${username}`);
+      // Procurar correspondência exata de username
+      const isExactMatch = new RegExp(`(^|\\s|@)${cleanUsername}([\\s,\\.!?]|$)`).test(ariaLabel);
   
-        // ✅ Aplica apenas o blur no elemento
-        button.style.filter = 'blur(5px)';
-        button.style.pointerEvents = 'none';
-        button.style.transition = 'filter 0.3s ease';
+      if (isExactMatch) {
+        chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+          const shouldRemove = result.remove_instead_of_blur === true;
   
-        /*
-        // ✅ Alternativa: remover completamente o story do feed
-        // button.style.display = 'none';
-        */
+          if (shouldRemove) {
+            button.remove();
+          } else {
+            button.style.filter = 'blur(5px)';
+            button.style.pointerEvents = 'none';
+            button.style.transition = 'filter 0.3s ease';
+          }
+        });
       }
     });
   }
+  
   
   
   

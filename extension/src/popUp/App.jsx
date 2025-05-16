@@ -14,10 +14,17 @@ const App = () => {
         });
     }, []);
 
-    // Check if we're on Twitter's home page
+    // Check if we're on Socials home page
     const instagramHomeUrls = ["/?variant=home", "/?variant=following", "/explore", "/reels"];
 
-    const isSocialHome = currentUrl && currentUrl.includes('/home') || currentUrl && currentUrl.includes(instagramHomeUrls) || currentUrl === "https://www.instagram.com/";
+    const isSocialHome = (
+        currentUrl &&
+        (
+            currentUrl.includes('/home') ||
+            instagramHomeUrls.some(path => currentUrl.includes(path)) ||
+            currentUrl === "https://www.instagram.com/"
+        )
+    );
 
     return (
         <div style={{ width: '100%', height: '100%' }}>
