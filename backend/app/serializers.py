@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Evaluation, SuspiciousActivity, User_BB, Profile, Social, Settings, Badge
+from .models import Evaluation, SuspiciousActivity, User_BB, Profile, Social, Settings, Badge, UserTimeout
 from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
@@ -183,9 +183,6 @@ class UserBBSerializer(serializers.ModelSerializer):
         return instance
     
 
-from rest_framework import serializers
-from .models import SuspiciousActivity, Profile, User_BB
-
 class SuspiciousActivitySerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()
     type_account = serializers.SerializerMethodField()
@@ -214,19 +211,47 @@ class SuspiciousActivitySerializer(serializers.ModelSerializer):
 
 class UserBBDisplaySerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    settings = SettingsSerializer()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = User_BB
-        fields = ['id', 'user', 'role', 'email', 'settings']
+        fields = ['id', 'user', 'role','status']
 
     def get_user(self, obj):
         if obj.user:
             return {
                 "id": obj.user.id,
                 "username": obj.user.username,
-                "first_name": obj.user.first_name,
-                "last_name": obj.user.last_name
             }
         return None
 
+    def get_status(self, obj):
+        if hasattr(obj, 'ban') and obj.ban.is_banned:
+            return "banned"
+
+        if any(timeout.is_active() for timeout in obj.timeouts.all()):
+            return "timeout"
+
+        return "active"
+
+class UserTimeoutSerializer(serializers.ModelSerializer):
+    is_active = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserTimeout
+        fields = [
+            'id',
+            'reason',
+            'start_time',
+            'duration',
+            'end_time',
+            'is_enabled',
+            'is_active'
+        ]
+
+    def get_is_active(self, obj):
+        return obj.is_active()
+
+    def get_end_time(self, obj):
+        return obj.get_end_time()

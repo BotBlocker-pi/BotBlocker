@@ -496,6 +496,158 @@ def mark_suspicious_activity_resolved(request, activity_id):
 
     return Response({"message": "Activity marked as resolved"}, status=status.HTTP_200_OK)
 
+from django.core.exceptions import ObjectDoesNotExist
+
+def is_user_banned(user_bb):
+    try:
+        return user_bb.ban.is_banned
+    except ObjectDoesNotExist:
+        return False
+
+
+def is_user_under_timeout(user_bb):
+    return any(timeout.is_active() for timeout in user_bb.timeouts.all())
+
+def was_user_unbanned(user_bb):
+    try:
+        ban = user_bb.ban
+        return not ban.is_banned
+    except ObjectDoesNotExist:
+        return False
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def apply_timeout(request):
+    try:
+        user_id = request.data.get("user_id")
+        duration = request.data.get("duration")  # in seconds
+
+        if not user_id or not duration:
+            return Response({"error": "Both user_id and duration are required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+        timeout = UserTimeout.objects.create(user=user_bb, duration=int(duration))
+
+        return Response({
+            "success": True,
+            "message": f"Timeout applied until {timeout.get_end_time()}."
+        }, status=201)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in apply_timeout:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def revoke_timeout(request):
+    try:
+        user_id = request.data.get("user_id")
+
+        if not user_id:
+            return Response({"error": "user_id is required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+        active_timeouts = [t for t in user_bb.timeouts.all() if t.is_active()]
+
+        if not active_timeouts:
+            return Response({"message": "User has no active timeouts."}, status=404)
+
+        for timeout in active_timeouts:
+            timeout.is_enabled = False
+            timeout.save()
+
+        return Response({
+            "success": True,
+            "message": f"{len(active_timeouts)} timeout(s) revoked."
+        }, status=200)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in revoke_timeout:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ban_user(request):
+    try:
+        user_id = request.data.get("user_id")
+        reason = request.data.get("reason", "No reason provided.")
+
+        if not user_id:
+            return Response({"error": "user_id is required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+
+        if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
+            return Response({"error": "User is already banned."}, status=400)
+
+        ban, _ = UserBan.objects.get_or_create(user=user_bb)
+        ban.reason = reason
+        ban.is_banned = True
+        ban.save()
+
+        return Response({
+            "success": True,
+            "message": f"User banned on {ban.banned_at}."
+        }, status=201)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in ban_user:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unban_user(request):
+    try:
+        user_id = request.data.get("user_id")
+
+        if not user_id:
+            return Response({"error": "user_id is required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+
+        if not hasattr(user_bb, 'ban'):
+            return Response({"message": "User was never banned."}, status=404)
+
+        if not user_bb.ban.is_banned:
+            return Response({"message": "User is already unbanned."}, status=400)
+
+        user_bb.ban.is_banned = False
+        user_bb.ban.save()
+
+        return Response({"success": True, "message": "User successfully unbanned."}, status=200)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in unban_user:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_timeouts(request, user_id):
+    try:
+        user_bb = User_BB.objects.get(id=user_id)
+        timeouts = user_bb.timeouts.all().order_by('-start_time')
+        serializer = UserTimeoutSerializer(timeouts, many=True)
+        return Response(serializer.data, status=200)
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+
 
 
 
