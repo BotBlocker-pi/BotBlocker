@@ -118,6 +118,15 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         return evaluation
     
+class UserEvaluationSerializer(serializers.ModelSerializer):
+    profile_username = serializers.CharField(source='profile.username')
+    social_platform = serializers.CharField(source='profile.social.social')
+    
+    class Meta:
+        model = Evaluation
+        fields = ['profile_username', 'social_platform', 'is_bot', 'notas', 'created_at']
+
+
 class ProfileShortSerializer(serializers.ModelSerializer):
     social = serializers.CharField(source='social.social')
 
