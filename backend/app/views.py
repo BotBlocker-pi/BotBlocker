@@ -115,20 +115,33 @@ class CustomTokenObtainView(APIView):
         if not username or not password:
             return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
         user = authenticate(username=username, password=password)
-        if user:
-            # get user role
-            user_bb = User_BB.objects.filter(user=user).first()
-            role = user_bb.role if user_bb else None
-            refresh = RefreshToken.for_user(user)
+        if not user:
+            return Response({"error": "Invalid credentials"}, status=401)
+
+        user_bb = User_BB.objects.filter(user=user).first()
+        if not user_bb:
+            return Response({"error": "User profile not found."}, status=404)
+
+        if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
+            return Response({"error": "Your account is banned."}, status=403)
+
+        active_timeout = next((t for t in user_bb.timeouts.all() if t.is_active()), None)
+        if active_timeout:
             return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "role": role,
-            }, status=status.HTTP_200_OK)
+                "error": "Your account is under a timeout.",
+                "timeout_ends_at": active_timeout.get_end_time().isoformat()
+            }, status=403)
 
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user_id": user_bb.id,
+            "role": user_bb.role,
+        }, status=200)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -527,6 +540,10 @@ def apply_timeout(request):
             return Response({"error": "Both user_id and duration are required."}, status=400)
 
         user_bb = User_BB.objects.get(id=user_id)
+
+        if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
+            return Response({"error": "Cannot apply timeout to a banned user."}, status=400)
+        
         timeout = UserTimeout.objects.create(user=user_bb, duration=int(duration))
 
         return Response({
@@ -588,6 +605,10 @@ def ban_user(request):
 
         if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
             return Response({"error": "User is already banned."}, status=400)
+
+        has_active_timeout = any(t.is_active() for t in user_bb.timeouts.all())
+        if has_active_timeout:
+            return Response({"error": "Cannot ban a user with an active timeout."}, status=400)
 
         ban, _ = UserBan.objects.get_or_create(user=user_bb)
         ban.reason = reason

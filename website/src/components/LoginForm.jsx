@@ -50,6 +50,8 @@ const LoginForm = ({ onAuthChange, onClose, initialMode = false }) => {
             } else {
                 // Login logic
                 const data = await loginUser(username, password);
+                console.log(data);
+                
                 if (data) {
                     localStorage.setItem("access_token", data.access);
                     localStorage.setItem("refresh_token", data.refresh);
@@ -64,9 +66,8 @@ const LoginForm = ({ onAuthChange, onClose, initialMode = false }) => {
             }
         } catch (error) {
             // Handle specific error messages from the backend
-            const errorMessage = error.response?.data?.error ||
-                "❌ Authentication failed. Please try again.";
-            setMessage(errorMessage);
+            setMessage(error.message || "❌ Authentication failed.");
+            console.error("Login error:", error);
 
             console.error(isRegisterMode ? "Registration error:" : "Login error:", error);
         }

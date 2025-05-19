@@ -238,24 +238,26 @@ const Login = ({ onBackToHome, onAuthChange, initialMode = false }) => {
       return;
     }
 
-    try {
+  try {
       const data = await loginUser(username, password);
+
       if (data && data.access) {
-        localStorage.setItem("access_token", data.access);
-        if (data.refresh) {
-          localStorage.setItem("refresh_token", data.refresh);
-        }
-        setMessage("✅ Login successful!");
-        setIsAuthenticated(true);
-        // Call the function to update parent state
-        if (onAuthChange) onAuthChange(true);
+          localStorage.setItem("access_token", data.access);
+          if (data.refresh) {
+              localStorage.setItem("refresh_token", data.refresh);
+          }
+
+          setMessage("✅ Login successful!");
+          setIsAuthenticated(true);
+          if (onAuthChange) onAuthChange(true);
       } else {
-        setMessage("❌ Invalid credentials.");
+          setMessage("❌ Invalid credentials.");
       }
-    } catch (error) {
+  } catch (error) {
       console.error("Login error:", error);
-      setMessage("❌ Login failed. Please try again.");
-    }
+      setMessage(error.message || "❌ Login failed. Please try again.");
+  }
+
   };
 
   const handleSignUp = async (e) => {

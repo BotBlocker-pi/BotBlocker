@@ -71,19 +71,31 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick  }) => {
             <button onClick={handleEvaluations} className="eval-button">
                 🧾 Evaluations History
             </button>
-            <button disabled={localStatus === 'banned'} onClick={() => onTimeoutClick(userId, username)} className="timeout-button">
+            
+            <button
+                onClick={() => onTimeoutClick(userId, username)}
+                className={`timeout-button ${localStatus === 'banned' ? 'disabled' : ''}`}
+                disabled={localStatus === 'banned'}
+            >
                 ⏱️ Time-out
             </button>
 
-            <button disabled={localStatus === 'timeout'} 
+            <button
                 onClick={() => handleBanToggle()}
-                className="ban-button"
+                className={`ban-button ${localStatus === 'timeout' ? 'disabled' : ''}`}
+                disabled={localStatus === 'timeout'}
             >
-                {localStatus === "banned" ? "♻️ Unban" : "🚫 Ban"}
+                {localStatus === 'banned' ? '♻️ Unban' : '🚫 Ban'}
             </button>
-            <button onClick={handlePromote} className="promote-button">
+
+            <button
+                onClick={handlePromote}
+                className={`promote-button ${localStatus !== 'active' || role === 'admin' || role === 'verifier' ? 'disabled' : ''}`}
+                disabled={localStatus !== 'active' || role === 'admin' || role === 'verifier'}
+            >
                 ⭐ Promote
             </button>
+
             <div className="moderation-status">
                 {localStatus === 'banned' && <p style={{ color: 'red' }}>Banned</p>}
                 {localStatus === 'timeout' && <p style={{ color: 'orange' }}>Timeout active</p>}
