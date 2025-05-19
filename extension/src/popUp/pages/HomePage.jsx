@@ -315,6 +315,13 @@ const HomePage = () => {
             setData(null);
             return;
           }
+
+          // Facebook homepage
+          if (tabs[0].url === "https://www.facebook.com/" || tabs[0].url === "https://facebook.com/") {
+            setIsLoading(false);
+            setData(null);
+            return;
+          }
           
 
           try {

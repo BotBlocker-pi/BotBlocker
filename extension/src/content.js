@@ -24,10 +24,8 @@ function detectCurrentPlatform() {
     return 'instagram';
   } else if (url.includes('facebook.com')) {
     return 'facebook';
-  } else if (url.includes('threads.net')) {
-    return 'threads';
   }
-  
+
   return 'unknown';
 }
 
@@ -109,6 +107,32 @@ async function detectProfileImage() {
             }
         }
         }
+    } else if (platform === 'facebook') {
+    // Procura um <svg> com <image> dentro
+      const mainContent = document.querySelector('div[role="main"]');
+
+      if (!mainContent) {
+        console.warn("[BotBlocker] Conteúdo principal não encontrado.");
+        return null;
+      }
+
+      const svgImages = mainContent.querySelectorAll('svg[aria-label] image');
+
+      for (const image of svgImages) {
+        const href = image.getAttribute('xlink:href') || image.getAttribute('href');
+        if (href && href.includes("facebook.com")) continue; // ignora imagens de ícones
+
+        // Heurística extra: verifica se a imagem é quadrada e suficientemente grande
+        const height = parseInt(image.getAttribute("height") || "0");
+        const width = parseInt(image.getAttribute("width") || "0");
+        if (height >= 100 && width >= 100) {
+          chrome.storage.local.set({ avatarUrl: href });
+          console.log("[BotBlocker] Avatar Facebook armazenado corretamente:", href);
+          return href;
+        }
+      }
+
+      console.warn("[BotBlocker] Nenhuma imagem de perfil válida encontrada no Facebook.");
     }
   return null;
 }
@@ -147,11 +171,8 @@ function getCurrentProfile() {
       platform: 'instagram'
     };
   } else if (platform === 'facebook') {
-    // Facebook: extração diferente do perfil
-    // Exemplo simplificado: facebook.com/username ou facebook.com/profile.php?id=12345
-    const path = window.location.pathname.substring(1);
-    const profileMatch = path.match(/^([^\/]+)/);
-    const currentProfile = profileMatch ? profileMatch[1] : '';
+    const segments = window.location.pathname.split('/').filter(s => s);
+    const currentProfile = segments.length > 0 ? segments[0] : '';
     return {
       url: window.location.href,
       profile: currentProfile,
@@ -326,7 +347,33 @@ function collectMentions() {
         collectedMentions.add(mention);
       }
     });
+  } else if (platform === 'facebook') {
+    const usernameElements = document.querySelectorAll('a[href^="/"]:not([href="/"])');
+
+    usernameElements.forEach(element => {
+      const href = element.getAttribute('href');
+
+      // Match apenas se for algo como "/username" (sem subpaths)
+      const match = href.match(/^\/([^\/?#]+)/);
+      if (match && match[1]) {
+        const mention = match[1];
+
+        // Ignorar rotas que não são perfis válidos
+        const blockedPrefixes = ['pages', 'groups', 'watch', 'marketplace', 'events', 'gaming', 'notifications', 'settings', 'help'];
+
+        if (blockedPrefixes.includes(mention.toLowerCase())) return;
+
+        // Evita duplicação
+        if (!collectedMentions.has(mention)) {
+          console.log(`[BotBlocker] Novo perfil encontrado no Facebook: @${mention}`);
+          newProfilesFound.push(mention);
+        }
+
+        collectedMentions.add(mention);
+      }
+    });
   }
+
   
   // Log dos novos perfis encontrados
   if (newProfilesFound.length > 0) {
@@ -986,6 +1033,18 @@ function blockProfile(profileName, platform) {
         lastBlockedInstagramProfile = profileName; // nome do perfil bloqueado
         applyBlurToAllPostsFromUserInstagram(profileName);
         blockStoryPreviewInFeed(profileName);
+      }
+    } else if (platform === 'facebook') {
+      if (currentProfileInfo.profile === profileName) {
+        removePostsFacebook(profileName);
+        blockScrollFacebook(profileName);
+        addBlockedIndicatorFacebook(profileName);
+
+      }
+      else {
+        // Estamos no feed - aplicar blur aos posts
+        applyBlurToAllPostsFromUserFacebook(profileName);
+        blockStoryPreviewInFeedFacebook(profileName);
       }
     }
     updateBlockedAccountsStorage();
@@ -1709,10 +1768,14 @@ function unblockScrollInstagram() {
         const shouldRemove = result.remove_instead_of_blur === true;
   
         if (shouldRemove) {
-          post.style.display = 'none';
+          // style para nao partir o layout do insta
           post.style.visibility = 'hidden';
+          post.style.position = 'absolute';
+          post.style.top = '-9999px';
+          post.style.left = '-9999px';
           post.style.height = '0';
-          post.style.overflow = 'hidden';
+          post.style.width = '0';
+
 
         } else {
           post.style.filter = 'blur(5px)';

@@ -22,7 +22,8 @@ const App = () => {
         (
             currentUrl.includes('/home') ||
             instagramHomeUrls.some(path => currentUrl.includes(path)) ||
-            currentUrl === "https://www.instagram.com/"
+            currentUrl === "https://www.instagram.com/" ||
+            currentUrl === "https://www.facebook.com/"
         )
     );
 
