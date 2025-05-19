@@ -3,6 +3,7 @@ import '../css/ActionButton.css';
 import { banUser,unbanUser } from "../api/data";
 const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvaluationsClick }) => {
     const [localStatus, setLocalStatus] = useState(status);
+    const [localRole, setLocalRole] = useState(role);
       useEffect(() => {
             setLocalStatus(status);
     }, [status]);
@@ -30,8 +31,8 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvalu
   };
 
     const handlePromote = async () => {
-        if (role === 'admin' || role === 'verifier') {
-            alert(`${role.charAt(0).toUpperCase() + role.slice(1)}s cannot be promoted.`);
+        if (localRole === 'admin' || localRole === 'verifier') {
+            alert(`${localRole.charAt(0).toUpperCase() + localRole.slice(1)}s cannot be promoted.`);
             return;
         }
 
@@ -49,6 +50,7 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvalu
             }
 
             const data = await response.json();
+            setLocalRole('admin')
             alert(`✅ ${username} has been promoted to admin.`);
         } catch (err) {
             console.error('Error promoting user:', err);
@@ -81,8 +83,8 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvalu
 
             <button
                 onClick={handlePromote}
-                className={`promote-button ${localStatus !== 'active' || role === 'admin' || role === 'verifier' ? 'disabled' : ''}`}
-                disabled={localStatus !== 'active' || role === 'admin' || role === 'verifier'}
+                className={`promote-button ${localStatus !== 'active' || localRole === 'admin' || localRole === 'verifier' ? 'disabled' : ''}`}
+                disabled={localStatus !== 'active' || localRole === 'admin' || localRole === 'verifier'}
             >
                 ⭐ Promote
             </button>
