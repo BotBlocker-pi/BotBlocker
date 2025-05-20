@@ -60,3 +60,11 @@
     background-color: #34a853;
     color: white;
 }
+
+.action-buttons button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #cccccc !important;
+  color: #666 !important;
+  border: none;
+}

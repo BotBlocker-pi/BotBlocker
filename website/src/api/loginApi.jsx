@@ -7,17 +7,27 @@ export const loginUser = async (username, password) => {
         const response = await fetch(`${API_BASE_URL}/token/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: username, password })
+            body: JSON.stringify({ username, password })
         });
 
-        if (!response.ok) throw new Error("Credenciais inválidas");
+        const data = await response.json(); 
 
-        return await response.json(); // Retorna os tokens (access e refresh)
+        if (!response.ok) {
+            if (response.status === 403 && data.timeout_ends_at) {
+                const endDate = new Date(data.timeout_ends_at);
+                const localDate = endDate.toLocaleString();
+                throw new Error(`⏱️ Your account is under timeout until ${localDate}`);
+            }
+            throw new Error(data.error || "Login failed.");
+        }
+
+        return data;
     } catch (error) {
         console.error("Error logging in:", error);
-        return null;
+        throw error;  
     }
 };
+
 
 // Função para registar um novo utilizador
 export const registerUser = async (username, email, password) => {

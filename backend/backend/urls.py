@@ -37,7 +37,11 @@ urlpatterns = [
     path('post_img/', post_img, name='post_img'),
     path('suspicious-activities/', get_suspicious_activities, name='get_suspicious_activities'),
     path('suspicious-activities/<uuid:activity_id>/resolve/', mark_suspicious_activity_resolved),
-
+    path('users/timeout/apply/', apply_timeout, name='apply-timeout'),
+    path('users/timeout/revoke/', revoke_timeout, name='revoke-timeout'),
+    path('users/ban/', ban_user, name='ban-user'),
+    path('users/unban/', unban_user, name='unban-user'),
+    path('users/<uuid:user_id>/timeouts/', get_user_timeouts, name='get-user-timeouts'),
 
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),

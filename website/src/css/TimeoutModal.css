@@ -1,0 +1,136 @@
+/* Overlay escurecido por trás do modal */
+.timeout-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Caixa principal do modal */
+.timeout-popup {
+  background-color: rgb(109, 109, 109);
+  border-radius: 12px;
+  padding: 24px;
+  width: 340px;
+  max-width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  position: relative;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Animação suave de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cabeçalho com botão de fechar */
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.popup-header button {
+  font-size: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Opções de duração */
+.duration-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+  justify-content: center;
+}
+
+.duration-options button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f0f0f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.duration-options button:hover {
+  background-color: #e0e0e0;
+}
+
+.duration-options .selected {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Botões principais */
+.apply-button,
+.revoke-button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+}
+
+.apply-button {
+  background-color: #28a745;
+}
+
+.revoke-button {
+  background-color: #dc3545;
+}
+
+/* Histórico de timeouts */
+.timeout-history {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.timeout-history h4 {
+  margin-bottom: 8px;
+  font-size: 16px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+}
+
+.timeout-history ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.timeout-history li {
+  font-size: 14px;
+  margin-bottom: 6px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.timeout-history li::before {
+  content: "⏱️";
+  position: absolute;
+  left: 0;
+}
