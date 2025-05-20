@@ -3,13 +3,13 @@ import { Navigate } from 'react-router-dom';
 import '../css/AdminDashboard.css';
 import Navbar from '../components/Navbar';
 import AdminSideBar from "../components/AdminSideBar.jsx";
-import AnomaliesSection from "../components/AnomaliesSection.jsx";
+import SpamVotingSection from "../components/SpamVotingSection.jsx";
 import VerificationSection from '../components/VerificationSection';
 import AccountsSection from '../components/AccountsSection'; // ✅ New import
 import { useNotifications } from '../api/NotificationContext.jsx';
 
 const AdminDashboard = () => {
-    const [activeSection, setActiveSection] = useState('anomalies');
+    const [activeSection, setActiveSection] = useState('spamVoting');
     const notifications = useNotifications();
 
     // If not an admin, redirect to home page
@@ -28,8 +28,8 @@ const AdminDashboard = () => {
                 />
 
                 <div className="admin-main-content">
-                    {activeSection === 'anomalies' ? (
-                        <AnomaliesSection
+                    {activeSection === 'spamVoting' ? (
+                        <SpamVotingSection
                             setActiveSection={setActiveSection}
                             externalNotifications={notifications}
                         />

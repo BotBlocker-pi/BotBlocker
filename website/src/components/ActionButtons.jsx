@@ -27,7 +27,7 @@ const ActionButtons = ({ username, userId, role }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ role: 'admin' }),
+                body: JSON.stringify({ role: 'verifier' }),
             });
 
             if (!response.ok) {
@@ -35,7 +35,7 @@ const ActionButtons = ({ username, userId, role }) => {
             }
 
             const data = await response.json();
-            alert(`✅ ${username} has been promoted to admin.`);
+            alert(`✅ ${username} has been promoted to verifier.`);
         } catch (err) {
             console.error('Error promoting user:', err);
             alert('⚠️ An error occurred while promoting the user.');
