@@ -1037,7 +1037,7 @@ function blockProfile(profileName, platform) {
     } else if (platform === 'facebook') {
       if (currentProfileInfo.profile === profileName) {
         removePostsFacebook(profileName);
-        blockScrollFacebook(profileName);
+        // blockScrollFacebook(profileName);
         addBlockedIndicatorFacebook(profileName);
 
       }
@@ -1051,58 +1051,77 @@ function blockProfile(profileName, platform) {
   }
   
   // Função para desbloquear um perfil
-  function unblockProfile(username, platform) {
-    platform = platform || detectCurrentPlatform();
-    
-    console.log(`[BotBlocker] Unblocking profile ${username} on ${platform}...`);
-    
-    if (platform === 'x') {
-      // Verificar se estamos visualizando este perfil
-      const currentProfile = window.location.pathname.split("/")[1];
-      if (currentProfile.toLowerCase() === username.toLowerCase()) {
-        console.log(`[BotBlocker] Currently viewing this profile. Applying unblocking...`);
-  
-        // Restaurar carregamento normal
-        unblockLoading();
-  
-        // Remover o indicador de bloqueio se existir
-        const indicator = document.getElementById('botblocker-indicator');
-        if (indicator) {
-          indicator.remove();
-        }
-  
-        // Recarregar a página automaticamente para restaurar os tweets
-        window.location.reload();
+function unblockProfile(username, platform) {
+  platform = platform || detectCurrentPlatform();
+
+  console.log(`[BotBlocker] Unblocking profile ${username} on ${platform}...`);
+
+  if (platform === 'x') {
+    const currentProfile = window.location.pathname.split("/")[1];
+    if (currentProfile.toLowerCase() === username.toLowerCase()) {
+      console.log(`[BotBlocker] Currently viewing this profile. Applying unblocking...`);
+
+      unblockLoading();
+
+      const indicator = document.getElementById('botblocker-indicator');
+      if (indicator) {
+        indicator.remove();
       }
-  
-      // Remover blur de todos os tweets deste usuário
-      removeBlurFromUserTweets(username);
-    } else if (platform === 'instagram') {
-      // Implementação para Instagram
-      const currentProfile = getCurrentProfile().profile;
-      if (currentProfile.toLowerCase() === username.toLowerCase()) {
-        console.log(`[BotBlocker] Currently viewing Instagram profile. Applying unblocking...`);
-        
-        // Remover estilos e limitações
-        const styleElement = document.getElementById('botblocker-instagram-style');
-        if (styleElement) {
-          styleElement.remove();
-        }
-        
-        // Remover o indicador de bloqueio
-        const indicator = document.getElementById('botblocker-indicator-instagram');
-        if (indicator) {
-          indicator.remove();
-        }
-        
-        // Recarregar página
-        window.location.reload();
+
+      window.location.reload();
+    }
+
+    removeBlurFromUserTweets(username);
+
+  } else if (platform === 'instagram') {
+    const currentProfile = getCurrentProfile().profile;
+    if (currentProfile.toLowerCase() === username.toLowerCase()) {
+      console.log(`[BotBlocker] Currently viewing Instagram profile. Applying unblocking...`);
+
+      const styleElement = document.getElementById('botblocker-instagram-style');
+      if (styleElement) {
+        styleElement.remove();
       }
-      
-      // Remover blur dos posts do usuário
-      removeBlurFromPostsInstagram(username);
+
+      const indicator = document.getElementById('botblocker-indicator-instagram');
+      if (indicator) {
+        indicator.remove();
+      }
+
+      window.location.reload();
+    }
+
+    removeBlurFromPostsInstagram(username);
+
+  } else if (platform === 'facebook') {
+    const currentPath = window.location.pathname;
+    if (currentPath.includes(username)) {
+      console.log(`[BotBlocker] Currently viewing Facebook profile. Applying unblocking...`);
+
+      // Restaurar o fetch original, se tiver sido sobrescrito
+      if (typeof originalFetch === 'function') {
+        window.fetch = originalFetch;
+        console.log('[BotBlocker] Restored original fetch function');
+      }
+
+      // Parar o observer se estiver ativo
+      if (loadingObserver) {
+        loadingObserver.disconnect();
+        console.log('[BotBlocker] Disconnected loading observer');
+      }
+
+      // Remover o indicador de bloqueio, se presente
+      const indicator = document.getElementById('botblocker-facebook-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
+
+      // Recarregar a página para repopular conteúdo
+      window.location.reload();
     }
   }
+}
+
   
   // Remover artigos do Twitter
   function removeArticles(profileName) {
@@ -1158,6 +1177,48 @@ function blockProfile(profileName, platform) {
     
     console.log(`[BotBlocker] Remoção de conteúdo concluída para ${profileName}`);
 }
+
+function observePageChangeForFacebookUnblock(username) {
+  const indicator = document.getElementById('botblocker-facebook-indicator');
+  if (!indicator) return;
+
+  let lastPath = window.location.pathname;
+
+  const observer = new MutationObserver(() => {
+    const currentPath = window.location.pathname;
+
+    if (!currentPath.includes(username)) {
+      console.log('[BotBlocker] Detected page change away from blocked profile. Forcing reload...');
+
+      observer.disconnect(); // Desliga antes do reload para evitar chamadas duplicadas
+      history.go(0) // 🔁 Recarrega a página para restaurar o conteúdo
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  console.log('[BotBlocker] Started observing for Facebook profile change...');
+}
+
+
+function removePostsFacebook(profileName) {
+  const currentPath = window.location.pathname;
+  if (!currentPath.includes(profileName) || currentPath === '/') return;
+
+
+  const mainContent = document.querySelector('div[role="main"]');
+  if (mainContent) {
+    mainContent.remove();
+    console.log(`[BotBlocker] Removed main content for ${profileName}`);
+  } else {
+    console.log(`[BotBlocker] Main content not found for ${profileName}`);
+  }
+}
+
+
   
   // Bloquear carregamento infinito no Twitter
   function blockInfiniteLoading(profileName) {
@@ -1356,6 +1417,54 @@ function blockProfile(profileName, platform) {
     // Armazenar referência do observer para possível desconexão posterior
     window.instagramBlockObserver = observer;
 }
+
+function blockScrollFacebook(profileName) {
+  if (loadingBlocked && currentBlockedProfile === profileName) return;
+
+  const currentPath = window.location.pathname;
+  if (!currentPath.includes(profileName)) return;
+
+  loadingBlocked = true;
+  currentBlockedProfile = profileName;
+  console.log(`[BotBlocker] Blocking infinite loading on Facebook for ${profileName}`);
+
+  // Backup da função original
+  if (!originalFetch) {
+    originalFetch = window.fetch;
+  }
+
+  window.fetch = async function (...args) {
+    const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+
+    if (url && url.includes('/api/graphql/') && window.location.pathname.includes(profileName)) {
+      console.log(`[BotBlocker] Intercepted Facebook data request for ${profileName}`);
+      return new Response(JSON.stringify({ data: {} }));
+    }
+
+    return originalFetch.apply(this, args);
+  };
+
+  loadingObserver = new MutationObserver(() => {
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes(profileName)) return;
+
+    // Remover indicadores de carregamento ou "ver mais"
+    document.querySelectorAll('[role="progressbar"], div[aria-label="Loading..."]').forEach(el => el.remove());
+    document.querySelectorAll('div[role="button"]').forEach(button => {
+      if (button.textContent.includes('See more') || button.textContent.includes('Ver mais')) {
+        button.remove();
+      }
+    });
+  });
+
+  loadingObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  console.log(`[BotBlocker] Facebook infinite loading blocked for ${profileName}`);
+}
+
 
 // Função para desbloquear
 function unblockScrollInstagram() {
@@ -1667,6 +1776,51 @@ function unblockScrollInstagram() {
     
     return true;
 }
+
+function addBlockedIndicatorFacebook(profileName) {
+  const currentPath = window.location.pathname;
+  if (!currentPath.includes(profileName)) return;
+
+  if (document.getElementById('botblocker-facebook-indicator')) return;
+
+  console.log(`[BotBlocker] Adding central blocked indicator for ${profileName}`);
+
+  const indicatorDiv = document.createElement('div');
+  indicatorDiv.id = 'botblocker-facebook-indicator';
+  indicatorDiv.textContent = 'BLOCKED';
+
+  Object.assign(indicatorDiv.style, {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    backgroundColor: '#FF3A3A',
+    color: 'white',
+    padding: '12px 24px',
+    borderRadius: '30px',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    zIndex: '9999',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    pointerEvents: 'none',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+    textAlign: 'center'
+  });
+
+  const tag = document.createElement('div');
+  tag.textContent = 'BotBlocker';
+  tag.style.fontSize = '12px';
+  tag.style.opacity = '0.9';
+  tag.style.marginTop = '4px';
+
+  indicatorDiv.appendChild(tag);
+
+  document.body.appendChild(indicatorDiv);
+
+  console.log(`[BotBlocker] Blocked indicator added successfully for ${profileName}`);
+}
+
+
   
   // Aplicar blur a todos os tweets de um usuário
   function applyBlurToAllTweetsFromUser(username) {
@@ -1755,63 +1909,70 @@ function unblockScrollInstagram() {
   
   // Função para aplicar blur a posts do Instagram
   function applyBlurToAllPostsFromUserInstagram(username) {
-    console.log(`[BotBlocker] Checking for Instagram posts from ${username}`);
-  
-    const posts = document.querySelectorAll('article');
-  
-    posts.forEach(post => {
-      const profileLinks = post.querySelectorAll(`a[href^="/${username}"]`);
-      
-      if (!profileLinks.length) return;
-  
-      chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
-        const shouldRemove = result.remove_instead_of_blur === true;
-  
-        if (shouldRemove) {
-          // style para nao partir o layout do insta
-          post.style.visibility = 'hidden';
-          post.style.position = 'absolute';
-          post.style.top = '-9999px';
-          post.style.left = '-9999px';
-          post.style.height = '0';
-          post.style.width = '0';
+  console.log(`[BotBlocker] Checking for Instagram posts from ${username}`);
 
+  const posts = document.querySelectorAll('article');
 
-        } else {
-          post.style.filter = 'blur(5px)';
-          post.style.transition = 'filter 0.3s ease';
-  
-          if (!post.querySelector('.bot-blocker-instagram-indicator')) {
-            const indicatorDiv = document.createElement('div');
-            indicatorDiv.className = 'bot-blocker-instagram-indicator';
-            indicatorDiv.textContent = 'BLOCKED';
-  
-            Object.assign(indicatorDiv.style, {
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: '#FF3A3A',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              zIndex: '999',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              pointerEvents: 'none'
-            });
-  
-            const computedStyle = window.getComputedStyle(post);
-            if (computedStyle.position === 'static') {
-              post.style.position = 'relative';
-            }
-  
-            post.appendChild(indicatorDiv);
-          }
-        }
-      });
+  posts.forEach(post => {
+    // Pega todos os links de perfil no post
+    const profileLinks = post.querySelectorAll('a[href^="/"]');
+
+    // Verifica se algum link corresponde exatamente ao username (com ou sem barra final)
+    const isExactMatch = Array.from(profileLinks).some(link => {
+      const href = link.getAttribute('href');
+      return href === `/${username}` || href === `/${username}/`;
     });
-  }
+
+    if (!isExactMatch) return;
+
+    chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+      const shouldRemove = result.remove_instead_of_blur === true;
+
+      if (shouldRemove) {
+        post.style.visibility = 'hidden';
+        post.style.position = 'absolute';
+        post.style.top = '-9999px';
+        post.style.left = '-9999px';
+        post.style.height = '0';
+        post.style.width = '0';
+      } else {
+        post.style.filter = 'blur(5px)';
+        post.style.transition = 'filter 0.3s ease';
+
+        if (!post.querySelector('.bot-blocker-instagram-indicator')) {
+          const indicatorDiv = document.createElement('div');
+          indicatorDiv.className = 'bot-blocker-instagram-indicator';
+          indicatorDiv.textContent = 'BLOCKED';
+
+          Object.assign(indicatorDiv.style, {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: '#FF3A3A',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            zIndex: '999',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            pointerEvents: 'none'
+          });
+
+          const computedStyle = window.getComputedStyle(post);
+          if (computedStyle.position === 'static') {
+            post.style.position = 'relative';
+          }
+
+          post.appendChild(indicatorDiv);
+        }
+      }
+    });
+  });
+}
+
+
+
   
 
   function blockStoryPreviewInFeed(username) {
@@ -1904,106 +2065,128 @@ function unblockScrollInstagram() {
   
   // Verificar e processar bloqueio do perfil atual
   async function checkProfileAndProcessBlocking() {
-    const { settings, blackList } = await getSettingsAndBlacklist();
-    const tolerance = settings.tolerance || 50; 
-    const badgeConfig = settings.badge || 'empty'; 
-    const platform = detectCurrentPlatform();
-    
-    if (platform === 'unknown') return;
-    
-    const currentProfileInfo = getCurrentProfile();
-    const currentProfile = currentProfileInfo.profile;
-  
-    // Se for homepage ou perfil vazio, não aplicar bloqueio
-    if (currentProfile === 'home' || !currentProfile || currentProfile === '') {
-      console.log(`[BotBlocker] Current profile is home or empty. Not applying block...`);
-      return;
-    }
-  
-    // Verificar se o perfil atual está na lista de perfis para bloquear
-    if (perfisDaAPI.length > 0) {
-      const perfilAPI = perfisDaAPI.find(p => 
-        p.username && p.username.toLowerCase() === currentProfile.toLowerCase()
-      );
-      
-      const isManuallyBlocked = blackList.some(([username, blockedPlatform]) =>
-        username.toLowerCase() === currentProfile.toLowerCase() && blockedPlatform.toLowerCase() === platform
-      );
-      
-      // Verificação por badge
-      let shouldBlockByBadge = false;
-      if (perfilAPI) {
-        const profileBadge = perfilAPI.badge || 'empty';
-        
-        if (badgeConfig === 'bot' && profileBadge === 'bot') {
-          shouldBlockByBadge = true;
-        } else if (badgeConfig === 'without_verification' && profileBadge === 'empty') {
-          shouldBlockByBadge = true;
-        } else if (badgeConfig === 'bot_and_without_verification' && 
+  const { settings, blackList } = await getSettingsAndBlacklist();
+  const tolerance = settings.tolerance || 50; 
+  const badgeConfig = settings.badge || 'empty'; 
+  const platform = detectCurrentPlatform();
+
+  if (platform === 'unknown') return;
+
+  const currentProfileInfo = getCurrentProfile();
+  const currentProfile = currentProfileInfo.profile;
+
+
+  console.log(`[BotBlocker] Current profile: ${currentProfile}`);
+
+  if (currentProfile === 'home' || !currentProfile || currentProfile === '') {
+    console.log(`[BotBlocker] Current profile is home or empty. Not applying block...`);
+    return;
+  }
+
+  if (perfisDaAPI.length > 0) {
+    const perfilAPI = perfisDaAPI.find(p => 
+      p.username && p.username.toLowerCase() === currentProfile.toLowerCase()
+    );
+
+    const isManuallyBlocked = blackList.some(([username, blockedPlatform]) =>
+      username.toLowerCase() === currentProfile.toLowerCase() && blockedPlatform.toLowerCase() === platform
+    );
+
+    let shouldBlockByBadge = false;
+    if (perfilAPI) {
+      const profileBadge = perfilAPI.badge || 'empty';
+
+      if (badgeConfig === 'bot' && profileBadge === 'bot') {
+        shouldBlockByBadge = true;
+      } else if (badgeConfig === 'without_verification' && profileBadge === 'empty') {
+        shouldBlockByBadge = true;
+      } else if (badgeConfig === 'bot_and_without_verification' && 
                  (profileBadge === 'empty' || profileBadge === 'bot')) {
-          shouldBlockByBadge = true;
-        }
+        shouldBlockByBadge = true;
       }
-  
-      if ((perfilAPI && perfilAPI.percentage > tolerance) || isManuallyBlocked || shouldBlockByBadge) {
-        // Log diferente dependendo do tipo de bloqueio
-        if (isManuallyBlocked) {
-          console.log(`[BotBlocker] Perfil atual ${currentProfile} está manualmente bloqueado. Bloqueando...`);
-        } else if (shouldBlockByBadge && perfilAPI) {
-          console.log(`[BotBlocker] Perfil atual ${currentProfile} com badge '${perfilAPI.badge || 'empty'}' corresponde à configuração de bloqueio '${badgeConfig}'. Bloqueando...`);
-        } else if (perfilAPI) {
-          console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+    }
+
+    if ((perfilAPI && perfilAPI.percentage > tolerance) || isManuallyBlocked || shouldBlockByBadge) {
+      if (isManuallyBlocked) {
+        console.log(`[BotBlocker] Perfil atual ${currentProfile} está manualmente bloqueado. Bloqueando...`);
+      } else if (shouldBlockByBadge && perfilAPI) {
+        console.log(`[BotBlocker] Perfil atual ${currentProfile} com badge '${perfilAPI.badge || 'empty'}' corresponde à configuração de bloqueio '${badgeConfig}'. Bloqueando...`);
+      } else if (perfilAPI) {
+        console.log(`[BotBlocker] Perfil atual ${currentProfile} encontrado na API com percentage ${perfilAPI.percentage}%. Bloqueando...`);
+      }
+
+      blockProfile(currentProfile, platform);
+
+      if (platform === 'x') {
+        let indicatorAdded = addBlockedIndicator(currentProfile);
+        if (!indicatorAdded) {
+          let attempts = 0;
+          const indicatorInterval = setInterval(() => {
+            if (attempts >= 5 || addBlockedIndicator(currentProfile)) {
+              clearInterval(indicatorInterval);
+              console.log(`[BotBlocker] Indicator added after ${attempts + 1} attempts`);
+            }
+            attempts++;
+          }, 1000);
         }
-  
-        // Aplicar bloqueio conforme a plataforma
-        blockProfile(currentProfile, platform);
-  
-        // Tentar adicionar o indicador se necessário (depende da plataforma)
-        if (platform === 'x') {
-          let indicatorAdded = addBlockedIndicator(currentProfile);
-          if (!indicatorAdded) {
-            // Se não conseguir adicionar imediatamente, tentar algumas vezes
-            let attempts = 0;
-            const indicatorInterval = setInterval(() => {
-              if (attempts >= 5 || addBlockedIndicator(currentProfile)) {
-                clearInterval(indicatorInterval);
-                console.log(`[BotBlocker] Indicator added after ${attempts + 1} attempts`);
-              }
-              attempts++;
-            }, 1000);
-          }
-        } else if (platform === 'instagram') {
-          let indicatorAdded = addBlockedIndicatorInstagram(currentProfile);
-          if (!indicatorAdded) {
-            // Se não conseguir adicionar imediatamente, tentar algumas vezes
-            let attempts = 0;
-            const indicatorInterval = setInterval(() => {
-              if (attempts >= 5 || addBlockedIndicatorInstagram(currentProfile)) {
-                clearInterval(indicatorInterval);
-                console.log(`[BotBlocker] Instagram indicator added after ${attempts + 1} attempts`);
-              }
-              attempts++;
-            }, 1000);
-          }
+      } else if (platform === 'instagram') {
+        let indicatorAdded = addBlockedIndicatorInstagram(currentProfile);
+        if (!indicatorAdded) {
+          let attempts = 0;
+          const indicatorInterval = setInterval(() => {
+            if (attempts >= 5 || addBlockedIndicatorInstagram(currentProfile)) {
+              clearInterval(indicatorInterval);
+              console.log(`[BotBlocker] Instagram indicator added after ${attempts + 1} attempts`);
+            }
+            attempts++;
+          }, 1000);
         }
-  
-        // Adicionar ao conjunto de perfis bloqueados
-        perfisBlockeados.add(currentProfile);
-      } else if (loadingBlocked && currentBlockedProfile === currentProfile && platform === 'x') {
-        // Se estamos em um perfil do Twitter que não precisa ser bloqueado mas está sendo bloqueado
+      } else if (platform === 'facebook') {
+        let indicatorAdded = addBlockedIndicatorFacebook(currentProfile);
+        if (!indicatorAdded) {
+          let attempts = 0;
+          const indicatorInterval = setInterval(() => {
+            if (attempts >= 5 || addBlockedIndicatorFacebook(currentProfile)) {
+              clearInterval(indicatorInterval);
+              console.log(`[BotBlocker] Facebook indicator added after ${attempts + 1} attempts`);
+            }
+            attempts++;
+          }, 1000);
+        }
+
+        observePageChangeForFacebookUnblock(currentProfile);
+      }
+
+      perfisBlockeados.add(currentProfile);
+    } else {
+      // Desbloqueio automático se antes foi bloqueado mas agora não é necessário
+      if (loadingBlocked && currentBlockedProfile === currentProfile && platform === 'x') {
         console.log(`[BotBlocker] Perfil ${currentProfile} não precisa ser bloqueado. Desbloqueando...`);
         unblockLoading();
-  
-        // Remover o indicador
         const indicator = document.getElementById('botblocker-indicator');
+        if (indicator) indicator.remove();
+      } else if (platform === 'facebook') {
+        const indicator = document.getElementById('botblocker-facebook-indicator');
         if (indicator) {
+          console.log(`[BotBlocker] Perfil ${currentProfile} não está mais bloqueado. Removendo indicador...`);
           indicator.remove();
         }
+
+        if (typeof originalFetch === 'function') {
+          window.fetch = originalFetch;
+          console.log('[BotBlocker] Fetch restaurado no Facebook');
+        }
+
+        if (loadingObserver) {
+          loadingObserver.disconnect();
+        }
       }
-    } else {
-      console.log('[BotBlocker] Aguardando carregamento de perfis da API...');
     }
+  } else {
+    console.log('[BotBlocker] Aguardando carregamento de perfis da API...');
   }
+}
+
   
   // Configuração dos observadores de DOM
   const mentionsObserver = new MutationObserver(() => {
@@ -2080,8 +2263,6 @@ if (detectCurrentPlatform() === 'instagram') {
 
       if (detectCurrentPlatform() === 'instagram') {
         const currentProfile = getCurrentProfile().profile;
-
-        const previousPage = previousUrl.split("/")[1];
         
         // Se não estiver mais no perfil bloqueado, desbloquear
         // tem um problema de estar sempre a dar load quando se volta para a homepage
@@ -2098,7 +2279,7 @@ if (detectCurrentPlatform() === 'instagram') {
           history.go(0);
 
       }
-    }
+    
   
       // Atualizar a URL atual
       previousUrl = window.location.href;
@@ -2109,7 +2290,9 @@ if (detectCurrentPlatform() === 'instagram') {
       // Reinicializar considerando a nova URL
       initializeScripts();
     }
-  }, 1000);
+  }
+  }
+  , 1000);
 
 
 
