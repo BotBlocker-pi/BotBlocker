@@ -107,7 +107,7 @@ const BlockList = () => {
                 }, resolve);
             });
 
-            if (response && response.success) {
+            if (response) {
                 setBlockedAccounts(prev => prev.filter(item => item.id !== account.id));
                 console.log(`Unblocked profile: ${account.username}`);
                 const { blackList } = await getSettingsAndBlacklist();

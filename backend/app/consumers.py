@@ -37,3 +37,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def send_notification(self, event):
         print(f"[WS NOTIFY] A enviar mensagem para canal {self.channel_name}: {(event['data'])}")
         await self.send(text_data=json.dumps(event["data"]))
+        
+    async def activity_resolved(self, event):
+        await self.send(text_data=json.dumps({
+            "event": "resolved",
+            "activity_id": event["activity_id"]
+        }))

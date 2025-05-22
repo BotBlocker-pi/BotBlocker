@@ -1,73 +1,58 @@
-/* AdminSideBar.css */
-
 .sidebar {
-    width: 180px;
+    width: 220px; /* previously 180px, adjust as needed */
     background-color: white;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-    margin: 0;
-    padding: 0;
     border-right: 1px solid #e0e0e0;
     position: fixed;
-    top: 80px; /* Make sure this matches your navbar height exactly */
+    top: 80px;
     bottom: 0;
     left: 0;
     z-index: 50;
     overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
-    height: calc(100vh - 80px); /* This should be exact */
+    height: calc(100vh - 80px);
 }
 
 .sidebar-menu {
     display: flex;
     flex-direction: column;
-    padding-top: 15px;
+    padding-top: 40px;
 }
 
-.menu-item {
+.sidebar-item {
     display: flex;
     align-items: center;
-    padding: 16px 20px;
+    padding: 20px 24px;
     cursor: pointer;
     border-left: 4px solid transparent;
     color: #2c3e50;
     transition: all 0.2s ease;
-    font-weight: 500;
-    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 17px;
 }
 
-.menu-item:hover {
+.sidebar-item:hover {
     background-color: rgba(83, 116, 160, 0.08);
     color: #5374a0;
 }
 
-.menu-item.active {
+.sidebar-item.active {
     background-color: rgba(83, 116, 160, 0.12);
     border-left-color: #5374a0;
     color: #5374a0;
 }
 
-.menu-icon {
-    margin-right: 12px;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.sidebar-text {
+    font-size: 17px;
+    white-space: nowrap;
 }
 
-.menu-text {
-    font-size: 15px;
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .sidebar {
         position: static;
         width: 100%;
         height: auto;
-        border-right: none;
         border-bottom: 1px solid #e0e0e0;
+        border-right: none;
         top: auto;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
     .sidebar-menu {
@@ -76,15 +61,14 @@
         padding-top: 0;
     }
 
-    .menu-item {
-        padding: 12px 15px;
+    .sidebar-item {
+        padding: 16px 20px;
         border-left: none;
         border-bottom: 3px solid transparent;
-        margin-bottom: 0;
+        font-size: 15px;
     }
 
-    .menu-item.active {
-        border-left-color: transparent;
+    .sidebar-item.active {
         border-bottom-color: #5374a0;
     }
 }

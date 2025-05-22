@@ -3,6 +3,8 @@ from django.db import utils
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from datetime import timedelta
+from django.utils import timezone
 import uuid
 
 class Role(models.TextChoices):
@@ -100,3 +102,28 @@ class SuspiciousActivity(models.Model):
 
     def __str__(self):
         return f"{self.target} - {self.motive} [{self.status}]"
+    
+
+class UserTimeout(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User_BB, on_delete=models.CASCADE, related_name='timeouts')
+    reason = models.CharField(max_length=255)
+    start_time = models.DateTimeField(auto_now_add=True)
+    duration = models.PositiveIntegerField(help_text="Timeout duration in seconds")
+    is_enabled  = models.BooleanField(default=True)
+
+    def get_end_time(self):
+        return self.start_time + timedelta(seconds=self.duration)
+
+    def is_active(self):
+        return timezone.now() < self.get_end_time() and self.is_enabled 
+
+
+class UserBan(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User_BB, on_delete=models.CASCADE, related_name='ban')
+    reason = models.CharField(max_length=255)
+    banned_at = models.DateTimeField(auto_now_add=True)
+    is_banned = models.BooleanField(default=True)
+
+

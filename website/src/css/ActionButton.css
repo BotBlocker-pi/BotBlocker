@@ -1,0 +1,70 @@
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-buttons button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    color: #333;
+    background-color: #f8f9fa;
+    font-weight: 400;
+}
+
+.action-buttons button span {
+    margin-left: 4px;
+}
+
+.eval-button {
+    border: 1px solid #4285f4;
+    color: #4285f4;
+}
+
+.timeout-button {
+    border: 1px solid #fbbc05;
+    color: #fbbc05;
+}
+
+.ban-button {
+    border: 1px solid #ea4335;
+    color: #ea4335;
+}
+
+.eval-button:hover {
+    background-color: #4285f4;
+    color: white;
+}
+
+.timeout-button:hover {
+    background-color: #fbbc05;
+    color: white;
+}
+
+.ban-button:hover {
+    background-color: #ea4335;
+    color: white;
+}
+
+.promote-button {
+    border: 1px solid #34a853;
+    color: #34a853;
+}
+
+.promote-button:hover {
+    background-color: #34a853;
+    color: white;
+}
+
+.action-buttons button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #cccccc !important;
+  color: #666 !important;
+  border: none;
+}
