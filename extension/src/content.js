@@ -348,31 +348,68 @@ function collectMentions() {
       }
     });
   } else if (platform === 'facebook') {
-    const usernameElements = document.querySelectorAll('a[href^="/"]:not([href="/"])');
+    // --- 1. Aria-labels de links (ex: "História de Universidade de Aveiro") ---
+    const ariaLinks = document.querySelectorAll('a[aria-label]');
+    ariaLinks.forEach(link => {
+      const label = link.getAttribute('aria-label')?.trim();
+      if (!label) return;
 
-    usernameElements.forEach(element => {
-      const href = element.getAttribute('href');
-
-      // Match apenas se for algo como "/username" (sem subpaths)
-      const match = href.match(/^\/([^\/?#]+)/);
+      const match = label.match(/História de (.+)/i);
       if (match && match[1]) {
-        const mention = match[1];
+        const name = match[1].trim();
+        const normalized = name.replace(/\s+/g, '');
 
-        // Ignorar rotas que não são perfis válidos
-        const blockedPrefixes = ['pages', 'groups', 'watch', 'marketplace', 'events', 'gaming', 'notifications', 'settings', 'help'];
-
-        if (blockedPrefixes.includes(mention.toLowerCase())) return;
-
-        // Evita duplicação
-        if (!collectedMentions.has(mention)) {
-          console.log(`[BotBlocker] Novo perfil encontrado no Facebook: @${mention}`);
-          newProfilesFound.push(mention);
+        if (!collectedMentions.has(normalized)) {
+          console.log(`[BotBlocker] Novo perfil (aria-label): @${normalized}`);
+          newProfilesFound.push(normalized);
+          collectedMentions.add(normalized);
         }
+      }
+    });
 
-        collectedMentions.add(mention);
+    // --- 2. Imagens com alt (limitar a texto curto e sem símbolos estranhos) ---
+    const imgElements = document.querySelectorAll('img[alt]');
+    imgElements.forEach(img => {
+      const alt = img.getAttribute('alt')?.trim();
+      if (!alt || alt.length < 3 || alt.length > 40) return;
+      if (/[^A-Za-zÀ-ÿ0-9\s'.-]/.test(alt)) return; // evita emojis ou símbolos
+
+      const isInsideStoryOrFeed = img.closest('a[href*="/stories/"]') || img.closest('div[data-pagelet^="FeedUnit_"]');
+      if (!isInsideStoryOrFeed) return;
+
+      const normalized = alt.replace(/\s+/g, '');
+
+      if (!collectedMentions.has(normalized)) {
+        console.log(`[BotBlocker] Novo perfil (img alt): @${normalized}`);
+        newProfilesFound.push(normalized);
+        collectedMentions.add(normalized);
+      }
+    });
+
+    // --- 3. Texto visível dentro de posts (pareça nome real, e esteja dentro do feed) ---
+    const spanElements = document.querySelectorAll('span');
+    spanElements.forEach(span => {
+      const text = span.textContent?.trim();
+      if (!text || text.length < 4 || text.length > 40) return;
+
+      const looksLikeName = /^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÇ][A-Za-zÀ-ÿ\s'.-]+$/.test(text);
+      const isInsideFeed = span.closest('div[data-pagelet^="FeedUnit_"]');
+
+      if (looksLikeName && isInsideFeed) {
+        const normalized = text.replace(/\s+/g, '');
+
+        if (!collectedMentions.has(normalized)) {
+          console.log(`[BotBlocker] Novo perfil (span texto): @${normalized}`);
+          newProfilesFound.push(normalized);
+          collectedMentions.add(normalized);
+        }
       }
     });
   }
+
+
+
+
 
   
   // Log dos novos perfis encontrados
@@ -1035,13 +1072,15 @@ function blockProfile(profileName, platform) {
         blockStoryPreviewInFeed(profileName);
       }
     } else if (platform === 'facebook') {
+      console.log('ENTROU NO FACEBOOK')
       if (currentProfileInfo.profile === profileName) {
+        console.log('ENTROU NO FACEBOOK - PERFIL')
         removePostsFacebook(profileName);
-        // blockScrollFacebook(profileName);
         addBlockedIndicatorFacebook(profileName);
 
       }
       else {
+        console.log('ESTOU AQUIIIIII')
         // Estamos no feed - aplicar blur aos posts
         applyBlurToAllPostsFromUserFacebook(profileName);
         blockStoryPreviewInFeedFacebook(profileName);
@@ -1973,6 +2012,8 @@ function addBlockedIndicatorFacebook(profileName) {
 
 
 
+
+
   
 
   function blockStoryPreviewInFeed(username) {
@@ -2002,6 +2043,128 @@ function addBlockedIndicatorFacebook(profileName) {
       }
     });
   }
+
+  function applyBlurToAllPostsFromUserFacebook(username) {
+    const normalizedUsername = username.toLowerCase().replace(/\s+/g, '');
+    console.log(`[BotBlocker] Checking for Facebook content from ${normalizedUsername}`);
+
+    const postsAndReels = document.querySelectorAll('div[role="article"], div[data-pagelet^="ReelFeed"]');
+
+    postsAndReels.forEach(item => {
+      const textContent = item.innerText?.toLowerCase().replace(/\s+/g, '');
+      if (!textContent || !textContent.includes(normalizedUsername)) return;
+
+      chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+        const shouldRemove = result.remove_instead_of_blur === true;
+
+        if (shouldRemove) {
+          item.style.visibility = 'hidden';
+          item.style.position = 'absolute';
+          item.style.top = '-9999px';
+          item.style.left = '-9999px';
+          item.style.height = '0';
+          item.style.width = '0';
+        } else {
+          item.style.filter = 'blur(5px)';
+          item.style.transition = 'filter 0.3s ease';
+
+          if (!item.querySelector('.bot-blocker-facebook-indicator')) {
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'bot-blocker-facebook-indicator';
+            indicatorDiv.textContent = 'BLOCKED';
+
+            Object.assign(indicatorDiv.style, {
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: '#FF3A3A',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              zIndex: '999',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              pointerEvents: 'none'
+            });
+
+            const computedStyle = window.getComputedStyle(item);
+            if (computedStyle.position === 'static') {
+              item.style.position = 'relative';
+            }
+
+            item.appendChild(indicatorDiv);
+          }
+        }
+      });
+    });
+  }
+
+
+
+function blockStoryPreviewInFeedFacebook(username) {
+  console.log(`[BotBlocker] Checking Facebook story previews for ${username}`);
+
+  const cleanUsername = username.toLowerCase().replace(/^@/, '').replace(/\s+/g, '');
+
+  const storyLinks = document.querySelectorAll('a[role="link"][href*="/stories/"]');
+
+  storyLinks.forEach(link => {
+    const ariaLabel = (link.getAttribute('aria-label') || '').toLowerCase();
+    const normalizedAria = ariaLabel.replace(/\s+/g, '');
+
+    const isExactMatch = normalizedAria.includes(cleanUsername);
+
+    if (isExactMatch) {
+      chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+        const shouldRemove = result.remove_instead_of_blur === true;
+
+        if (shouldRemove) {
+          link.remove();
+        } else {
+          link.style.filter = 'blur(5px)';
+          link.style.pointerEvents = 'none';
+          link.style.transition = 'filter 0.3s ease';
+
+          // Adicionar indicador se ainda não existir
+          if (!link.querySelector('.bot-blocker-facebook-indicator')) {
+            const indicator = document.createElement('div');
+            indicator.className = 'bot-blocker-facebook-indicator';
+            indicator.textContent = 'BLOCKED';
+
+            Object.assign(indicator.style, {
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: '#FF3A3A',
+              color: 'white',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              zIndex: '9999',
+              pointerEvents: 'none'
+            });
+
+            const computedStyle = window.getComputedStyle(link);
+            if (computedStyle.position === 'static') {
+              link.style.position = 'relative';
+            }
+
+            // Forçar reflow antes de adicionar
+            link.offsetHeight;
+            link.appendChild(indicator);
+          }
+        }
+      });
+    }
+  });
+}
+
+
+
+
   
   
   
@@ -2211,6 +2374,20 @@ if (detectCurrentPlatform() === 'instagram') {
   });
 
   feedObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+if (detectCurrentPlatform() === 'facebook') {
+  const fbObserver = new MutationObserver(() => {
+    perfisBlockeados.forEach(username => {
+      applyBlurToAllPostsFromUserFacebook(username);
+      blockStoryPreviewInFeedFacebook(username); // Garante que os stories também fiquem bloqueados
+    });
+  });
+
+  fbObserver.observe(document.body, {
     childList: true,
     subtree: true
   });
