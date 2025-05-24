@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import '../css/SpamVotingSection.css';
-import { getSuspiciousActivities, markActivityResolved } from '../api/data';
+import '../../../css/managment/spam/SpamVotingSection.css';
+import { getSuspiciousActivities, markActivityResolved } from '../../../api/data.jsx';
 
 const SpamVotingSection = ({ setActiveSection, externalNotifications = [] }) => {
     const [activities, setActivities] = useState([]);

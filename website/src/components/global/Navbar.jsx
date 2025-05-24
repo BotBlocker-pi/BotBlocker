@@ -1,43 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import botBlockerLogo from '../assets/logo.png';
-import '../css/Navbar.css';
-import { checkAuth, logoutUser } from '../api/loginApi';
-import LoginForm from "./LoginForm.jsx";
-import { useNotifications } from '../api/NotificationContext.jsx';
+import botBlockerLogo from '../../assets/logo.png';
+import '../../css/global/Navbar.css';
+import { checkAuth, logoutUser } from '../../api/loginApi.jsx';
+import LoginForm from "./LogIn.jsx";
+import { useNotifications } from '../../api/NotificationContext.jsx';
 
 const Navbar = () => {
+    const location = useLocation();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [initialLoginMode, setInitialLoginMode] = useState(false);
-    const notifications = useNotifications();
-    const userRole = localStorage.getItem('role') || 'user';
     const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(notifications ? notifications.length : 0);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [notifications, setNotifications] = useState([]);
 
+    const protectedRoutes = ['/admin-dashboard', '/verification-dashboard'];
+
+    const userRole = localStorage.getItem('role') || 'user';
+    const rawNotifications = isAuthenticated ? useNotifications() : [];
+
+    // 🔁 Always check auth status when the route changes
     useEffect(() => {
         const checkAuthStatus = async () => {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                setIsAuthenticated(false);
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('role');
+                return;
+            }
+
             try {
                 const authStatus = await checkAuth();
                 setIsAuthenticated(authStatus);
                 localStorage.setItem('isAuthenticated', JSON.stringify(authStatus));
-                if (!authStatus) localStorage.removeItem('role');
-            } catch (error) {
-                console.error("Error checking auth status:", error);
+                if (!authStatus) {
+                    localStorage.removeItem('role');
+                }
+            } catch {
                 setIsAuthenticated(false);
                 localStorage.removeItem('role');
             }
         };
 
-        const storedAuth = localStorage.getItem('isAuthenticated');
-        if (storedAuth) {
-            setIsAuthenticated(JSON.parse(storedAuth));
-            if (!JSON.parse(storedAuth)) localStorage.removeItem('role');
-        }
-
         checkAuthStatus();
-    }, []);
+    }, [location.pathname]); // ✅ Run on every route change
+
+    // Load notifications for admins
+    useEffect(() => {
+        if (isAuthenticated && protectedRoutes.includes(location.pathname)) {
+            setNotifications(rawNotifications);
+        }
+    }, [rawNotifications, isAuthenticated, location.pathname]);
 
     const handleAuthChange = (status) => {
         setIsAuthenticated(status);
@@ -51,6 +67,7 @@ const Navbar = () => {
         setIsAuthenticated(false);
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('role');
+        window.location.href = '/';
     };
 
     const toggleLoginModal = (registerMode = false) => {
@@ -67,19 +84,19 @@ const Navbar = () => {
                     </Link>
                 </div>
                 <nav className="navbar-navigation">
-                    <Link to="/" className={`navbar-nav-link ${window.location.pathname === '/' ? 'active' : ''}`}>HOME</Link>
-                    <Link to="/understand-bots" className={`navbar-nav-link ${window.location.pathname === '/understand-bots' ? 'active' : ''}`}>UNDERSTAND BOTS</Link>
-                    <Link to="/contact" className={`navbar-nav-link ${window.location.pathname === '/contact' ? 'active' : ''}`}>CONTACT</Link>
+                    <Link to="/" className={`navbar-nav-link ${location.pathname === '/' ? 'active' : ''}`}>HOME</Link>
+                    <Link to="/understand-bots" className={`navbar-nav-link ${location.pathname === '/understand-bots' ? 'active' : ''}`}>UNDERSTAND BOTS</Link>
+                    <Link to="/contact" className={`navbar-nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>CONTACT</Link>
 
                     {userRole === 'verifier' && (
-                        <Link to="/verification-dashboard" className={`navbar-nav-link ${window.location.pathname === '/verification-dashboard' ? 'active' : ''}`}>
+                        <Link to="/verification-dashboard" className={`navbar-nav-link ${location.pathname === '/verification-dashboard' ? 'active' : ''}`}>
                             VERIFICATION DASHBOARD
                         </Link>
                     )}
 
-                    {userRole === 'admin' && (
+                    {userRole === 'admin' && isAuthenticated && (
                         <>
-                            <Link to="/admin-dashboard" className={`navbar-nav-link ${window.location.pathname === '/admin-dashboard' ? 'active' : ''}`}>
+                            <Link to="/admin-dashboard" className={`navbar-nav-link ${location.pathname === '/admin-dashboard' ? 'active' : ''}`}>
                                 ADMIN DASHBOARD
                             </Link>
 
@@ -125,7 +142,9 @@ const Navbar = () => {
                     {isAuthenticated ? (
                         <button onClick={handleLogout} className="navbar-logout-button">Logout</button>
                     ) : (
-                        <button onClick={() => toggleLoginModal(false)} className="navbar-login-button">Login</button>
+                        <span onClick={() => toggleLoginModal(false)} className="navbar-nav-link" style={{ cursor: 'pointer' }}>
+                            LOGIN
+                        </span>
                     )}
                 </nav>
             </header>
@@ -134,13 +153,12 @@ const Navbar = () => {
                 <div className="navbar-login-modal">
                     <div className="navbar-login-modal-content">
                         <div className="navbar-modal-header">
-                            <h2>Account Login</h2>
                             <button onClick={() => toggleLoginModal()} className="navbar-close-button">&times;</button>
                         </div>
 
                         <LoginForm
                             onAuthChange={handleAuthChange}
-                            onClose={() => toggleLoginModal()}
+                            onClose={() => setShowLoginModal(false)}
                             initialMode={initialLoginMode}
                         />
                     </div>

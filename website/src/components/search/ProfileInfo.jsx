@@ -1,7 +1,7 @@
 import React from 'react';
-import '../css/ProfileInfo.css';
-import AIAnalysis from './AIAnalysis';
-import ProfileEvaluation from './ProfileEvaluation';
+import '../../css/search/ProfileInfo.css';
+import AIAnalysis from './AIAnalysis.jsx';
+import ProfileEvaluation from './ProfileEvaluation.jsx';
 
 const ProfileInfo = ({
                          aiPercentage = 15,

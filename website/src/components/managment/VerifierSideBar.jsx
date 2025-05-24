@@ -1,16 +1,15 @@
 import React from 'react';
-import '../css/VerifierSideBar.css';
+import '../../css/managment/Sidebar.css';
 
 const VerifierSideBar = ({ activeSection, setActiveSection }) => {
     return (
         <div className="sidebar">
             <div className="sidebar-menu">
                 <div
-                    className={`menu-item ${activeSection === 'verify' || activeSection === 'profile-details' ? 'active' : ''}`}
+                    className={`sidebar-item ${activeSection === 'verify' || activeSection === 'profile-details' ? 'active' : ''}`}
                     onClick={() => setActiveSection('verify')}
                 >
-                    <span className="menu-icon">✅</span>
-                    <span className="menu-text">Verify</span>
+                    <span className="sidebar-text">Verify</span>
                 </div>
             </div>
         </div>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import AccountCard from './AccountCard';
 import axios from 'axios';
-import '../css/AccountSection.css';
-import TimeoutModal from '../components/TimeoutModal';
-import EvaluationsPopup from '../components/EvaluationsPopup';
+import '../../../css/managment/accounts/AccountSection.css';
+import TimeoutModal from './TimeoutModal.jsx';
+import EvaluationsPopup from './EvaluationsPopup.jsx';
+import ActionButtons from './ActionButtons.jsx';
 
 const AccountsSection = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -11,6 +11,8 @@ const AccountsSection = () => {
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedEvaluationsUser, setSelectedEvaluationsUser] = useState(null);
+    const [actionMessage, setActionMessage] = useState(null);
+
     useEffect(() => {
         axios.get('http://localhost/api/get_users_detailed/')
             .then((response) => {
@@ -24,6 +26,15 @@ const AccountsSection = () => {
             });
     }, [selectedUser]);
 
+    useEffect(() => {
+        if (actionMessage) {
+            const timer = setTimeout(() => {
+                setActionMessage(null);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [actionMessage]);
+
     const filteredAccounts = accounts.filter(account =>
         account.user &&
         account.user.username.toLowerCase().includes(searchTerm.toLowerCase())
@@ -34,20 +45,18 @@ const AccountsSection = () => {
     };
 
     const handleEvaluationsClick = (userId, username) => {
-        console.log({ userId, username });
-        
         setSelectedEvaluationsUser({ userId, username });
     };
 
     return (
         <div className="accounts-section">
-            <h2 className="accounts-title">These are the most recently created BB_Accounts:</h2>
+            <h2 className="accounts-title">Search all BB_Accounts</h2>
 
-            <div className="search-container">
-                <span className="search-icon">🔍</span>
+            <div className="accounts-search-container">
+                <span className="accounts-search-icon">🔍</span>
                 <input
                     type="text"
-                    className="search-input"
+                    className="accounts-search-input"
                     placeholder="Search for accounts..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -59,24 +68,30 @@ const AccountsSection = () => {
             ) : (
                 <div className="accounts-list">
                     {filteredAccounts.map((account) => (
-                        <AccountCard
-                            key={account.id}
-                            username={account.user.username}
-                            userId={account.id}
-                            role={account.role}
-                            status={account.status}
-                            onTimeoutClick={handleTimeoutClick}
-                            onEvaluationsClick={handleEvaluationsClick}
-                        />
+                        <div className="accounts-card" key={account.id}>
+                            <div className="accounts-card-profile">
+                                <span className="accounts-username">@{account.user.username}</span>
+                            </div>
+                            <ActionButtons
+                                username={account.user.username}
+                                userId={account.id}
+                                role={account.role}
+                                status={account.status}
+                                onTimeoutClick={handleTimeoutClick}
+                                onEvaluationsClick={handleEvaluationsClick}
+                                setMessage={setActionMessage}
+                            />
+                        </div>
                     ))}
                 </div>
             )}
 
-              {selectedUser && (
+            {selectedUser && (
                 <TimeoutModal
                     userId={selectedUser.userId}
                     username={selectedUser.username}
                     onClose={() => setSelectedUser(null)}
+                    onFeedback={(msg) => setActionMessage(msg)}
                 />
             )}
 
@@ -86,6 +101,12 @@ const AccountsSection = () => {
                     username={selectedEvaluationsUser.username}
                     onClose={() => setSelectedEvaluationsUser(null)}
                 />
+            )}
+
+            {actionMessage && (
+                <div className={`toast-message ${actionMessage.type}`}>
+                    {actionMessage.type === 'success' ? '✅' : '❌'} {actionMessage.text}
+                </div>
             )}
         </div>
     );

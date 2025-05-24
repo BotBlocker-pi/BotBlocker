@@ -627,16 +627,6 @@ html, body {
     color: #5374a0;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-}
-
 /* Responsive styles */
 @media (max-width: 768px) {
     .understand-content {

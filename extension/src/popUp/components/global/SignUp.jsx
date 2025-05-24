@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { loginUser, registerUser } from '../../../api/loginApi.jsx';
-import '../../css/components/global/SignUpComponent.css';
+import '../../css/components/global/SignUp.css';
 
 const SignUp = ({ onClose, onSignUpSuccess, onSwitchToLogin }) => {
     const [username, setUsername] = useState('');

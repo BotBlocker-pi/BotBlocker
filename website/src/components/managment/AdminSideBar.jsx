@@ -1,5 +1,5 @@
 import React from 'react';
-import '../css/AdminSideBar.css';
+import '../../css/managment/Sidebar.css';
 
 const AdminSideBar = ({ activeSection, setActiveSection }) => {
     return (
@@ -11,14 +11,12 @@ const AdminSideBar = ({ activeSection, setActiveSection }) => {
                 >
                     <span className="sidebar-text">Accounts</span>
                 </div>
-
                 <div
                     className={`sidebar-item ${activeSection === 'verify' ? 'active' : ''}`}
                     onClick={() => setActiveSection('verify')}
                 >
                     <span className="sidebar-text">Verify</span>
                 </div>
-
                 <div
                     className={`sidebar-item ${activeSection === 'spamVoting' ? 'active' : ''}`}
                     onClick={() => setActiveSection('spamVoting')}

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { applyTimeout, revokeTimeout } from '../api/data';
-import '../css/TimeoutModal.css';
+import { applyTimeout, revokeTimeout } from '../../../api/data.jsx';
+import '../../../css/managment/accounts/TimeoutModal.css';
 
-const TimeoutModal = ({ userId, username, onClose }) => {
+const TimeoutModal = ({ userId, username, onClose, onFeedback }) => {
     const [timeouts, setTimeouts] = useState([]);
     const [duration, setDuration] = useState(3600);
     const [loading, setLoading] = useState(false);
@@ -35,16 +35,16 @@ const TimeoutModal = ({ userId, username, onClose }) => {
     }, [userId]);
 
     const activeTimeout = timeouts.find(t => t.is_active);
-    const recentTimeouts = timeouts.slice(0, 4); // últimos 4, incluindo ativo
+    const recentTimeouts = timeouts.slice(0, 4);
 
     const handleApply = async () => {
         setLoading(true);
         try {
             await applyTimeout(userId, duration);
-            alert("Timeout applied.");
+            onFeedback({ type: 'success', text: '⏱️ Timeout applied successfully.' });
             fetchTimeouts();
         } catch {
-            alert("Failed to apply timeout.");
+            onFeedback({ type: 'error', text: '⚠️ Failed to apply timeout.' });
         } finally {
             setLoading(false);
         }
@@ -54,10 +54,10 @@ const TimeoutModal = ({ userId, username, onClose }) => {
         setLoading(true);
         try {
             await revokeTimeout(userId);
-            alert("Timeout revoked.");
+            onFeedback({ type: 'success', text: '✅ Timeout revoked successfully.' });
             fetchTimeouts();
         } catch {
-            alert("Failed to revoke timeout.");
+            onFeedback({ type: 'error', text: '❌ Failed to revoke timeout.' });
         } finally {
             setLoading(false);
         }

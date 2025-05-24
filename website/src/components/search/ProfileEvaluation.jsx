@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../css/ProfileEvaluation.css';
+import '../../css/search/ProfileEvaluation.css';
 
 const ProfileEvaluation = ({ evaluations = [] }) => {
     // State to track visible evaluations (9 at a time)

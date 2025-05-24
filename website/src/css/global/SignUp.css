@@ -67,9 +67,13 @@
 }
 
 .btn-cancel {
-    background-color: transparent;
-    border: 1px solid #e0e0e0;
-    color: #6c757d;
+    background-color: #ccc;
+    border: none;
+    color: #333;
+}
+
+.btn-cancel:hover {
+    background-color: #bbb;
 }
 
 .btn-signup {
@@ -105,4 +109,13 @@
 
 .btn-login-link:hover {
     color: #3d5a80;
+}
+
+input,
+textarea,
+select {
+    background-color: white !important;
+    color: #000;
+    border: 1px solid #ccc;
+    color-scheme: light; /* Prevent OS dark mode styling */
 }

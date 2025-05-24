@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import '../css/VerificationSection.css';
+import '../../../css/managment/verify/VerificationSection.css';
 
 const EvaluationsPopup = ({ userId, username, onClose }) => {
     const [evaluations, setEvaluations] = useState([]);

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import '../css/AdminDashboard.css';
-import Navbar from '../components/Navbar';
-import AdminSideBar from "../components/AdminSideBar.jsx";
-import SpamVotingSection from "../components/SpamVotingSection.jsx";
-import VerificationSection from '../components/VerificationSection';
-import AccountsSection from '../components/AccountsSection'; // ✅ New import
+import '../css/pages/AdminDashboard.css';
+import Navbar from '../components/global/Navbar.jsx';
+import AdminSideBar from "../components/managment/AdminSideBar.jsx";
+import SpamVotingSection from "../components/managment/spam/SpamVotingSection.jsx";
+import VerificationSection from '../components/managment/verify/VerificationSection.jsx';
+import AccountsSection from '../components/managment/accounts/AccountsSection.jsx'; // ✅ New import
 import { useNotifications } from '../api/NotificationContext.jsx';
 
 const AdminDashboard = () => {
-    const [activeSection, setActiveSection] = useState('spamVoting');
+    const [activeSection, setActiveSection] = useState('accounts');
     const notifications = useNotifications();
 
     // If not an admin, redirect to home page

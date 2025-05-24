@@ -1,9 +1,9 @@
 import React from 'react';
-import '../css/AIAnalysis.css';
+import '../../css/search/AIAnalysis.css';
 // Import placeholder paths - replace these with your actual paths
-import BotBadge from '../assets/badges/botBadge.png';
-import HumanBadge from '../assets/badges/humanBadge.png';
-import UnknownBadge from '../assets/badges/unknownBadge.png';
+import BotBadge from '../../assets/badges/botBadge.png';
+import HumanBadge from '../../assets/badges/humanBadge.png';
+import UnknownBadge from '../../assets/badges/unknownBadge.png';
 
 const AIAnalysis = ({ aiPercentage, votes, badge, username, socialMedia}) => {
     // Frontend-only logic for badge selection

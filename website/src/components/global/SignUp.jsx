@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { loginUser, registerUser } from '../api/loginApi';
-import '../css/SignUpComponent.css';
+import { loginUser, registerUser } from '../../api/loginApi.jsx';
+import '../../css/global/SignUp.css';
 
-const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
+const SignUp = ({ onClose, onSignUpSuccess, onToggleMode }) => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -13,7 +13,6 @@ const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
         e.preventDefault();
         setError('');
 
-        // Validation checks
         if (!username || !email || !password) {
             setError('All fields are required');
             return;
@@ -24,33 +23,27 @@ const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
             return;
         }
 
-        // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError('Invalid email format');
             return;
         }
 
-        // Attempt registration
         try {
             const registrationResponse = await registerUser(username, email, password);
 
             if (registrationResponse && registrationResponse.access) {
-                // If registration is successful, automatically log in
                 const loginResponse = await loginUser(username, password);
 
                 if (loginResponse && loginResponse.access) {
-                    // Store tokens
                     localStorage.setItem('access_token', loginResponse.access);
                     localStorage.setItem('refresh_token', loginResponse.refresh);
 
-                    // Notify parent component of successful signup
                     onSignUpSuccess && onSignUpSuccess();
                 } else {
                     setError('Registration successful, but login failed');
                 }
             } else {
-                // Handle registration errors
                 setError(registrationResponse?.error || 'Registration failed');
             }
         } catch (err) {
@@ -59,14 +52,9 @@ const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
         }
     };
 
-    const handleLogInClick = () => {
-        // Assuming there's a way to switch to login mode
-        onClose && onClose('login');
-    };
-
     return (
         <div className="signup-container">
-            <h2>Account Login</h2>
+            <h2 className="form-title">Sign Up</h2>
 
             <form onSubmit={handleSubmit} className="signup-form">
                 {error && <div className="error-message">{error}</div>}
@@ -118,17 +106,10 @@ const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
                 </div>
 
                 <div className="form-actions">
-                    <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={onClose}
-                    >
+                    <button type="button" className="btn-cancel" onClick={onClose}>
                         Cancel
                     </button>
-                    <button
-                        type="submit"
-                        className="btn-signup"
-                    >
+                    <button type="submit" className="btn-signup">
                         Sign Up
                     </button>
                 </div>
@@ -137,7 +118,7 @@ const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
                     Already have an account?
                     <button
                         type="button"
-                        onClick={handleLogInClick}
+                        onClick={onToggleMode}
                         className="btn-login-link"
                     >
                         Log In
@@ -148,4 +129,4 @@ const SignUpComponent = ({ onClose, onSignUpSuccess }) => {
     );
 };
 
-export default SignUpComponent;
+export default SignUp;
