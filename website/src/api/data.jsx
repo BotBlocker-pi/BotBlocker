@@ -83,8 +83,154 @@ export const assignBadgeToProfile = async (userId, badge) => {
     }
 };
 
+export const getSuspiciousActivities = async () => {
+    try {
+        const apiUrl = `${API_BASE_URL}/suspicious-activities/`;
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to fetch suspicious activities: ${response.statusText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        console.log("Suspicious Activities:", data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching suspicious activities:", error);
+        return null;
+    }
+};
+
+export const markActivityResolved = async (activityId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/suspicious-activities/${activityId}/resolve/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to mark activity as resolved: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Resolved:", data);
+        return data;
+    } catch (err) {
+        console.error("Error resolving activity:", err);
+        return null;
+    }
+};
+
+export const banUser = async (userId, reason = "No reason provided") => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/ban/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            },
+            body: JSON.stringify({ user_id: userId, reason })
+        });
+
+        if (!response.ok) throw new Error(`Ban failed: ${response.statusText}`);
+
+        const data = await response.json();
+        console.log("User banned:", data);
+        return data;
+    } catch (error) {
+        console.error("Error banning user:", error);
+        return null;
+    }
+};
+
+export const unbanUser = async (userId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/unban/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            },
+            body: JSON.stringify({ user_id: userId })
+        });
+
+        if (!response.ok) throw new Error(`Unban failed: ${response.statusText}`);
+
+        const data = await response.json();
+        console.log("User unbanned:", data);
+        return data;
+    } catch (error) {
+        console.error("Error unbanning user:", error);
+        return null;
+    }
+};
+
+export const applyTimeout = async (userId, durationSeconds) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/timeout/apply/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            },
+            body: JSON.stringify({ user_id: userId, duration: durationSeconds })
+        });
+
+        if (!response.ok) throw new Error(`Apply timeout failed: ${response.statusText}`);
+
+        const data = await response.json();
+        console.log("Timeout applied:", data);
+        return data;
+    } catch (error) {
+        console.error("Error applying timeout:", error);
+        return null;
+    }
+};
+
+export const revokeTimeout = async (userId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/timeout/revoke/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            },
+            body: JSON.stringify({ user_id: userId })
+        });
+
+        if (!response.ok) throw new Error(`Revoke timeout failed: ${response.statusText}`);
+
+        const data = await response.json();
+        console.log("Timeout revoked:", data);
+        return data;
+    } catch (error) {
+        console.error("Error revoking timeout:", error);
+        return null;
+    }
+};
+
+
+
+
+
 export default {
     getEvaluationHistory,
     getProfileData,
-    assignBadgeToProfile
+    assignBadgeToProfile,
+    getSuspiciousActivities,
+    markActivityResolved,
+    banUser,
+    unbanUser,
+    applyTimeout,
+    revokeTimeout
 };

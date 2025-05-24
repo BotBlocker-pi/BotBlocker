@@ -169,11 +169,63 @@ const SaveButton = styled.button`
     transition: background-color 0.2s ease;
 `;
 
+const ToggleContainer = styled.div`
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+
+const ToggleLabel = styled.label`
+    font-size: 18px;
+    font-weight: 500;
+`;
+
+const ToggleSwitch = styled.input`
+    position: relative;
+    width: 50px;
+    height: 26px;
+    -webkit-appearance: none;
+    background: #ccc;
+    outline: none;
+    border-radius: 50px;
+    transition: background 0.3s;
+
+    &:checked {
+        background: #566C98;
+    }
+
+    &::before {
+        content: '';
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        background: white;
+        transition: 0.3s;
+    }
+
+    &:checked::before {
+        transform: translateX(24px);
+    }
+`;
+
 const BlockingSettings = () => {
     const [blockPercentage, setBlockPercentage] = useState(70);
     const [blockAI, setBlockAI] = useState(true);
     const [blockUnverified, setBlockUnverified] = useState(true);
     const [isSliding, setIsSliding] = useState(false);
+    const [removeInsteadOfBlur, setRemoveInsteadOfBlur] = useState(true);
+
+    // Atualizar toggle
+    const handleToggleChange = () => {
+        const newValue = !removeInsteadOfBlur;
+        setRemoveInsteadOfBlur(newValue);
+        chrome.storage.local.set({ remove_instead_of_blur: newValue });
+    };
+  
 
     const handleSliderChange = (e) => {
         setBlockPercentage(Number(e.target.value));
@@ -189,53 +241,36 @@ const BlockingSettings = () => {
 
     const handleSave = async () => {
         let badge = "empty";
-        if (blockAI && blockUnverified) {
-          badge = "bot_and_without_verification";
-        } else if (blockAI && !blockUnverified) {
-          badge = "bot";
-        } else if (!blockAI && blockUnverified) {
-          badge = "without_verification";
-        }
-      
-        // Update local cache
-        await updateSettings({
-          tolerance: blockPercentage,
-          badge,
-        });
-      
-        const { settings,blackList } = await getSettingsAndBlacklist();
-        console.log("Settings saved to local cache:", settings);
-      
-        const isSynced = localStorage.getItem("is_Sync") === "true";
-        if (isSynced) {
-          const result = await sendUpdatedSettings({
-            tolerance: blockPercentage,
-            badge: badge,
-            blocklist: blackList.map(([username, social]) => ({
-              username,
-              social,
-            })),
-          });
-      
-          if (result) {
-            console.log("Changes successfully synced with the backend.");
-          } else {
-            console.log("Failed to sync changes with the backend.");
-          }
-        } else {
-          console.log("Changes were saved locally but not sent to the backend (sync not active).");
-        }
-      };
+        if (blockAI && blockUnverified) badge = "bot_and_without_verification";
+        else if (blockAI) badge = "bot";
+        else if (blockUnverified) badge = "without_verification";
 
-      useEffect(() => {
+        await updateSettings({ tolerance: blockPercentage, badge });
+
+        // 🟢 Salvar preferências locais
+        localStorage.setItem("remove_instead_of_blur", removeInsteadOfBlur.toString());
+
+        const { settings, blackList } = await getSettingsAndBlacklist();
+        const isSynced = localStorage.getItem("is_Sync") === "true";
+
+        if (isSynced) {
+            const result = await sendUpdatedSettings({
+                tolerance: blockPercentage,
+                badge,
+                blocklist: blackList.map(([username, social]) => ({ username, social })),
+            });
+            console.log(result ? "Changes synced with backend." : "Failed to sync changes.");
+        } else {
+            console.log("Changes saved locally (sync off).");
+        }
+    };
+
+    useEffect(() => {
         const fetchSettings = async () => {
             const { settings } = await getSettingsAndBlacklist();
-            const { blackList } = await getSettingsAndBlacklist();
-            console.log({...settings,blackList});
-            
+
             if (settings) {
                 setBlockPercentage(settings.tolerance ?? 70);
-    
                 switch (settings.badge) {
                     case 'bot_and_without_verification':
                         setBlockAI(true);
@@ -249,53 +284,52 @@ const BlockingSettings = () => {
                         setBlockAI(false);
                         setBlockUnverified(true);
                         break;
-                    case 'empty':
                     default:
                         setBlockAI(false);
                         setBlockUnverified(false);
                         break;
                 }
             }
+
+            // 🟢 Inicializar toggle com valor persistido ou default "true"
+            chrome.storage.local.get(['remove_instead_of_blur'], (result) => {
+                const value = result.remove_instead_of_blur;
+                if (typeof value === 'boolean') {
+                  setRemoveInsteadOfBlur(value);
+                } else {
+                  chrome.storage.local.set({ remove_instead_of_blur: true });
+                  setRemoveInsteadOfBlur(true);
+                }
+              });
         };
 
         const fetchAndSync = async () => {
             await fetchSettings();
 
-            const isFreshLogin = localStorage.getItem("is_new_login") === "true";
-        
-            if (!isFreshLogin) {
-              console.log("It's not a new login. No need to ask.");
-              return;
-            }
-        
+            if (localStorage.getItem("is_new_login") !== "true") return;
+
             const settingsFromAPI = await getUserSettings();
             if (!settingsFromAPI) return;
-        
-            const isEqual = await areSettingsEqual(settingsFromAPI);
-        
-            if (!isEqual) {
-              const shouldSync = window.confirm("Foram detetadas diferenças entre as definições locais e do servidor. Deseja sincronizar?");
-              if (shouldSync) {
-                await importSettingsFromSerializer(settingsFromAPI);
-                console.log("Cache synchronized with backend settings.");
-                localStorage.setItem("is_Sync", "true");
-                await fetchSettings();
-                window.location.reload()
-              } else {
-                console.log("User refused synchronization.");
-                localStorage.setItem("is_Sync", "false");
-              }
-            } else {
-              console.log("Cache is already synchronized.");
-              localStorage.setItem("is_Sync", "true");
-            }
-        
-                localStorage.setItem("is_new_login", "false");
-          };
-  
-        
 
-    
+            const isEqual = await areSettingsEqual(settingsFromAPI);
+
+            if (!isEqual) {
+                const shouldSync = window.confirm("Foram detetadas diferenças entre as definições locais e do servidor. Deseja sincronizar?");
+                if (shouldSync) {
+                    await importSettingsFromSerializer(settingsFromAPI);
+                    localStorage.setItem("is_Sync", "true");
+                    await fetchSettings();
+                    window.location.reload();
+                } else {
+                    localStorage.setItem("is_Sync", "false");
+                }
+            } else {
+                localStorage.setItem("is_Sync", "true");
+            }
+
+            localStorage.setItem("is_new_login", "false");
+        };
+
         fetchAndSync();
     }, []);
 
@@ -306,10 +340,7 @@ const BlockingSettings = () => {
             <SliderContainer>
                 <Question>At what percentage do you want accounts to start getting blocked?</Question>
                 <SliderWrapper>
-                    <PercentageDisplay
-                        value={blockPercentage}
-                        isVisible={isSliding}
-                    >
+                    <PercentageDisplay value={blockPercentage} isVisible={isSliding}>
                         {blockPercentage}%
                     </PercentageDisplay>
                     <Slider
@@ -353,10 +384,20 @@ const BlockingSettings = () => {
                 </CheckboxOption>
             </CheckboxContainer>
 
+            <ToggleContainer>
+                <ToggleSwitch
+                    type="checkbox"
+                    checked={removeInsteadOfBlur}
+                    onChange={handleToggleChange}
+                    id="remove-blur-toggle"
+                />
+                <ToggleLabel htmlFor="remove-blur-toggle">
+                    Remove posts instead of applying blur
+                </ToggleLabel>
+            </ToggleContainer>
+
             <ButtonContainer>
-                <SaveButton onClick={handleSave}>
-                    Save Changes
-                </SaveButton>
+                <SaveButton onClick={handleSave}>Save Changes</SaveButton>
             </ButtonContainer>
         </BlockingContainer>
     );

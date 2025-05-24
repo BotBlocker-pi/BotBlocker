@@ -1,5 +1,77 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework import serializers
-from .models import Evaluation, User_BB, Profile, Social, Settings, Badge
+from .models import Evaluation, SuspiciousActivity, User_BB, Profile, Social, Settings, Badge, UserTimeout
+from django.core.cache import cache
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import User
+
+from django.utils import timezone
+from datetime import timedelta
+from django.core.cache import cache
+from .models import Evaluation
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def send_notification(data):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "admins",
+        {
+            "type": "send_notification",
+             "data": data,
+        }
+    )
+
+
+
+def create_suspicious_activity_if_needed(target, motive, cache_key, type_account, username):
+    if not cache.get(cache_key):
+        print(f"[SPAM ALERT] {motive}")
+        sa = SuspiciousActivity.objects.create(
+            content_type=ContentType.objects.get_for_model(target),
+            object_id=target.id,
+            motive=motive
+        )
+        send_notification({
+            "id": str(sa.id),
+            "username": username,
+            "type_account": type_account,
+            "reason": motive
+        })
+        cache.set(cache_key, True, timeout=600)
+
+def detect_anomalies(user_bb, profile):
+    now = timezone.now()
+
+    recent_user_votes = Evaluation.objects.filter(
+        user=user_bb,
+        created_at__gte=now - timedelta(minutes=1)
+    ).count()
+
+    if recent_user_votes > 30:
+        create_suspicious_activity_if_needed(
+            target=user_bb,
+            motive=f"{recent_user_votes} votes in 1 minute",
+            cache_key=f"spam_alert_user_{user_bb.id}",
+            type_account="User",
+            username=user_bb.user.username
+        )
+
+    recent_profile_votes = Evaluation.objects.filter(
+        profile=profile,
+        created_at__gte=now - timedelta(minutes=5)
+    ).count()
+
+    if recent_profile_votes > 50:
+        create_suspicious_activity_if_needed(
+            target=profile,
+            motive=f"{recent_profile_votes} votes in 5 minutes",
+            cache_key=f"spam_alert_profile_{profile.id}",
+            type_account=profile.social.social,
+            username=profile.username
+        )
 
 class EvaluationSerializer(serializers.ModelSerializer):
     user = serializers.CharField()  
@@ -42,8 +114,19 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         profile.save()
 
+        detect_anomalies(user,profile)
+
         return evaluation
     
+class UserEvaluationSerializer(serializers.ModelSerializer):
+    profile_username = serializers.CharField(source='profile.username')
+    social_platform = serializers.CharField(source='profile.social.social')
+    
+    class Meta:
+        model = Evaluation
+        fields = ['profile_username', 'social_platform', 'is_bot', 'notas', 'created_at']
+
+
 class ProfileShortSerializer(serializers.ModelSerializer):
     social = serializers.CharField(source='social.social')
 
@@ -107,3 +190,77 @@ class UserBBSerializer(serializers.ModelSerializer):
         instance.settings.delete()
         instance.delete()
         return instance
+    
+
+class SuspiciousActivitySerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+    type_account = serializers.SerializerMethodField()
+    motive = serializers.CharField()
+    status = serializers.CharField()
+
+    class Meta:
+        model = SuspiciousActivity
+        fields = ['id', 'username', 'type_account', 'motive', 'status', 'created_at']
+
+    def get_username(self, obj):
+        target = obj.target
+        if isinstance(target, Profile):
+            return target.username
+        elif isinstance(target, User_BB) and target.user:
+            return target.user.username
+        return "Unknown"
+
+    def get_type_account(self, obj):
+        target = obj.target
+        if isinstance(target, Profile):
+            return target.social.social
+        elif isinstance(target, User_BB):
+            return "User"
+        return "Unknown"
+
+class UserBBDisplaySerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User_BB
+        fields = ['id', 'user', 'role','status']
+
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "username": obj.user.username,
+            }
+        return None
+
+    def get_status(self, obj):
+        if hasattr(obj, 'ban') and obj.ban.is_banned:
+            return "banned"
+
+        if any(timeout.is_active() for timeout in obj.timeouts.all()):
+            return "timeout"
+
+        return "active"
+
+class UserTimeoutSerializer(serializers.ModelSerializer):
+    is_active = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserTimeout
+        fields = [
+            'id',
+            'reason',
+            'start_time',
+            'duration',
+            'end_time',
+            'is_enabled',
+            'is_active'
+        ]
+
+    def get_is_active(self, obj):
+        return obj.is_active()
+
+    def get_end_time(self, obj):
+        return obj.get_end_time()

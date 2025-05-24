@@ -64,6 +64,7 @@ const BlockList = () => {
 
                 // Converter o formato do blackList para o formato utilizado pelo componente
                 const formattedAccounts = blackList.map(([username, platform], index) => {
+                    console.log('Username:', username, 'Platform:', platform); // Log para depuração
                     let accountType = 'X account';
 
                     // Determinar o tipo com base na plataforma
@@ -106,7 +107,7 @@ const BlockList = () => {
                 }, resolve);
             });
 
-            if (response && response.success) {
+            if (response) {
                 setBlockedAccounts(prev => prev.filter(item => item.id !== account.id));
                 console.log(`Unblocked profile: ${account.username}`);
                 const { blackList } = await getSettingsAndBlacklist();

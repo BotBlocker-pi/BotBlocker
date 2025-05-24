@@ -20,6 +20,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 def create_profile(username, platform, image=None):
 
@@ -113,20 +115,33 @@ class CustomTokenObtainView(APIView):
         if not username or not password:
             return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
         user = authenticate(username=username, password=password)
-        if user:
-            # get user role
-            user_bb = User_BB.objects.filter(user=user).first()
-            role = user_bb.role if user_bb else None
-            refresh = RefreshToken.for_user(user)
+        if not user:
+            return Response({"error": "Invalid credentials"}, status=401)
+
+        user_bb = User_BB.objects.filter(user=user).first()
+        if not user_bb:
+            return Response({"error": "User profile not found."}, status=404)
+
+        if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
+            return Response({"error": "Your account is banned."}, status=403)
+
+        active_timeout = next((t for t in user_bb.timeouts.all() if t.is_active()), None)
+        if active_timeout:
             return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "role": role,
-            }, status=status.HTTP_200_OK)
+                "error": "Your account is under a timeout.",
+                "timeout_ends_at": active_timeout.get_end_time().isoformat()
+            }, status=403)
 
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user_id": user_bb.id,
+            "role": user_bb.role,
+        }, status=200)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -198,6 +213,17 @@ def get_evaluation_history(request):
 
     serializer = EvaluationSerializer(history, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_evaluations(request, user_id):
+    try:
+        evaluations = Evaluation.objects.filter(user__id=user_id).order_by('-created_at')
+        serialized = UserEvaluationSerializer(evaluations, many=True)
+        return Response(serialized.data, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 
 # FORMAT TO CREATE USER
 #{
@@ -311,6 +337,16 @@ def get_users(request):
     except Exception as e:
         print(f"Error in get_users: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_users_detailed(request):
+    try:
+        users = User_BB.objects.all().order_by('-created_at')
+        serializer = UserBBDisplaySerializer(users, many=True)
+        return Response({'users': serializer.data})
+    except Exception as e:
+        print(f"Error in get_users_detailed: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 @api_view(['GET'])
 def get_user(request, id):
@@ -395,6 +431,7 @@ def give_badge(request):
     except Exception as e:
         print(f"Error in give_badge: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 @api_view(['POST'])
 def post_img(request):
     url = request.data.get('url')
@@ -444,3 +481,207 @@ def userWasVote(request):
         return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({'was_vote': was_vote}, status=status.HTTP_200_OK)
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_suspicious_activities(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized to view suspicious activities."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    activities = SuspiciousActivity.objects.exclude(status="resolved").order_by('-created_at')
+    serializer = SuspiciousActivitySerializer(activities, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def mark_suspicious_activity_resolved(request, activity_id):
+    try:
+        activity = SuspiciousActivity.objects.get(id=activity_id)
+    except SuspiciousActivity.DoesNotExist:
+        return Response({"error": "Activity not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    activity.status = "resolved"
+    activity.save()
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "admins",
+        {
+            "type": "activity_resolved",
+            "activity_id": str(activity_id),
+        }
+    )
+
+    return Response({"message": "Activity marked as resolved"}, status=status.HTTP_200_OK)
+
+from django.core.exceptions import ObjectDoesNotExist
+
+def is_user_banned(user_bb):
+    try:
+        return user_bb.ban.is_banned
+    except ObjectDoesNotExist:
+        return False
+
+
+def is_user_under_timeout(user_bb):
+    return any(timeout.is_active() for timeout in user_bb.timeouts.all())
+
+def was_user_unbanned(user_bb):
+    try:
+        ban = user_bb.ban
+        return not ban.is_banned
+    except ObjectDoesNotExist:
+        return False
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def apply_timeout(request):
+    try:
+        user_id = request.data.get("user_id")
+        duration = request.data.get("duration")  # in seconds
+
+        if not user_id or not duration:
+            return Response({"error": "Both user_id and duration are required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+
+        if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
+            return Response({"error": "Cannot apply timeout to a banned user."}, status=400)
+        
+        timeout = UserTimeout.objects.create(user=user_bb, duration=int(duration))
+
+        return Response({
+            "success": True,
+            "message": f"Timeout applied until {timeout.get_end_time()}."
+        }, status=201)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in apply_timeout:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def revoke_timeout(request):
+    try:
+        user_id = request.data.get("user_id")
+
+        if not user_id:
+            return Response({"error": "user_id is required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+        active_timeouts = [t for t in user_bb.timeouts.all() if t.is_active()]
+
+        if not active_timeouts:
+            return Response({"message": "User has no active timeouts."}, status=404)
+
+        for timeout in active_timeouts:
+            timeout.is_enabled = False
+            timeout.save()
+
+        return Response({
+            "success": True,
+            "message": f"{len(active_timeouts)} timeout(s) revoked."
+        }, status=200)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in revoke_timeout:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ban_user(request):
+    try:
+        user_id = request.data.get("user_id")
+        reason = request.data.get("reason", "No reason provided.")
+
+        if not user_id:
+            return Response({"error": "user_id is required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+
+        if hasattr(user_bb, 'ban') and user_bb.ban.is_banned:
+            return Response({"error": "User is already banned."}, status=400)
+
+        has_active_timeout = any(t.is_active() for t in user_bb.timeouts.all())
+        if has_active_timeout:
+            return Response({"error": "Cannot ban a user with an active timeout."}, status=400)
+
+        ban, _ = UserBan.objects.get_or_create(user=user_bb)
+        ban.reason = reason
+        ban.is_banned = True
+        ban.save()
+
+        return Response({
+            "success": True,
+            "message": f"User banned on {ban.banned_at}."
+        }, status=201)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in ban_user:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unban_user(request):
+    try:
+        user_id = request.data.get("user_id")
+
+        if not user_id:
+            return Response({"error": "user_id is required."}, status=400)
+
+        user_bb = User_BB.objects.get(id=user_id)
+
+        if not hasattr(user_bb, 'ban'):
+            return Response({"message": "User was never banned."}, status=404)
+
+        if not user_bb.ban.is_banned:
+            return Response({"message": "User is already unbanned."}, status=400)
+
+        user_bb.ban.is_banned = False
+        user_bb.ban.save()
+
+        return Response({"success": True, "message": "User successfully unbanned."}, status=200)
+
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+    except Exception as e:
+        print("Error in unban_user:", str(e))
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_timeouts(request, user_id):
+    try:
+        user_bb = User_BB.objects.get(id=user_id)
+        timeouts = user_bb.timeouts.all().order_by('-start_time')
+        serializer = UserTimeoutSerializer(timeouts, many=True)
+        return Response(serializer.data, status=200)
+    except User_BB.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+
+
+
+
+
+# if not User.objects.filter(username="admin").exists():
+#     User.objects.create_superuser("admin", "admin@example.com", "12345")
