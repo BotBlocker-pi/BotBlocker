@@ -38,6 +38,10 @@
     color: #6c757d;
 }
 
+.admin-dashboard-container .admin-main-content {
+    margin-left: 220px; /* match the sidebar width */
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .admin-dashboard-container .admin-main-content {

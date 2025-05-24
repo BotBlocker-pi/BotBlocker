@@ -14,12 +14,22 @@ const App = () => {
         });
     }, []);
 
-    // Check if we're on Twitter's home page
-    const isTwitterHome = currentUrl && currentUrl.includes('/home');
+    // Check if we're on Socials home page
+    const instagramHomeUrls = ["/?variant=home", "/?variant=following", "/explore", "/reels"];
+
+    const isSocialHome = (
+        currentUrl &&
+        (
+            currentUrl.includes('/home') ||
+            instagramHomeUrls.some(path => currentUrl.includes(path)) ||
+            currentUrl === "https://www.instagram.com/" ||
+            currentUrl === "https://www.facebook.com/"
+        )
+    );
 
     return (
         <div style={{ width: '100%', height: '100%' }}>
-            {isTwitterHome ? <BlockedAccounts /> : <HomePage />}
+            {isSocialHome ? <BlockedAccounts /> : <HomePage />}
         </div>
     );
 };

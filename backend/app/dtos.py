@@ -7,7 +7,7 @@ def extractPerfilNameAndPlataformOfURL(url: str):
 
     social_platforms = {
         'instagram': ['instagram.com'],
-        'linkedin': ['linkedin.com'],
+        'facebook': ['facebook.com'],
         'x': ['x.com', 'twitter.com']
     }
 
@@ -24,10 +24,8 @@ def extractPerfilNameAndPlataformOfURL(url: str):
     if plataforma == 'x' and path_segments:
         perfil_name = path_segments[0]
 
-    elif plataforma == 'linkedin':
-        # Suporta linkedin.com/in/..., linkedin.com/company/... e linkedin.com/school/...
-        if len(path_segments) >= 2 and path_segments[0] in ['in', 'company', 'school']:
-            perfil_name = path_segments[1]
+    elif plataforma == 'facebook':
+        perfil_name = path_segments[0]
 
     elif plataforma == 'instagram' and path_segments:
         perfil_name = path_segments[0]

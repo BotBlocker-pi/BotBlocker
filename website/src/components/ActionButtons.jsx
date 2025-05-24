@@ -42,7 +42,7 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvalu
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ role: 'admin' }),
+                body: JSON.stringify({ role: 'verifier' }),
             });
 
             if (!response.ok) {
@@ -50,8 +50,10 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvalu
             }
 
             const data = await response.json();
-            setLocalRole('admin')
-            alert(`✅ ${username} has been promoted to admin.`);
+            setLocalRole('verifier')
+
+            alert(`✅ ${username} has been promoted to verifier.`);
+
         } catch (err) {
             console.error('Error promoting user:', err);
             alert('⚠️ An error occurred while promoting the user.');

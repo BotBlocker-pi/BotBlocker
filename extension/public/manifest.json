@@ -10,7 +10,8 @@
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
-    "https://*.instagram.com/*"
+    "https://*.instagram.com/*",
+    "https://*.facebook.com/*"
   ],
   "background": {
     "service_worker": "background.js"

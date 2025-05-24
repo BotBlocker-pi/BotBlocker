@@ -88,7 +88,7 @@ const SocialMediaProfileInfo = ({ imageUrl, accountType, username }) => {
                 // Verificar se existe na blacklist
                 const blocked = blackList.some(([u, p]) =>
                     u.toLowerCase() === username.toLowerCase() &&
-                    (p === platform || p === 'x' || p === 'twitter' || p === 'instagram')
+                    (p === platform || p === 'x' || p === 'twitter' || p === 'instagram' || p === 'facebook')
                 );
 
                 // Só atualizar o estado se for diferente do atual
