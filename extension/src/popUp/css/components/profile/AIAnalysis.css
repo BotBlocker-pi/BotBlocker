@@ -1,0 +1,66 @@
+.ai-analysis-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 20px 0;
+    margin: 0;
+}
+
+.ai-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.ai-percentage {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.ai-votes {
+    font-size: 14px;
+    color: #666;
+}
+
+.ai-badge-container {
+    position: relative;
+    display: inline-block;
+}
+
+.ai-badge {
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+}
+
+.ai-tooltip {
+    visibility: hidden;
+    width: 120px;
+    background-color: #566C98;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 90%;
+    left: 50%;
+    transform: translateX(-70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ai-badge-container:hover .ai-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.ai-analysis-note {
+    font-size: 14px;
+    color: #6c757d;
+    text-align: center;
+    padding: 12px 0 16px;
+    font-weight: bold;
+}
+

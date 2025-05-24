@@ -1,0 +1,173 @@
+.blocking-container {
+    background-color: #f5f7fd;
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.blocking-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #2b2d42;
+}
+
+.slider-section {
+    margin-bottom: 20px;
+}
+
+.slider-question {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.slider-wrapper {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.custom-slider {
+    width: 100%;
+    appearance: none;
+    height: 6px;
+    background: linear-gradient(to right, #e0e5f6, #566C98);
+    border-radius: 4px;
+    outline: none;
+    margin-top: 8px;
+}
+
+.custom-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #566C98;
+    border: 2px solid white;
+    cursor: pointer;
+}
+
+.slider-value {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #566C98;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.percentage-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #777;
+    margin-top: 4px;
+}
+
+.checkbox-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.checkbox-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.checkbox-row img {
+    width: 24px;
+    height: 24px;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.toggle-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #566C98;
+}
+
+.settings-save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.save-button {
+    background-color: #566C98;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.save-button:hover {
+    background-color: #405179;
+}
+
+.save-confirmation {
+    color: #06d6a0;
+    background-color: rgba(6, 214, 160, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 16px;
+}
+
+/* Replace this section */
+.checkbox-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 24px 0;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.checkbox-title {
+    font-size: 18px; /* ⬆️ Increased */
+    font-weight: 700; /* ⬆️ Bolder */
+    margin-bottom: 16px;
+    color: #2b2d42;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* ⬆️ slightly more space */
+    margin-bottom: 14px; /* ⬆️ more spacing */
+    font-size: 16px; /* ⬆️ increased text size */
+}
+
+.checkbox-row img {
+    width: 28px; /* ⬆️ badge size */
+    height: 28px;
+}
