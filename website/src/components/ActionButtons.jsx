@@ -8,27 +8,33 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvalu
             setLocalStatus(status);
     }, [status]);
 
-  const handleBanToggle = async () => {
-    try {
-      if (localStatus === 'banned') {
-        const res = await unbanUser(userId);
-        if (res) {
-          alert(`✅ ${username} has been unbanned.`);
-          setLocalStatus('active');
+    const handleBanToggle = async () => {
+        try {
+            let success = false;
+
+            if (localStatus === 'banned') {
+                success = await unbanUser(userId);
+                if (success) {
+                    alert(`✅ ${username} has been unbanned.`);
+                    setLocalStatus('active');
+                }
+            } else {
+                success = await banUser(userId, 'Manual action from UI');
+                if (success) {
+                    alert(`🚫 ${username} has been banned.`);
+                    setLocalStatus('banned');
+                }
+            }
+
+            if (!success) {
+                alert(`⚠️ Failed to ${localStatus === 'banned' ? 'unban' : 'ban'} ${username}.`);
+            }
+
+        } catch (err) {
+            console.error('Error toggling ban:', err);
+            alert(`⚠️ Failed to ${localStatus === 'banned' ? 'unban' : 'ban'} ${username}.`);
         }
-      } else {
-        const res = await banUser(userId, 'Manual action from UI');
-        if (res) {
-          alert(`🚫 ${username} has been banned.`);
-          setLocalStatus('banned');
-        }
-      }
-    } catch (err) {
-      console.error('Error toggling ban:', err);
-      alert(`⚠️ Failed to ${localStatus === 'banned' ? 'unban' : 'ban'} ${username}.`);
-    } finally {
-    }
-  };
+    };
 
     const handlePromote = async () => {
         if (localRole === 'admin' || localRole === 'verifier') {

@@ -1,67 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { applyTimeout, revokeTimeout } from '../api/data';
-import '../css/TimeoutModal.css';
+import React, { useEffect, useState } from "react";
+import { applyTimeout, revokeTimeout } from "../api/data";
+import "../css/TimeoutModal.css";
+import { getUserTimeouts } from "../api/data";
 
 const TimeoutModal = ({ userId, username, onClose }) => {
-    const [timeouts, setTimeouts] = useState([]);
-    const [duration, setDuration] = useState(3600);
-    const [loading, setLoading] = useState(false);
+  const [timeouts, setTimeouts] = useState([]);
+  const [duration, setDuration] = useState(3600);
+  const [loading, setLoading] = useState(false);
 
-    const timeoutOptions = [
-        { label: '1 hour', seconds: 3600 },
-        { label: '6 hours', seconds: 21600 },
-        { label: '24 hours', seconds: 86400 },
-        { label: '30 days', seconds: 30 * 86400 },
-    ];
+  const timeoutOptions = [
+    { label: "1 hour", seconds: 3600 },
+    { label: "6 hours", seconds: 21600 },
+    { label: "24 hours", seconds: 86400 },
+    { label: "30 days", seconds: 30 * 86400 },
+  ];
 
     const fetchTimeouts = async () => {
-        try {
-            const res = await fetch(`http://localhost/api/users/${userId}/timeouts/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem("access_token")}`
-                }
-            });
-            const data = await res.json();
-            setTimeouts(data);
-        } catch (err) {
-            console.error("Error fetching timeouts:", err);
+        const data = await getUserTimeouts(userId);
+        if (data) {
+        setTimeouts(data);
         }
     };
 
-    useEffect(() => {
-        fetchTimeouts();
-    }, [userId]);
+  useEffect(() => {
+    fetchTimeouts();
+  }, [userId]);
 
-    const activeTimeout = timeouts.find(t => t.is_active);
-    const recentTimeouts = timeouts.slice(0, 4); // últimos 4, incluindo ativo
+  const activeTimeout = timeouts.find((t) => t.is_active);
+  const recentTimeouts = timeouts.slice(0, 4); 
 
-    const handleApply = async () => {
-        setLoading(true);
-        try {
-            await applyTimeout(userId, duration);
-            alert("Timeout applied.");
-            fetchTimeouts();
-        } catch {
+  const handleApply = async () => {
+    setLoading(true);
+    try {
+        const data = await applyTimeout(userId, duration);
+        if(!data){
             alert("Failed to apply timeout.");
-        } finally {
-            setLoading(false);
+            return
         }
-    };
+        fetchTimeouts();
+        alert("Timeout applied.");
 
-    const handleRevoke = async () => {
-        setLoading(true);
-        try {
-            await revokeTimeout(userId);
-            alert("Timeout revoked.");
-            fetchTimeouts();
-        } catch {
-            alert("Failed to revoke timeout.");
-        } finally {
-            setLoading(false);
+    } catch {
+      alert("Failed to apply timeout.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevoke = async () => {
+    setLoading(true);
+    try {
+        const data = await revokeTimeout(userId);
+        if(!data){
+            alert("Failed to apply timeout.");
+            return
         }
-    };
+      fetchTimeouts();
+      alert("Timeout revoked.");
+    } catch {
+      alert("Failed to revoke timeout.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
     return (
         <div className="timeout-popup-overlay" onClick={onClose}>
