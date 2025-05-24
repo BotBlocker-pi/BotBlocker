@@ -3,13 +3,14 @@ import AccountCard from './AccountCard';
 import axios from 'axios';
 import '../css/AccountSection.css';
 import TimeoutModal from '../components/TimeoutModal';
+import EvaluationsPopup from '../components/EvaluationsPopup';
 
 const AccountsSection = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
-
+    const [selectedEvaluationsUser, setSelectedEvaluationsUser] = useState(null);
     useEffect(() => {
         axios.get('http://localhost/api/get_users_detailed/')
             .then((response) => {
@@ -30,6 +31,12 @@ const AccountsSection = () => {
 
     const handleTimeoutClick = (userId, username) => {
         setSelectedUser({ userId, username });
+    };
+
+    const handleEvaluationsClick = (userId, username) => {
+        console.log({ userId, username });
+        
+        setSelectedEvaluationsUser({ userId, username });
     };
 
     return (
@@ -59,6 +66,7 @@ const AccountsSection = () => {
                             role={account.role}
                             status={account.status}
                             onTimeoutClick={handleTimeoutClick}
+                            onEvaluationsClick={handleEvaluationsClick}
                         />
                     ))}
                 </div>
@@ -69,6 +77,14 @@ const AccountsSection = () => {
                     userId={selectedUser.userId}
                     username={selectedUser.username}
                     onClose={() => setSelectedUser(null)}
+                />
+            )}
+
+            {selectedEvaluationsUser && (
+                <EvaluationsPopup
+                    userId={selectedEvaluationsUser.userId}
+                    username={selectedEvaluationsUser.username}
+                    onClose={() => setSelectedEvaluationsUser(null)}
                 />
             )}
         </div>

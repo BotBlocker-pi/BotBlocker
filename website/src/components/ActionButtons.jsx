@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import '../css/ActionButton.css';
 import { banUser,unbanUser } from "../api/data";
-const ActionButtons = ({ username, userId, role, status, onTimeoutClick  }) => {
+const ActionButtons = ({ username, userId, role, status, onTimeoutClick, onEvaluationsClick }) => {
     const [localStatus, setLocalStatus] = useState(status);
+    const [localRole, setLocalRole] = useState(role);
       useEffect(() => {
             setLocalStatus(status);
     }, [status]);
-
-    const handleEvaluations = () => {
-        console.log(`View evaluations for ${username}`);
-    };
-
-    const handleTimeout = () => {
-        console.log(`Timeout triggered for ${username}`);
-    };
-
 
   const handleBanToggle = async () => {
     try {
@@ -39,8 +31,8 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick  }) => {
   };
 
     const handlePromote = async () => {
-        if (role === 'admin' || role === 'verifier') {
-            alert(`${role.charAt(0).toUpperCase() + role.slice(1)}s cannot be promoted.`);
+        if (localRole === 'admin' || localRole === 'verifier') {
+            alert(`${localRole.charAt(0).toUpperCase() + localRole.slice(1)}s cannot be promoted.`);
             return;
         }
 
@@ -58,7 +50,10 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick  }) => {
             }
 
             const data = await response.json();
+            setLocalRole('verifier')
+
             alert(`✅ ${username} has been promoted to verifier.`);
+
         } catch (err) {
             console.error('Error promoting user:', err);
             alert('⚠️ An error occurred while promoting the user.');
@@ -68,10 +63,10 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick  }) => {
 
     return (
         <div className="action-buttons">
-            <button onClick={handleEvaluations} className="eval-button">
+            <button onClick={() => onEvaluationsClick(userId, username)} className="eval-button">
                 🧾 Evaluations History
             </button>
-            
+
             <button
                 onClick={() => onTimeoutClick(userId, username)}
                 className={`timeout-button ${localStatus === 'banned' ? 'disabled' : ''}`}
@@ -90,8 +85,8 @@ const ActionButtons = ({ username, userId, role, status, onTimeoutClick  }) => {
 
             <button
                 onClick={handlePromote}
-                className={`promote-button ${localStatus !== 'active' || role === 'admin' || role === 'verifier' ? 'disabled' : ''}`}
-                disabled={localStatus !== 'active' || role === 'admin' || role === 'verifier'}
+                className={`promote-button ${localStatus !== 'active' || localRole === 'admin' || localRole === 'verifier' ? 'disabled' : ''}`}
+                disabled={localStatus !== 'active' || localRole === 'admin' || localRole === 'verifier'}
             >
                 ⭐ Promote
             </button>
