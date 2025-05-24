@@ -100,15 +100,17 @@
 .toggle-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    margin-bottom: 12px;
+    gap: 10px;
+    font-size: 18px; /* Aumentado */
+    font-weight: 500;
+    margin-bottom: 16px;
 }
 
 .toggle-row input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width: 20px;   /* Aumentado */
+    height: 20px;  /* Aumentado */
     accent-color: #566C98;
+    cursor: pointer;
 }
 
 .settings-save-button-container {
@@ -170,4 +172,11 @@
 .checkbox-row img {
     width: 28px; /* ⬆️ badge size */
     height: 28px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 20px;      /* Aumentado */
+    height: 20px;     /* Aumentado */
+    accent-color: #566C98;
+    cursor: pointer;
 }
