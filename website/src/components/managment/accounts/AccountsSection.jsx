@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import '../../../css/managment/accounts/AccountSection.css';
 import TimeoutModal from './TimeoutModal.jsx';
 import EvaluationsPopup from './EvaluationsPopup.jsx';
 import ActionButtons from './ActionButtons.jsx';
+import { getUsersDetailed } from '../../../api/data.jsx';
 
 const AccountsSection = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -14,16 +14,14 @@ const AccountsSection = () => {
     const [actionMessage, setActionMessage] = useState(null);
 
     useEffect(() => {
-        axios.get('http://localhost/api/get_users_detailed/')
-            .then((response) => {
-                const fetchedUsers = response.data.users || [];
-                setAccounts(fetchedUsers);
-                setLoading(false);
-            })
-            .catch((error) => {
-                console.error('Error fetching users:', error);
-                setLoading(false);
-            });
+        const fetchUsers = async () => {
+            setLoading(true);
+            const fetchedUsers = await getUsersDetailed();
+            setAccounts(fetchedUsers);
+            setLoading(false);
+        };
+
+        fetchUsers();
     }, [selectedUser]);
 
     useEffect(() => {
