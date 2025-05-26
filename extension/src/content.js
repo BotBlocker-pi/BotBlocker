@@ -1947,16 +1947,14 @@ function addBlockedIndicatorFacebook(profileName) {
 }
   
   // Função para aplicar blur a posts do Instagram
-  function applyBlurToAllPostsFromUserInstagram(username) {
+function applyBlurToAllPostsFromUserInstagram(username) {
   console.log(`[BotBlocker] Checking for Instagram posts from ${username}`);
 
   const posts = document.querySelectorAll('article');
 
   posts.forEach(post => {
-    // Pega todos os links de perfil no post
     const profileLinks = post.querySelectorAll('a[href^="/"]');
 
-    // Verifica se algum link corresponde exatamente ao username (com ou sem barra final)
     const isExactMatch = Array.from(profileLinks).some(link => {
       const href = link.getAttribute('href');
       return href === `/${username}` || href === `/${username}/`;
@@ -1968,12 +1966,22 @@ function addBlockedIndicatorFacebook(profileName) {
       const shouldRemove = result.remove_instead_of_blur === true;
 
       if (shouldRemove) {
-        post.style.visibility = 'hidden';
-        post.style.position = 'absolute';
-        post.style.top = '-9999px';
-        post.style.left = '-9999px';
-        post.style.height = '0';
-        post.style.width = '0';
+        // Substitui conteúdo por um espaço mínimo discreto
+        post.innerHTML = '';
+
+        post.style.display = 'flex';
+        post.style.alignItems = 'center';
+        post.style.justifyContent = 'center';
+        post.style.minHeight = '40px'; // altura reduzida
+        post.style.backgroundColor = '#ffffff'; // branco
+        post.style.border = '1px solid #ffffff'; // borda branca invisível
+        post.style.color = '#ffffff'; // texto branco (invisível)
+        post.style.fontSize = '14px';
+        post.style.textAlign = 'center';
+
+        const placeholder = document.createElement('div');
+        placeholder.textContent = `Post ocultado`; // ainda presente, mas invisível
+        post.appendChild(placeholder);
       } else {
         post.style.filter = 'blur(5px)';
         post.style.transition = 'filter 0.3s ease';
@@ -2009,6 +2017,11 @@ function addBlockedIndicatorFacebook(profileName) {
     });
   });
 }
+
+
+
+  
+
 
 
 
