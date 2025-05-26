@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import '../css/Contact.css';
-import Navbar from '../components/Navbar'; // Import the Navbar component
+import '../css/pages/Contact.css';
+import Navbar from '../components/global/Navbar.jsx'; // Import the Navbar component
 
 const Contact = () => {
-    const [isLoaded, setIsLoaded] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -14,13 +13,8 @@ const Contact = () => {
     const [isSubmitted, setIsSubmitted] = useState(false);
 
     useEffect(() => {
-        // Add animation class after component mounts
-        setIsLoaded(true);
-
-        // Make sure the page scrolls to top when loaded
         window.scrollTo(0, 0);
 
-        // Enable scrolling on body
         document.body.style.overflow = 'auto';
     }, []);
 
@@ -78,7 +72,7 @@ const Contact = () => {
     };
 
     return (
-        <div className={`contact-container ${isLoaded ? 'fade-in' : ''}`}>
+        <div className="contact-container">
             {/* Use the Navbar component instead of embedded header */}
             <Navbar />
 
@@ -113,7 +107,7 @@ const Contact = () => {
                             </div>
                             <div className="info-content">
                                 <h3>Email</h3>
-                                <p>infobotblocker@gmail.com</p>
+                                <p>BotBlockerPI@gmail.com</p>
                             </div>
                         </div>
 
@@ -125,7 +119,7 @@ const Contact = () => {
                             </div>
                             <div className="info-content">
                                 <h3>Support</h3>
-                                <p>support@botblocker.com</p>
+                                <p>BotBlockerPI@gmail.com</p>
                             </div>
                         </div>
 

@@ -214,6 +214,17 @@ def get_evaluation_history(request):
     serializer = EvaluationSerializer(history, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_evaluations(request, user_id):
+    try:
+        evaluations = Evaluation.objects.filter(user__id=user_id).order_by('-created_at')
+        serialized = UserEvaluationSerializer(evaluations, many=True)
+        return Response(serialized.data, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
 # FORMAT TO CREATE USER
 #{
 #    "username": "rita",

@@ -1,0 +1,42 @@
+.evaluations-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.evaluations-popup {
+  background: white;
+  color: black; /* ← texto preto */
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: black; /* ← opcional, reforço */
+}
+
+.evaluations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: black; /* ← opcional */
+}
+
+.evaluation-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  color: black; /* ← opcional */
+}

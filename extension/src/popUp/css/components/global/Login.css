@@ -1,0 +1,114 @@
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px 16px;
+}
+
+.login-box {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2b2d42;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-message {
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.login-message.success {
+    background-color: rgba(6, 214, 160, 0.1);
+    color: #06d6a0;
+}
+
+.login-message.error {
+    background-color: rgba(239, 71, 111, 0.1);
+    color: #ef476f;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2b2d42;
+    margin-bottom: 6px;
+}
+
+.input-group input {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    font-size: 14px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    outline: none;
+}
+
+.login-button {
+    background-color: #4361ee;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+    transition: all 0.3s ease;
+}
+
+.login-button:hover {
+    background-color: #3a56d4;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+}
+
+.login-toggle {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.toggle-link {
+    background: none;
+    border: none;
+    color: #4361ee;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.toggle-link:hover {
+    text-decoration: underline;
+    color: #3a56d4;
+}

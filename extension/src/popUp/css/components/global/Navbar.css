@@ -1,0 +1,116 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: linear-gradient(to right, #EAEDFA, #566C98);
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.back-button {
+    background: none;
+    border: none;
+    color: #000;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0;
+    font-weight: 600;
+}
+
+.back-button:hover {
+    opacity: 0.8;
+}
+
+.logo-image {
+    height: 40px;
+}
+
+.navbar-icons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.icon {
+    font-size: 22px;
+    color: white;
+    cursor: pointer;
+}
+
+.icon:hover {
+    opacity: 0.8;
+}
+
+.login-button-navbar {
+    background-color: #4361ee;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+}
+
+.login-button-navbar:hover {
+    background-color: #3a56d4;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+}
+
+.login-button-navbar:active {
+    transform: translateY(0);
+}
+
+.logout-button-navbar {
+    background-color: #ef476f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(239, 71, 111, 0.3);
+}
+
+.logout-button-navbar:hover {
+    background-color: #e5364d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(239, 71, 111, 0.4);
+}
+
+.logout-button-navbar:active {
+    transform: translateY(0);
+}
+
+.question-back-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+}
+
+.question-back-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(108, 117, 125, 0.4);
+}
+
+.question-back-button:active {
+    transform: translateY(0);
+}
