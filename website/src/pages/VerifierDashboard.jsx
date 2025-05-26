@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import '../css/VerifierDashboard.css';
-import Navbar from '../components/Navbar';
-import VerifierSideBar from '../components/VerifierSideBar';
-import VerificationSection from '../components/VerificationSection';
+import '../css/pages/VerifierDashboard.css';
+import Navbar from '../components/global/Navbar.jsx';
+import VerifierSideBar from '../components/managment/VerifierSideBar.jsx';
+import VerificationSection from '../components/managment/verify/VerificationSection.jsx';
 
 const VerifierDashboard = () => {
     // State to control which section is active in the sidebar

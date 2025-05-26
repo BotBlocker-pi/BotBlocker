@@ -1,0 +1,78 @@
+.page-wrapper {
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.blocked-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 16px;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    margin-top: -0.5rem;
+}
+
+.account-list {
+    margin-top: 0.5rem;
+}
+
+.account-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.account-info {
+    flex: 1;
+}
+
+.username {
+    font-weight: bold;
+}
+
+.badge-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.badge {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.tooltip {
+    visibility: hidden;
+    width: 160px;
+    background-color: #566C98;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.badge-container:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
