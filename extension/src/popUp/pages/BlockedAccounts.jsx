@@ -1,82 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import Navbar from '../components/global/Navbar';
+import Login from '../components/global/Login';
 import BotBadge from '../../assets/badges/botBadge.png';
 import HumanBadge from '../../assets/badges/humanBadge.png';
 import UnknownBadge from '../../assets/badges/unknownBadge.png';
-import Navbar from '../components/global/Navbar';
-import '../index.css';
-
-const BlockedAccountsContainer = styled.div`
-    padding: 20px;
-`;
-
-const Title = styled.h1`
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-    margin-top: -0.5rem;
-`;
-
-const AccountList = styled.div`
-    margin-top: 0.5rem;
-`;
-
-const AccountItem = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-`;
-
-const ProfileImage = styled.img`
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 10px;
-`;
-
-const AccountInfo = styled.div`
-    flex: 1;
-`;
-
-const Username = styled.div`
-    font-weight: bold;
-`;
-
-const BadgeContainer = styled.div`
-    position: relative;
-    display: inline-block;
-    margin-left: 10px;
-`;
-
-const Badge = styled.img`
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-`;
-
-const Tooltip = styled.div`
-    visibility: hidden;
-    width: 120px;
-    background-color: #566C98;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 8px;
-    position: absolute;
-    z-index: 1;
-    right: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-right: 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
-
-    ${BadgeContainer}:hover & {
-        visibility: visible;
-        opacity: 1;
-    }
-`;
+import { checkAuth } from '../../api/loginApi.jsx';
+import '../css/pages/BlockedAccounts.css';
 
 const BlockedAccounts = () => {
     const [blockedAccounts, setBlockedAccounts] = useState({
@@ -84,10 +13,12 @@ const BlockedAccounts = () => {
         profilesBlockedManually: [],
         profilesBlockedByBadge: []
     });
+
     const [isLoading, setIsLoading] = useState(true);
+    const [showLoginPage, setShowLoginPage] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        // Get blocked accounts from storage
         chrome.storage.local.get(['blockedAccounts'], (result) => {
             if (result.blockedAccounts) {
                 setBlockedAccounts(result.blockedAccounts);
@@ -95,7 +26,6 @@ const BlockedAccounts = () => {
             setIsLoading(false);
         });
 
-        // Listen for changes in storage
         const handleStorageChange = (changes) => {
             if (changes.blockedAccounts) {
                 setBlockedAccounts(changes.blockedAccounts.newValue || {
@@ -107,82 +37,101 @@ const BlockedAccounts = () => {
         };
 
         chrome.storage.onChanged.addListener(handleStorageChange);
-
         return () => {
             chrome.storage.onChanged.removeListener(handleStorageChange);
         };
     }, []);
 
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            try {
+                const authStatus = await checkAuth();
+                setIsAuthenticated(authStatus);
+            } catch (error) {
+                console.error("Error checking auth status:", error);
+            }
+        };
+        checkAuthStatus();
+    }, []);
+
+    const handleLoginClick = () => setShowLoginPage(true);
+    const handleBackToMain = () => setShowLoginPage(false);
+
     const getBadgeInfo = (badge) => {
         switch (badge) {
             case 'bot':
-                return {
-                    src: BotBadge,
-                    message: "Our specialists verified this account as a bot."
-                };
+                return { src: BotBadge, message: "Our specialists verified this account as a bot." };
             case 'human':
-                return {
-                    src: HumanBadge,
-                    message: "Our specialists verified this account as a human."
-                };
+                return { src: HumanBadge, message: "Our specialists verified this account as a human." };
             default:
-                return {
-                    src: UnknownBadge,
-                    message: "The status of this account is unknown."
-                };
+                return { src: UnknownBadge, message: "The status of this account is unknown." };
         }
     };
 
     const renderAccountList = (accounts, title) => {
         if (accounts.length === 0) return null;
-
         return (
             <div>
                 <h3>{title}</h3>
                 {accounts.map((account, index) => {
                     const badgeInfo = getBadgeInfo(account.badge);
                     return (
-                        <AccountItem key={index}>
-                            <ProfileImage 
-                                src={account.profileImage || 'default-avatar.png'} 
-                                alt={`${account.username}'s profile`}
+                        <div className="account-item" key={index}>
+                            <img
+                                className="profile-image"
+                                src={account.profileImage || 'default-avatar.png'}
+                                alt="Profile"
                             />
-                            <AccountInfo>
-                                <Username>@{account.username}</Username>
+                            <div className="account-info">
+                                <div className="username">@{account.username}</div>
                                 {account.percentage !== null && (
                                     <div>{account.percentage}% chance of being AI</div>
                                 )}
-                            </AccountInfo>
-                            <BadgeContainer>
-                                <Badge src={badgeInfo.src} alt="Badge" />
-                                <Tooltip>{badgeInfo.message}</Tooltip>
-                            </BadgeContainer>
-                        </AccountItem>
+                            </div>
+                            <div className="badge-container">
+                                <img className="badge" src={badgeInfo.src} alt="Badge" />
+                                <div className="tooltip">{badgeInfo.message}</div>
+                            </div>
+                        </div>
                     );
                 })}
             </div>
         );
     };
 
-    if (isLoading) {
-        return <div>Loading...</div>;
+    if (showLoginPage) {
+        return (
+            <div className="page-wrapper">
+                <Navbar onBack={handleBackToMain} showBackButton={true} />
+                <Login
+                    onBackToHome={handleBackToMain}
+                    onAuthChange={(authStatus) => setIsAuthenticated(authStatus)}
+                    initialMode={false}
+                />
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <Navbar />
-            <div className="container mx-auto px-4 py-8">
-                <BlockedAccountsContainer>
-                    <Title>Blocked accounts on your timeline</Title>
-                    <AccountList>
+        <div className="page-wrapper">
+            <Navbar
+                onLoginClick={handleLoginClick}
+                isAuthenticated={isAuthenticated}
+            />
+            <div className="blocked-container">
+                <h1 className="title">Blocked accounts on your timeline</h1>
+                {isLoading ? (
+                    <div>Loading...</div>
+                ) : (
+                    <div className="account-list">
                         {renderAccountList(blockedAccounts.profilesBlockedAutomatically, "Automatically Blocked")}
                         {renderAccountList(blockedAccounts.profilesBlockedManually, "Manually Blocked")}
                         {renderAccountList(blockedAccounts.profilesBlockedByBadge, "Blocked by Badge")}
-                    </AccountList>
-                </BlockedAccountsContainer>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-export default BlockedAccounts; 
+export default BlockedAccounts;

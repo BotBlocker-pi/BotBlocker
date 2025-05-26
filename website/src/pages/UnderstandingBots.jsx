@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import '../css/UnderstandingBots.css';
-import Navbar from '../components/Navbar'; // Import the Navbar component
+import '../css/pages/UnderstandingBots.css';
+import Navbar from '../components/global/Navbar.jsx'; // Import the Navbar component
 
 const UnderstandBots = () => {
-    const [isLoaded, setIsLoaded] = useState(false);
     const [activeSection, setActiveSection] = useState('what-are-bots');
-
-    useEffect(() => {
-        // Add animation class after component mounts
-        setIsLoaded(true);
-    }, []);
 
     const handleSectionChange = (section) => {
         setActiveSection(section);
     };
 
     return (
-        <div className={`understand-container ${isLoaded ? 'fade-in' : ''}`}>
+        <div className="understand-container">
             {/* Use the Navbar component instead of embedded header */}
             <Navbar />
 

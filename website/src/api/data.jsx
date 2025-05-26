@@ -54,10 +54,10 @@ export const assignBadgeToProfile = async (userId, badge) => {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
-                // Add any necessary authentication headers
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
             },
             body: JSON.stringify({
-                user_id: userId,  // Use the passed userId directly
+                user_id: userId,
                 badge: badge
             })
         });
@@ -219,6 +219,94 @@ export const revokeTimeout = async (userId) => {
     }
 };
 
+export const getUsersDetailed = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/get_users_detailed/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro na resposta: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.users || [];
+    } catch (error) {
+        console.error('Erro ao buscar utilizadores:', error);
+        return [];
+    }
+};
+
+export const getUserTimeouts = async (userId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/timeouts/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro na resposta: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Erro ao buscar timeouts:", error);
+        return null;
+    }
+};
+
+export const getUserEvaluations = async (userId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/evaluations/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem("access_token")}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro na resposta: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Erro ao buscar avaliações:", error);
+        return [];
+    }
+};
+
+export const promoteUser = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/promote_user/${userId}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+      body: JSON.stringify({ role: 'verifier' })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to promote user.');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Erro ao promover utilizador:", error);
+    return null;
+  }
+};
 
 
 
@@ -232,5 +320,9 @@ export default {
     banUser,
     unbanUser,
     applyTimeout,
-    revokeTimeout
+    revokeTimeout,
+    getUsersDetailed,
+    getUserTimeouts,
+    getUserEvaluations,
+    promoteUser
 };

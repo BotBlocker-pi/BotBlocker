@@ -217,6 +217,12 @@ def get_evaluation_history(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_evaluations(request, user_id):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         evaluations = Evaluation.objects.filter(user__id=user_id).order_by('-created_at')
         serialized = UserEvaluationSerializer(evaluations, many=True)
@@ -375,7 +381,30 @@ def update_user(request, id):
     except Exception as e:
         print(f"Error in update_user: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def promote_user(request, id):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    try:
+        user = User_BB.objects.get(id=id)
+        serializer = UserBBSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'user': serializer.data})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except User_BB.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error in update_user: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+
 
 @api_view(['DELETE'])
 def delete_user(request, id):
@@ -413,7 +442,14 @@ def get_profile(request, username):
     
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def give_badge(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or (user_bb.role != "verifier" and user_bb.role != "admin"):
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         profile_id = request.data.get('user_id')
         badge = request.data.get('badge')
@@ -501,6 +537,13 @@ def get_suspicious_activities(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def mark_suspicious_activity_resolved(request, activity_id):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized to view suspicious activities."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         activity = SuspiciousActivity.objects.get(id=activity_id)
     except SuspiciousActivity.DoesNotExist:
@@ -520,29 +563,15 @@ def mark_suspicious_activity_resolved(request, activity_id):
 
     return Response({"message": "Activity marked as resolved"}, status=status.HTTP_200_OK)
 
-from django.core.exceptions import ObjectDoesNotExist
-
-def is_user_banned(user_bb):
-    try:
-        return user_bb.ban.is_banned
-    except ObjectDoesNotExist:
-        return False
-
-
-def is_user_under_timeout(user_bb):
-    return any(timeout.is_active() for timeout in user_bb.timeouts.all())
-
-def was_user_unbanned(user_bb):
-    try:
-        ban = user_bb.ban
-        return not ban.is_banned
-    except ObjectDoesNotExist:
-        return False
-    
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def apply_timeout(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         user_id = request.data.get("user_id")
         duration = request.data.get("duration")  # in seconds
@@ -573,6 +602,12 @@ def apply_timeout(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def revoke_timeout(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         user_id = request.data.get("user_id")
 
@@ -605,6 +640,12 @@ def revoke_timeout(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def ban_user(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         user_id = request.data.get("user_id")
         reason = request.data.get("reason", "No reason provided.")
@@ -642,6 +683,12 @@ def ban_user(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def unban_user(request):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         user_id = request.data.get("user_id")
 
@@ -671,6 +718,12 @@ def unban_user(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_timeouts(request, user_id):
+    user_bb = User_BB.objects.filter(user=request.user).first()
+    if not user_bb or user_bb.role != "admin":
+        return Response(
+            {"error": "You are not authorized."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         user_bb = User_BB.objects.get(id=user_id)
         timeouts = user_bb.timeouts.all().order_by('-start_time')
