@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { applyTimeout, revokeTimeout } from '../../../api/data.jsx';
+import { applyTimeout, revokeTimeout, getUserTimeouts } from '../../../api/data.jsx';
 import '../../../css/managment/accounts/TimeoutModal.css';
 
 const TimeoutModal = ({ userId, username, onClose, onFeedback }) => {
@@ -15,18 +15,9 @@ const TimeoutModal = ({ userId, username, onClose, onFeedback }) => {
     ];
 
     const fetchTimeouts = async () => {
-        try {
-            const res = await fetch(`http://localhost/api/users/${userId}/timeouts/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem("access_token")}`
-                }
-            });
-            const data = await res.json();
-            setTimeouts(data);
-        } catch (err) {
-            console.error("Error fetching timeouts:", err);
+        const data = await getUserTimeouts(userId);
+        if (data) {
+        setTimeouts(data);
         }
     };
 

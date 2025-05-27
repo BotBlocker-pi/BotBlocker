@@ -43,6 +43,7 @@ urlpatterns = [
     path('users/unban/', unban_user, name='unban-user'),
     path('users/<uuid:user_id>/timeouts/', get_user_timeouts, name='get-user-timeouts'),
     path('users/<uuid:user_id>/evaluations/', get_user_evaluations, name='get_user_evaluations'),
+    path('promote_user/<uuid:id>/', promote_user, name='promote_user'),        # PUT - Atualizar usuário
 
     path('block_profile/', block_profile, name='block_profile'),
     path('unblock_profile/', unblock_profile, name='unblock_profile'),

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../../../css/managment/verify/VerificationSection.css';
+import { getUserEvaluations } from '../../../api/data';
 
 const EvaluationsPopup = ({ userId, username, onClose }) => {
     const [evaluations, setEvaluations] = useState([]);
@@ -8,19 +9,9 @@ const EvaluationsPopup = ({ userId, username, onClose }) => {
 
     useEffect(() => {
         const fetchEvaluations = async () => {
-            try {
-                const res = await fetch(`http://localhost/api/users/${userId}/evaluations/`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem("access_token")}`
-                    }
-                });
-                const data = await res.json();
-                setEvaluations(data);
-            } catch (err) {
-                console.error("Error fetching evaluations:", err);
-            } finally {
-                setLoading(false);
-            }
+            const data = await getUserEvaluations(userId);
+            setEvaluations(data);
+            setLoading(false);
         };
 
         fetchEvaluations();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { banUser, unbanUser } from "../../../api/data.jsx";
+import { banUser, unbanUser, promoteUser } from "../../../api/data.jsx";
 import '../../../css/managment/accounts/ActionButton.css';
 
 const ActionButtons = ({
@@ -51,25 +51,17 @@ const ActionButtons = ({
             return;
         }
 
-        try {
-            const response = await fetch(`http://localhost/api/update_user/${userId}/`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ role: 'verifier' })
-            });
 
-            if (!response.ok) throw new Error('Failed to promote user.');
+        const res = await promoteUser(userId);
 
-            await response.json();
+        if (res) {
             setLocalRole('verifier');
             setMessage({
                 type: 'success',
                 text: `⭐ ${username} has been promoted to verifier.`
             });
-        } catch (err) {
-            console.error('Error promoting user:', err);
+        } else {
+            console.error(`❌ Error promoting user ${username}`);
             setMessage({
                 type: 'error',
                 text: `❌ Error promoting ${username}.`
