@@ -1,6 +1,8 @@
 // Adicione "facebook.com" aos domínios suportados
 const SUPPORTED_DOMAINS = ["twitter.com", "x.com", "instagram.com", "facebook.com"];
 
+const API_URL = "http://mednat.ieeta.pt/api"; // URL da API
+
 // Helper para checar se a URL corresponde a uma rede suportada
 function isSupportedUrl(url) {
     return SUPPORTED_DOMAINS.some(domain => url.includes(domain));
@@ -42,7 +44,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "fetchProfiles") {
         (async () => {
             try {
-                const response = await fetch("http://localhost/api/perfis/");
+                const response = await fetch(`${API_URL}/perfis/`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 sendResponse({ success: true, profiles: data.perfis || [] });
@@ -80,7 +82,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
 
             try {
-                const response = await fetch("http://localhost/api/block_profile/", {
+                const response = await fetch(`${API_URL}/block_profile/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username, platform }),
@@ -121,7 +123,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             try {
                 await removeFromBlacklist(username, platform);
 
-                const response = await fetch("http://localhost/api/unblock_profile/", {
+                const response = await fetch(`${API_URL}/unblock_profile/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username, platform }),

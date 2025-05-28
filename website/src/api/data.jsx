@@ -1,8 +1,8 @@
-const API_BASE_URL = "http://localhost/api";
+import { API_URL} from "../api/config.js";
 
 export const getEvaluationHistory = async (url) => {
     try {
-        const apiUrl = `${API_BASE_URL}/get_evaluation_history/?url=${encodeURIComponent(url)}`;
+        const apiUrl = `${API_URL}/get_evaluation_history/?url=${encodeURIComponent(url)}`;
         const response = await fetch(apiUrl, {
             method: "GET",
             headers: { "Content-Type": "application/json" }
@@ -25,7 +25,7 @@ export const getEvaluationHistory = async (url) => {
 export const getProfileData = async (url) => {
     try {
         console.log("URL received for analysis:", url);
-        const apiUrl = `${API_BASE_URL}/get_probability/?url=${encodeURIComponent(url)}`;
+        const apiUrl = `${API_URL}/get_probability/?url=${encodeURIComponent(url)}`;
         console.log("Making request to:", apiUrl);
 
         const response = await fetch(apiUrl, {
@@ -49,7 +49,7 @@ export const getProfileData = async (url) => {
 
 export const assignBadgeToProfile = async (userId, badge) => {
     try {
-        const apiUrl = `${API_BASE_URL}/give_badge/`;
+        const apiUrl = `${API_URL}/give_badge/`;
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: { 
@@ -85,7 +85,7 @@ export const assignBadgeToProfile = async (userId, badge) => {
 
 export const getSuspiciousActivities = async () => {
     try {
-        const apiUrl = `${API_BASE_URL}/suspicious-activities/`;
+        const apiUrl = `${API_URL}/suspicious-activities/`;
         const response = await fetch(apiUrl, {
             method: "GET",
             headers: {
@@ -110,7 +110,7 @@ export const getSuspiciousActivities = async () => {
 
 export const markActivityResolved = async (activityId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/suspicious-activities/${activityId}/resolve/`, {
+        const response = await fetch(`${API_URL}/suspicious-activities/${activityId}/resolve/`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -133,7 +133,7 @@ export const markActivityResolved = async (activityId) => {
 
 export const banUser = async (userId, reason = "No reason provided") => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/ban/`, {
+        const response = await fetch(`${API_URL}/users/ban/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -155,7 +155,7 @@ export const banUser = async (userId, reason = "No reason provided") => {
 
 export const unbanUser = async (userId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/unban/`, {
+        const response = await fetch(`${API_URL}/users/unban/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -177,7 +177,7 @@ export const unbanUser = async (userId) => {
 
 export const applyTimeout = async (userId, durationSeconds) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/timeout/apply/`, {
+        const response = await fetch(`${API_URL}/users/timeout/apply/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -199,7 +199,7 @@ export const applyTimeout = async (userId, durationSeconds) => {
 
 export const revokeTimeout = async (userId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/timeout/revoke/`, {
+        const response = await fetch(`${API_URL}/users/timeout/revoke/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -221,7 +221,7 @@ export const revokeTimeout = async (userId) => {
 
 export const getUsersDetailed = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/get_users_detailed/`, {
+        const response = await fetch(`${API_URL}/get_users_detailed/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -243,7 +243,7 @@ export const getUsersDetailed = async () => {
 
 export const getUserTimeouts = async (userId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/timeouts/`, {
+        const response = await fetch(`${API_URL}/users/${userId}/timeouts/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -265,7 +265,7 @@ export const getUserTimeouts = async (userId) => {
 
 export const getUserEvaluations = async (userId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/evaluations/`, {
+        const response = await fetch(`${API_URL}/users/${userId}/evaluations/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -287,7 +287,7 @@ export const getUserEvaluations = async (userId) => {
 
 export const promoteUser = async (userId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/promote_user/${userId}/`, {
+    const response = await fetch(`${API_URL}/promote_user/${userId}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

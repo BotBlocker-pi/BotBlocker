@@ -1,9 +1,10 @@
-const API_BASE_URL = "http://localhost/api";
+import { API_URL } from "../config.js";  
+
 
 export const getProfileData = async (url) => {
     try {
         console.log("URL received for analysis:", url);
-        const apiUrl = `${API_BASE_URL}/get_probability/?url=${encodeURIComponent(url)}`;
+        const apiUrl = `${API_URL}/get_probability/?url=${encodeURIComponent(url)}`;
         console.log("Making request to:", apiUrl);
 
         const response = await fetch(apiUrl, {
@@ -27,7 +28,7 @@ export const getProfileData = async (url) => {
 
 export const createProfile = async (url) => {
     try {
-        const apiUrl = `${API_BASE_URL}/create_profile/?url=${encodeURIComponent(
+        const apiUrl = `${API_URL}/create_profile/?url=${encodeURIComponent(
             url
         )}`;
         console.log("Trying to create profile with:", apiUrl);
@@ -58,7 +59,7 @@ export const sendEvaluationToBackend = async (evaluationData) => {
     const token = localStorage.getItem("access_token");
     if (!token){alert("The user is not authenticated"); return null;}
     try {
-        const response = await fetch(`${API_BASE_URL}/avaliacao/`, {
+        const response = await fetch(`${API_URL}/avaliacao/`, {
             method: "POST",
             headers: {"Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify(evaluationData),
@@ -78,7 +79,7 @@ export const sendAvatarToBackend = async ({ url, avatar }) => {
     console.log("URL avatar:", avatar);
   
     try {
-      const response = await fetch(`${API_BASE_URL}/post_img/`, {
+      const response = await fetch(`${API_URL}/post_img/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,7 +110,7 @@ export const getUserSettings = async () => {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/get_settings/`, {
+        const response = await fetch(`${API_URL}/get_settings/`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -141,7 +142,7 @@ export const sendUpdatedSettings = async (settingsData) => {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/update_settings/`, {
+        const response = await fetch(`${API_URL}/update_settings/`, {
             method: "PUT",
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -171,7 +172,7 @@ export const getUserWasVote = async ({ username, platform }) => {
   
     try {
       const response = await fetch(
-        `${API_BASE_URL}/userWasVote/?username=${encodeURIComponent(username)}&platform=${encodeURIComponent(platform)}`,
+        `${API_URL}/userWasVote/?username=${encodeURIComponent(username)}&platform=${encodeURIComponent(platform)}`,
         {
           method: "GET",
           headers: {
