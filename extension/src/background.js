@@ -1,7 +1,7 @@
 // Adicione "facebook.com" aos domínios suportados
 const SUPPORTED_DOMAINS = ["twitter.com", "x.com", "instagram.com", "facebook.com"];
 
-const API_URL = "http://mednat.ieeta.pt/api"; // URL da API
+const API_URL = "http://mednat.ieeta.pt:8776/api"; // URL da API
 
 // Helper para checar se a URL corresponde a uma rede suportada
 function isSupportedUrl(url) {
