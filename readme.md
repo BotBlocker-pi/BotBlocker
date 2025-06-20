@@ -19,7 +19,7 @@ Antes de começar, garante que tens o seguinte instalado no teu sistema:
 ### 1️⃣ Clona o repositório
 
 ```bash
-git clone https://github.com/teu-usuario/BotBlocker.git
+git clone git@github.com:BotBlocker-pi/BotBlocker.git
 cd BotBlocker
 ```
 
